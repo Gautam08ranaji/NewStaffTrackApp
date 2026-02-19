@@ -1,0 +1,418 @@
+{
+  "LanguageScreen": {
+    "title": "भाषा चुनें",
+    "subtitle": "वह भाषा चुनें जिसमें आप सहज हों",
+    "continue": "जारी रखें",
+    "loading": "सहेजा जा रहा है..."
+  },
+  "OnboardingScreen": {
+    "title1": "FRO",
+    "title2": "सेवा प्लेटफ़ॉर्म",
+    "chooseLanguage": "भाषा चुनें"
+  },
+  "login": {
+    "title": "स्वागत है",
+    "subtitle": "अपने खाते में लॉगिन करें",
+    "email": "ईमेल पता",
+    "password": "पासवर्ड",
+    "login": "लॉगिन",
+    "loggingIn": "लॉगिन हो रहा है...",
+    "forgotPassword": "पासवर्ड भूल गए?",
+    "errorTitle": "लॉगिन त्रुटि",
+    "errors": {
+      "invalidEmail": "कृपया मान्य ईमेल पता दर्ज करें",
+      "invalidPassword": "पासवर्ड कम से कम 8 अक्षरों का हो, बड़े अक्षर से शुरू हो, और उसमें एक संख्या व एक विशेष चिन्ह हो",
+      "loginFailed": "ईमेल या पासवर्ड गलत है",
+      "generic": "कुछ गलत हो गया। कृपया पुनः प्रयास करें।"
+    }
+  },
+  "onboarding": {
+    "step1Title": "नए मामले तुरंत प्राप्त करें",
+    "step1Subtitle": "आपको सौंपे गए सभी नए मामले यहाँ देखें।",
+    "step2Title": "लोकेशन पर आसानी से जाएँ",
+    "step2Subtitle": "GPS से सीधे नागरिक के स्थान पर नेविगेट करें।",
+    "step3Title": "मामले की स्थिति अपडेट करें",
+    "step3Subtitle": "फ़ोटो, नोट्स और सबूत जोड़कर मामला पूरा करें।",
+    "prev": "पिछला",
+    "next": "अगला",
+    "gotoDashboard": "डैशबोर्ड पर जाएँ"
+  },
+  "otp": {
+    "enterOtp": "OTP दर्ज करें",
+    "sentTo": "हमने 6-अंकों का OTP भेजा है",
+    "verify": "सत्यापित करें",
+    "resendAfter": "सेकंड बाद",
+    "resendOtp": "फिर से OTP भेजें"
+  },
+  "profileSteps": {
+    "step1Title": "अधिकारी विवरण",
+    "fullName": "पूरा नाम",
+    "enterFullName": "अपना नाम लिखें",
+    "position": "पद",
+    "empCode": "कर्मचारी कोड",
+    "step2Title": "आपका कार्यक्षेत्र",
+    "step2Description": "कृपया अपना कार्यक्षेत्र चुनें ताकि आपको सही मामले भेजे जा सकें।",
+    "state": "राज्य",
+    "enterState": "राज्य दर्ज करें",
+    "district": "ज़िला",
+    "enterDistrict": "ज़िला दर्ज करें",
+    "block": "ब्लॉक / थाना",
+    "enterBlock": "ब्लॉक / थाना दर्ज करें",
+    "teamLead": "टीम लीडर का नाम",
+    "step3Title": "संपर्क विवरण",
+    "mobile": "मोबाइल नंबर",
+    "enterMobile": "मोबाइल नंबर दर्ज करें",
+    "email": "ईमेल (वैकल्पिक)",
+    "enterEmail": "ईमेल दर्ज करें",
+    "mobileRequired": "कृपया मोबाइल नंबर दर्ज करें",
+    "mobileInvalid": "मान्य 10 अंकों का मोबाइल नंबर दर्ज करें",
+    "emailInvalid": "वैध ईमेल दर्ज करें",
+    "next": "आगे बढ़ें",
+    "submit": "सबमिट करें"
+  },
+  "button": {
+    "back": "वापस",
+    "continue": "जारी रखें"
+  },
+  "profileSuccess": {
+    "welcome": ", स्वागत है",
+    "message": "सभी विवरण सफलतापूर्वक इकट्ठा कर लिए गए हैं, और हम इन्हें उपयोग के लिए तैयार कर रहे हैं।"
+  },
+  "ConfirmLocation": {
+    "popupDistance": "सबसे नज़दीकी FRO टीम",
+    "kmAway": "किमी दूर है।",
+    "confirmHeading": "अपनी लोकेशन की पुष्टि करें",
+    "yesCorrect": "हाँ, लोकेशन सही है",
+    "notCorrect": "लोकेशन सही नहीं है, इसे मैन्युअली सेट करें",
+    "searchAddress": "पता खोजें",
+    "savedAddressUse": "सेव किया हुआ लोकेशन इस्तेमाल करें",
+    "sendingLocation": "आपकी लोकेशन भेजी जा रही है…",
+    "call14567": "14567 पर कॉल करें",
+    "gotHelp": "मुझे अन्य सहायता मिल गई है, धन्यवाद"
+  },
+  "home": {
+    "TasksOverview": "मामलों का विवरण",
+    "newTasks": "नए मामले",
+    "approvedTasks": "स्वीकृत मामले",
+    "onTheWay": "रास्ते में",
+    "working": "कार्य जारी",
+    "followup": "फॉलो-अप",
+    "closedTasks": "बंद मामले",
+    "todayDuty": "आज की ड्यूटी",
+    "totalTasks": "कुल मामले",
+    "highPriority": "उच्च प्राथमिकता मामले:",
+    "quickActions": "त्वरित कार्रवाई",
+    "addNewCase": "नया मामला जोड़ें",
+    "viewMap": "मैप देखें"
+  },
+  "welcome": {
+    "title": "स्वागत है, फील्ड रिस्पॉन्स ऑफिसर",
+    "subtitle": "आपको सौंपे गए मामलों को देखने, अपडेट करने और सहायता प्रदान करने के लिए इस ऐप का उपयोग किया जाता है।",
+    "login": "लॉगिन करें",
+    "aboutApp": "ऐप के बारे में जानें"
+  },
+  "escalation": {
+    "screenTitle": "एस्केलेशन भेजें",
+    "warningText": "⚠️ एस्केलेशन केवल गंभीर मामलों के लिए उपयोग करें। आपका सुपरवाइज़र तुरंत सूचित किया जाएगा।",
+    "chooseReason": "कारण चुनें",
+    "reasonPlaceholder": "कारण चुनें",
+    "notesLabel": "नोट्स जोड़ें",
+    "notesPlaceholder": "यहां लिखें...",
+    "uploadLabel": "फोटो / दस्तावेज़ जोड़ें",
+    "uploadText": "फाइल अपलोड करें",
+    "fileSelected": "फाइल चुनी गई ✓",
+    "camera": "📷 कैमरा",
+    "gallery": "🖼️ गैलरी",
+    "cancel": "रद्द करें",
+    "submitEscalation": "एस्केलेशन सबमिट करें",
+    "reason1": "आपातकालीन स्थिति",
+    "reason2": "कारण स्पष्ट नहीं",
+    "reason3": "सहयोग प्राप्त नहीं",
+    "reason4": "इलाज में देरी"
+  },
+  "notifications": {
+    "screenTitle": "नोटिफिकेशन",
+    "newCaseAssigned": "आपको नया मामला सौंपा गया है",
+    "ticketUpdated": "टिकट अपडेट हुआ है",
+    "supervisorComment": "सुपरवाइज़र ने टिप्पणी जोड़ी है",
+    "ticketNumber": "टिकट नंबर:",
+    "newMessage": "वरिष्ठ नागरिक ने नया संदेश भेजा है",
+    "newComment": "नई टिप्पणी",
+    "minAgo": "मिनट पहले",
+    "hourAgo": "घंटे पहले"
+  },
+  "Tasks": {
+    "screenTitle": "मामले",
+    "tabNew": "नए",
+    "tabApproved": "स्वीकृत",
+    "tabOnWay": "रास्ते में",
+    "tabWorking": "कार्य जारी",
+    "tabFollowup": "फॉलो-अप",
+    "tabClosed": "बंद-मामले",
+    "noTasks": "कोई मामला उपलब्ध नहीं",
+    "age": "उम्र",
+    "category": "शिकायत श्रेणी",
+    "ticket": "टिकट नंबर",
+    "away": "दूर",
+    "viewCase": "मामला देखें",
+    "timeMinutesAgo": "मिनट पहले मिला",
+    "timeHoursAgo": "घंटे पहले मिला"
+  },
+  "caseDetail": {
+    "screenTitle": "टिकट नंबर: {{ticket}}",
+    "elderDetails": "वरिष्ठ नागरिक विवरण",
+    "name": "नाम",
+    "age": "उम्र",
+    "gender": "लिंग",
+    "phone": "फ़ोन नंबर",
+    "emergency": "आपातकालीन संपर्क",
+    "complaintInfo": "शिकायत विवरण",
+    "category": "शिकायत श्रेणी",
+    "details": "विवरण",
+    "attachments": "संलग्न मीडिया",
+    "location": "स्थान",
+    "address": "पता",
+    "startNavigation": "नेविगेशन शुरू करें",
+    "timeline": "समयरेखा",
+    "actions": "कार्रवाई",
+    "updateStatus": "स्थिति अपडेट करें",
+    "addPhoto": "फोटो/वीडियो जोड़ें",
+    "addNote": "नोट जोड़ें",
+    "addVoice": "वॉइस नोट जोड़ें",
+    "scheduleFollowup": "फॉलो-अप शेड्यूल करें",
+    "closeCase": "मामला बंद करें",
+    "genderMale": "पुरुष",
+    "years": "वर्ष",
+    "steps": {
+      "registered": "शिकायत दर्ज हुई",
+      "assigned": "FRO को सौंपा गया",
+      "approved": "स्वीकृत",
+      "onway": "रास्ते में",
+      "arrived": "स्थान पर पहुँचे",
+      "working": "कार्य जारी"
+    }
+  },
+  "navigation": {
+    "screenTitle": "लोकेशन पर जाएँ",
+    "distance": "दूरी",
+    "eta": "अनुमानित समय",
+    "address": "पता",
+    "openMaps": "Google Maps में खोलें",
+    "onTheWay": "मैं रास्ते में हूँ",
+    "name": "रामलाल शर्मा",
+    "distanceValue": "2.3 km",
+    "etaValue": "8 मिनट",
+    "fullAddress": "123, गांधी नगर, सेक्टर 5, मुंबई, महाराष्ट्र - 400001"
+  },
+  "statusUpdate": {
+    "screenTitle": "स्थिति अपडेट करें",
+    "step1Title": "मामला स्वीकृत",
+    "step1Subtitle": "मामला स्वीकार करें और आगे बढ़ें",
+    "acceptCase": "मामला स्वीकार करें",
+    "step2Title": "मैं रास्ते में हूँ",
+    "step2Subtitle": "आपका लोकेशन साझा किया जा रहा है।",
+    "locationTracking": "📍 आपकी लाइव लोकेशन ट्रैक की जा रही है",
+    "updateStatus": "स्थिति अपडेट करें",
+    "step3Title": "स्थल पर पहुँच गए?",
+    "step3Subtitle": "कृपया पुष्टि करें और कार्य शुरू करें।",
+    "step3Yes": "हाँ, पहुँच गया",
+    "step3No": "नहीं, पता नहीं मिला",
+    "step4Title": "क्या वरिष्ठ नागरिक से संपर्क हुआ?",
+    "step4Yes": "हाँ",
+    "step4No": "नहीं",
+    "step5Title": "किए गए कार्य का विवरण",
+    "notesPlaceholder": "यहां लिखें...",
+    "uploadPhoto": "फ़ोटो",
+    "uploadVoice": "वॉइस नोट",
+    "saveAndUpdate": "सेव करें और अपडेट करें"
+  },
+  "attendance": {
+    "todayAttendanceTitle": "आज की उपस्थिति",
+    "startTimeLabel": "शुरू होने का समय",
+    "endTimeLabel": "समाप्ति का समय",
+    "totalTimeLabel": "कुल समय",
+    "startDutyButton": "ड्यूटी शुरू करें",
+    "endDutyButton": "ड्यूटी समाप्त करें",
+    "hoursSuffix": "घंटे",
+    "tabs": {
+      "all": "सभी",
+      "present": "उपस्थित",
+      "absent": "अनुपस्थित",
+      "leave": "अवकाश"
+    },
+    "history": {
+      "presentStatus": "उपस्थित",
+      "absentStatus": "अनुपस्थित",
+      "leaveStatus": "अवकाश",
+      "checkInOutLabel": "चेक-इन / चेक-आउट",
+      "totalWorkingHoursLabel": "कुल कार्य समय",
+      "toLabel": "से"
+    }
+  },
+  "addPhoto": {
+    "screenTitle": "फोटो जोड़ें",
+    "openCamera": "कैमरा खोलें",
+    "chooseGallery": "गैलरी से चुनें",
+    "selectedPhoto": "चुनी गई फोटो",
+    "savePhoto": "फोटो सेव करें"
+  },
+  "voiceNote": {
+    "screenTitle": "वॉइस नोट रिकॉर्ड करें",
+    "recording": "रिकॉर्डिंग चल रही है...",
+    "ready": "रिकॉर्ड करने के लिए तैयार",
+    "start": "रिकॉर्ड शुरू करें",
+    "stop": "रिकॉर्ड रोकें",
+    "savedNote": "रिकॉर्ड किया गया वॉइस नोट",
+    "play": "चलाएँ",
+    "pause": "रोकें"
+  },
+  "availability": {
+    "screenTitle": "रिपोर्टिंग",
+    "tabAttendance": "उपस्थिति",
+    "tabDaily": "दैनिक",
+    "tabWeekly": "साप्ताहिक",
+    "tabMonthly": "मासिक"
+  },
+  "attendance": {
+    "todayAttendanceTitle": "आज की उपस्थिति",
+    "startTimeLabel": "शुरू होने का समय",
+    "endTimeLabel": "समाप्ति का समय",
+    "totalTimeLabel": "कुल समय",
+    "startDutyButton": "ड्यूटी शुरू करें",
+    "endDutyButton": "ड्यूटी समाप्त करें",
+    "hoursSuffix": "घंटे",
+    "tabs": {
+      "all": "सभी",
+      "present": "उपस्थित",
+      "absent": "अनुपस्थित",
+      "leave": "अवकाश"
+    },
+    "history": {
+      "dateLabel": "तारीख",
+      "checkInOutLabel": "चेक-इन / चेक-आउट",
+      "totalWorkingHoursLabel": "कुल कार्य समय",
+      "presentStatus": "उपस्थित",
+      "absentStatus": "अनुपस्थित",
+      "leaveStatus": "अवकाश"
+    },
+    "timePlaceholder": "--:--",
+    "amLabel": "पूर्वाह्न",
+    "pmLabel": "अपराह्न"
+  },
+  "dailyReport": {
+    "title": "दैनिक रिपोर्ट",
+    "totalTasks": "कुल मामले",
+    "solvedTasks": "सुलझे हुए मामले",
+    "followUp": "फॉलो अप",
+    "placeVisited": "देखी गई जगहें"
+  },
+  "weeklyReport": {
+    "title": "साप्ताहिक रिपोर्ट",
+    "totalTasks": "कुल मामले",
+    "solvedTasks": "सुलझे हुए मामले",
+    "days": {
+      "mon": "सोम",
+      "tue": "मंगल",
+      "wed": "बुध",
+      "thu": "गुरु",
+      "fri": "शुक्र",
+      "sat": "शनि",
+      "sun": "रवि"
+    }
+  },
+  "monthlyReport": {
+    "title": "मासिक रिपोर्ट",
+    "totalTasks": "कुल मामले",
+    "solvedTasks": "सुलझे हुए मामले",
+    "followUp": "फॉलो अप",
+    "placeVisited": "देखी गई जगहें"
+  },
+  "profile": {
+    "name": "राजेश कुमार",
+    "code": "FRO-14567-001",
+    "role": "FRO - फील्ड रिस्पॉन्स ऑफिसर",
+    "menuOfficerDetails": "अधिकारी विवरण",
+    "menuWorkArea": "कार्यक्षेत्र",
+    "menuLanguage": "भाषा",
+    "menuSettings": "सेटिंग्स",
+    "menuChangePassword": "पासवर्ड बदलें",
+    "logout": "लॉगआउट",
+    "logoutTitle": "क्या आप लॉगआउट करना चाहते हैं?",
+    "logoutDescription": "आप अपने खाते से बाहर हो जाएंगे।",
+    "logoutConfirm": "हाँ, लॉगआउट करें",
+    "logoutCancel": "रद्द करें"
+  },
+  "officerDetails": {
+    "screenTitle": "अधिकारी विवरण",
+    "name": "नाम",
+    "nameValue": "राजेश कुमार",
+    "employeeCode": "कर्मचारी कोड",
+    "employeeCodeValue": "FRO-14567-001",
+    "mobile": "मोबाइल नंबर",
+    "mobileValue": "+91-9876543210",
+    "email": "ईमेल",
+    "emailValue": "rajesh.kumar@example.com",
+    "save": "सेव करें"
+  },
+  "locationDetails": {
+    "screenTitle": "कार्यक्षेत्र",
+    "state": "राज्य",
+    "district": "जिला",
+    "block": "ब्लॉक / थाना",
+    "blockPlaceholder": "ब्लॉक / थाना दर्ज करें",
+    "teamLeadName": "टीम लीडर का नाम",
+    "teamLeadPlaceholder": "टीम लीडर का नाम दर्ज करें",
+    "save": "सेव करें",
+    "defaultName": "राजेश कुमार",
+    "states": {
+      "up": "उत्तर प्रदेश",
+      "br": "बिहार",
+      "rj": "राजस्थान"
+    },
+    "districts": {
+      "lucknow": "लखनऊ",
+      "kanpur": "कानपुर",
+      "varanasi": "वाराणसी"
+    }
+  },
+  "settings": {
+    "screenTitle": "सेटिंग्स",
+    "notification": "नोटिफिकेशन",
+    "locationPermission": "लोकेशन अनुमति",
+    "changeTheme": "थीम बदलें",
+    "textSize": "टेक्स्ट साइज़",
+    "textSizeSmall": "छोटा",
+    "textSizeMedium": "मध्यम",
+    "textSizeLarge": "बड़ा",
+    "helpSupport": "हेल्प & सपोर्ट",
+    "locationAlertTitle": "लोकेशन बंद करें",
+    "locationAlertMessage": "लोकेशन परमिशन बंद करने के लिए ऐप सेटिंग्स खोलें।",
+    "locationAlertCancel": "रद्द करें",
+    "locationAlertOpenSettings": "सेटिंग्स खोलें"
+  },
+  "changePassword": {
+    "screenTitle": "पासवर्ड बदलें",
+    "oldPassword": "पुराना पासवर्ड",
+    "oldPasswordPlaceholder": "पुराना पासवर्ड दर्ज करें",
+    "newPassword": "नया पासवर्ड",
+    "newPasswordPlaceholder": "नया पासवर्ड दर्ज करें",
+    "confirmPassword": "पासवर्ड पुष्टि करें",
+    "confirmPasswordPlaceholder": "नया पासवर्ड फिर से दर्ज करें",
+    "save": "सेव करें"
+  },
+  "frl": {
+    "home": {
+      "TasksOverview": "एफ़आरओ और मामले",
+      "newTasks": "कुल एफआरओ",
+      "approvedTasks": "ड्यूटी पर",
+      "onTheWay": "ड्यूटी से बाहर",
+      "working": "सक्रिय मामले",
+      "todayDuty": "आज की ड्यूटी",
+      "totalTasks": "कुल मामले",
+      "highPriority": "उच्च प्राथमिकता",
+      "quickActions": "त्वरित कार्य",
+      "addNewCase": "नया मामला जोड़ें",
+      "viewMap": "नक्शा देखें"
+    }
+  }
+}

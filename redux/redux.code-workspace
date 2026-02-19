@@ -1,0 +1,13 @@
+{
+  "folders": [
+    {
+      "name": "redux",
+      "path": "./redux"
+    },
+    {
+      "name": "Seneior-citizen-helpdesk-app",
+      "path": "."
+    }
+  ],
+  "settings": {}
+}

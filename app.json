@@ -1,0 +1,67 @@
+{
+  "expo": {
+    "name": "FRO",
+    "slug": "fro",
+    "version": "1.0.0",
+    "orientation": "portrait",
+
+    "icon": "./assets/images/saarthi-logo.png",
+
+    "scheme": "froapp",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/images/saarthi-logo.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "backgroundColor": "#ffffff",
+          "dark": {
+            "backgroundColor": "#000000"
+          },
+          "autoHide": false
+        }
+      ]
+    ],
+
+    "android": {
+      "backgroundColor": "#ffffff",
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false,
+      "package": "com.gautam1008.fro",
+
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/saarthi-logo.png",
+        "backgroundColor": "#ffffff"
+      },
+
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyDVl4s2zlYODWTIpEfzYePa_hj5nrWksuE"
+        }
+      }
+    },
+
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.gautam1008.fro",
+      "config": {
+        "googleMapsApiKey": "PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE"
+      }
+    },
+
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/saarthi-logo.png"
+    },
+
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}
