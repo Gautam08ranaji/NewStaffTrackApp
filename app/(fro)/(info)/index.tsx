@@ -15,9 +15,9 @@ import type { IconName } from "react-native-remix-icon";
 import RemixIcon from "react-native-remix-icon";
 
 import AttendanceTab from "./attendanceTab";
-import DailyTab from "./dailyTab";
 
 import { useTranslation } from "react-i18next";
+import DailyTab from "./dailyTab";
 
 type TabKey = "attendance" | "daily" | "weekly" | "monthly";
 
@@ -36,7 +36,7 @@ export default function AvailabilityScreen() {
       key: "attendance",
       icon: "alarm-line",
     },
-    { label: t("availability.tabDaily"), key: "daily", icon: "calendar-line" },
+    { label: "Leaves", key: "daily", icon: "calendar-line" },
   ];
 
   const [activeTab, setActiveTab] = useState(0);
@@ -83,7 +83,7 @@ export default function AvailabilityScreen() {
   const shouldScroll = totalTabsWidth > containerWidth && containerWidth > 0;
 
   return (
-    <BodyLayout type="screen" screenName={t("availability.screenTitle")}>
+    <BodyLayout type="screen" screenName={"Attendance"}>
       {/* ---------- TOP TABS ---------- */}
       <View
         style={[styles.tabsContainer, { marginBottom: 20 }]}

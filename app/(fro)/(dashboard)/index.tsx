@@ -240,7 +240,7 @@ export default function HomeScreen() {
             { color: theme.colors.colorPrimary600, marginTop: 20 },
           ]}
         >
-          {t("home.TasksOverview")}
+          Task Overview
         </Text>
 
         {/* Case Cards */}

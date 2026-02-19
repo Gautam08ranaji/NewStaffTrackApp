@@ -656,7 +656,7 @@ export default function CaseDetailScreen() {
   };
 
   return (
-    <BodyLayout type="screen" screenName={`Case Details - ${ticketNo}`}>
+    <BodyLayout type="screen" screenName={`Task Details - ${ticketNo}`}>
       {/* ELDER DETAILS */}
       <View
         style={[
@@ -681,7 +681,7 @@ export default function CaseDetailScreen() {
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Elder Details
+              Client Details
             </Text>
           </View>
           <TouchableOpacity
@@ -970,7 +970,7 @@ export default function CaseDetailScreen() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Sub Sub Category:
+                  Sub Category:
                 </Text>
               </View>
               <Text
@@ -1396,7 +1396,7 @@ export default function CaseDetailScreen() {
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Case Metadata
+              Task Metadata
             </Text>
           </View>
         </View>

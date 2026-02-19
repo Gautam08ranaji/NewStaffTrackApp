@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   ScrollView,
   StyleSheet,
   Text,
@@ -135,144 +136,168 @@ export default function LoginScreen() {
     <SafeAreaView
       style={[styles.container, { backgroundColor: theme.colors.background }]}
     >
-      <ScrollView contentContainerStyle={styles.inner}>
-        <View style={styles.iconWrapper}>
-          <RemixIcon
-            name="contract-right-line"
-            size={28}
-            color={theme.colors.btnPrimaryBg}
-          />
-        </View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.mainContent}>
+          <View style={styles.iconWrapper}>
+            {/* Replace icon with image */}
+            <Image
+              source={require("@/assets/images/staffTrackLogo.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
+          </View>
 
-        <Text
-          style={[
-            theme.typography.fontH1,
-            styles.title,
-            { color: theme.colors.primary },
-          ]}
-        >
-          {t("login.title")}
-        </Text>
-
-        <Text
-          style={[
-            theme.typography.fontBodySmall,
-            styles.subtitle,
-            { color: theme.colors.colorTextSecondary },
-          ]}
-        >
-          {t("login.subtitle")}
-        </Text>
-
-        {/* EMAIL */}
-        <View style={styles.inputWrapper}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t("login.email")}
-          </Text>
-
-          <TextInput
+          <Text
             style={[
-              styles.input,
-              {
-                borderColor: emailError
-                  ? theme.colors.colorError400
-                  : theme.colors.border,
-                backgroundColor: theme.colors.card,
-                color: theme.colors.text,
-              },
+              theme.typography.fontH1,
+              styles.title,
+              { color: theme.colors.primary },
             ]}
-            placeholder="example@email.com"
-            placeholderTextColor={theme.colors.inputPlaceholder}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            value={email}
-            onChangeText={(t) => setEmail(t.trimStart())}
-          />
-          {emailError ? (
-            <Text
-              style={[styles.errorText, { color: theme.colors.colorError400 }]}
-            >
-              {emailError}
-            </Text>
-          ) : null}
-        </View>
-
-        {/* PASSWORD */}
-        <View style={styles.inputWrapper}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>
-            {t("login.password")}
+          >
+            {t("login.title")}
           </Text>
 
-          <View
+          <Text
             style={[
-              styles.passwordContainer,
+              theme.typography.fontBodySmall,
+              styles.subtitle,
+              { color: theme.colors.colorTextSecondary },
+            ]}
+          >
+            {t("login.subtitle")}
+          </Text>
+
+          {/* EMAIL */}
+          <View style={styles.inputWrapper}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              {t("login.email")}
+            </Text>
+
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  borderColor: emailError
+                    ? theme.colors.colorError400
+                    : theme.colors.border,
+                  backgroundColor: theme.colors.card,
+                  color: theme.colors.text,
+                },
+              ]}
+              placeholder="example@email.com"
+              placeholderTextColor={theme.colors.inputPlaceholder}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={email}
+              onChangeText={(t) => setEmail(t.trimStart())}
+            />
+            {emailError ? (
+              <Text
+                style={[
+                  styles.errorText,
+                  { color: theme.colors.colorError400 },
+                ]}
+              >
+                {emailError}
+              </Text>
+            ) : null}
+          </View>
+
+          {/* PASSWORD */}
+          <View style={styles.inputWrapper}>
+            <Text style={[styles.label, { color: theme.colors.text }]}>
+              {t("login.password")}
+            </Text>
+
+            <View
+              style={[
+                styles.passwordContainer,
+                {
+                  borderColor: passwordError
+                    ? theme.colors.colorError400
+                    : theme.colors.border,
+                  backgroundColor: theme.colors.card,
+                },
+              ]}
+            >
+              <TextInput
+                style={[styles.passwordInput, { color: theme.colors.text }]}
+                placeholder="••••••••"
+                placeholderTextColor={theme.colors.inputPlaceholder}
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={(t) => setPassword(t.replace(/\s/g, ""))}
+              />
+
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <RemixIcon
+                  name={showPassword ? "eye-off-line" : "eye-line"}
+                  size={20}
+                  color={theme.colors.colorTextSecondary}
+                />
+              </TouchableOpacity>
+            </View>
+            {passwordError ? (
+              <Text
+                style={[
+                  styles.errorText,
+                  { color: theme.colors.colorError400 },
+                ]}
+              >
+                {passwordError}
+              </Text>
+            ) : null}
+          </View>
+
+          <TouchableOpacity style={styles.forgotWrapper}>
+            <Text style={{ color: theme.colors.primary }}>
+              {t("login.forgotPassword")}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={handleLogin}
+            activeOpacity={0.8}
+            style={[
+              styles.button,
               {
-                borderColor: passwordError
-                  ? theme.colors.colorError400
-                  : theme.colors.border,
-                backgroundColor: theme.colors.card,
+                backgroundColor: theme.colors.btnPrimaryBg,
+                opacity: isLoading ? 0.85 : 1,
               },
             ]}
           >
-            <TextInput
-              style={[styles.passwordInput, { color: theme.colors.text }]}
-              placeholder="••••••••"
-              placeholderTextColor={theme.colors.inputPlaceholder}
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={(t) => setPassword(t.replace(/\s/g, ""))}
-            />
-
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <RemixIcon
-                name={showPassword ? "eye-off-line" : "eye-line"}
-                size={20}
-                color={theme.colors.colorTextSecondary}
+            {isLoading ? (
+              <ActivityIndicator
+                size="small"
+                color={theme.colors.btnPrimaryText}
               />
-            </TouchableOpacity>
-          </View>
-          {passwordError ? (
-            <Text
-              style={[styles.errorText, { color: theme.colors.colorError400 }]}
-            >
-              {passwordError}
-            </Text>
-          ) : null}
+            ) : (
+              <Text
+                style={[
+                  styles.buttonText,
+                  { color: theme.colors.btnPrimaryText },
+                ]}
+              >
+                {t("login.login")}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.forgotWrapper}>
-          <Text style={{ color: theme.colors.primary }}>
-            {t("login.forgotPassword")}
+        {/* Footer Text */}
+        <View style={styles.footer}>
+          <Text
+            style={[
+              styles.footerText,
+              { color: theme.colors.colorTextSecondary },
+            ]}
+          >
+            © 2026 Stream Digital Services | All Rights Reserved
           </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={handleLogin}
-          activeOpacity={0.8}
-          style={[
-            styles.button,
-            {
-              backgroundColor: theme.colors.btnPrimaryBg,
-              opacity: isLoading ? 0.85 : 1,
-            },
-          ]}
-        >
-          {isLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={theme.colors.btnPrimaryText}
-            />
-          ) : (
-            <Text
-              style={[
-                styles.buttonText,
-                { color: theme.colors.btnPrimaryText },
-              ]}
-            >
-              {t("login.login")}
-            </Text>
-          )}
-        </TouchableOpacity>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -280,23 +305,32 @@ export default function LoginScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  inner: { padding: 20 },
-
+  scrollContent: {
+    flexGrow: 1,
+    padding: 20,
+  },
+  mainContent: {
+    flex: 1,
+  },
   iconWrapper: {
-    width: 70,
-    height: 70,
+    width: 100,
+    height: 100,
     borderRadius: 50,
-    backgroundColor: "#E5F4EE",
+    // backgroundColor: "#E5F4EE",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 20,
+    overflow: "hidden",
   },
-
+  logoImage: {
+    width: 80,
+    height: 80,
+  },
   title: { marginTop: 10 },
-  subtitle: { marginTop: 10 },
+  subtitle: { marginTop: 10, marginBottom: 10 },
 
-  inputWrapper: { marginTop: 30 },
-  label: { marginBottom: 8 },
+  inputWrapper: { marginTop: 20 },
+  label: { marginBottom: 8, fontSize: 14, fontWeight: "500" },
 
   input: {
     paddingVertical: 16,
@@ -329,7 +363,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 16,
     alignItems: "center",
-    marginTop: 35,
+    marginTop: 25,
   },
 
   buttonText: {
@@ -340,5 +374,16 @@ const styles = StyleSheet.create({
   errorText: {
     fontSize: 12,
     marginTop: 6,
+  },
+
+  footer: {
+    paddingVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 20,
+  },
+  footerText: {
+    fontSize: 12,
+    textAlign: "center",
   },
 });

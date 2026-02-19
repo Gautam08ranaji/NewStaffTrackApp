@@ -29,7 +29,7 @@ export default function FROPerformanceGraph({
           { color: theme.colors.colorPrimary600 },
         ]}
       >
-        Case Performance Day Wise
+        Task Performance Day Wise
       </Text>
 
       <LineChart

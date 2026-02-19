@@ -58,7 +58,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="(info)"
         options={{
-          title: "Reporting",
+          title: "Attendance",
           tabBarIcon: ({ color }) => (
             <RemixIcon name="article-line" size={28} color={color} />
           ),

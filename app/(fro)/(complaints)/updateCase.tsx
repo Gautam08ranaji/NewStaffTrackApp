@@ -1,6 +1,6 @@
 import {
-    getDropdownByEndpoint,
-    getDropdownByEndpointAndId,
+  getDropdownByEndpoint,
+  getDropdownByEndpointAndId,
 } from "@/features/fro/dropdownApi";
 import { addAndUpdateFROLocation } from "@/features/fro/froLocationApi";
 import { addInteractionActivityHistory } from "@/features/fro/interaction/ActivityHistory";
@@ -14,20 +14,20 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    Dimensions,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 
 type DropdownItem = {
@@ -475,7 +475,7 @@ const UpdateStatusScreen = () => {
             { color: theme.colors.colorTextSecondary },
           ]}
         >
-          Loading case data...
+          Loading Task data...
         </Text>
       </View>
     );

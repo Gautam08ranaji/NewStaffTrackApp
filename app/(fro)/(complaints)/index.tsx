@@ -40,6 +40,35 @@ const STATUS_DISPLAY_MAP: Record<string, string> = {
   Closed: "Closed",
 };
 
+const statusColors: Record<string, string> = {
+  Open: "#00C950",
+  "In-Progress": "#F57C00",
+  "In Progress": "#F57C00",
+  Closed: "#6A7282",
+};
+
+// Helper function to safely get status
+const getSafeStatus = (item: any): string => {
+  return item?.TaskstatusName?.toLowerCase() || "";
+};
+
+// Helper function to get display status
+const getDisplayStatus = (TaskstatusName: string): string => {
+  if (!TaskstatusName) return "Unknown";
+  return STATUS_DISPLAY_MAP[TaskstatusName] || TaskstatusName;
+};
+
+// Helper function to get status color
+const getStatusColor = (TaskstatusName: string): string => {
+  if (!TaskstatusName) return "#6A7282"; // Default gray
+
+  const displayStatus = getDisplayStatus(TaskstatusName);
+  const statusKey = Object.keys(statusColors).find(
+    (key) => key.toLowerCase() === displayStatus.toLowerCase(),
+  );
+  return statusKey ? statusColors[statusKey] : "#6A7282";
+};
+
 export default function TasksScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
@@ -60,11 +89,13 @@ export default function TasksScreen() {
   const tabs = [
     { label: "All", key: "all", displayKey: "all" },
     { label: "Open", key: "open", displayKey: "Open" },
-    { label: "In Progress", key: "inProgress", displayKey: "In-Progress" },
-    { label: "Closed", key: "closed", displayKey: "Closed" },
+    {
+      label: "In-progress",
+      key: "inProgress",
+      displayKey: "In-Progress",
+    },
+    { label: "closed", key: "closed", displayKey: "Closed" },
   ];
-
-  // console.log("param", params);
 
   const initialTabIndex = tabs.findIndex((t) => t.key === params.filter);
   const [activeTab, setActiveTab] = useState(
@@ -79,7 +110,6 @@ export default function TasksScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchInteractions();
-      // setShowPopUp(true);
     }, []),
   );
 
@@ -133,66 +163,128 @@ export default function TasksScreen() {
   const selectedFilterKey = tabs[activeTab].key;
 
   const filteredData = useMemo(() => {
-    // console.log("Filtering data with key:", selectedFilterKey);
-    // console.log("Total interactions:", interactions.length);
-
     if (selectedFilterKey === "all") {
-      // console.log("Showing all Tasks");
       return interactions;
     }
 
-    const filtered = interactions.filter((item) => {
-      // Get the case status from backend
-      const Taskstatus = item.TaskstatusName || "";
-      // console.log(
-      //   `Item ${item.transactionNumber}: TaskstatusName="${Taskstatus}"`,
-      // );
+    return interactions.filter((item) => {
+      const status = getSafeStatus(item);
 
-      // For Open tab, check if it's "Open" (case-insensitive)
-      if (selectedFilterKey === "open") {
-        return Taskstatus.toLowerCase() === "open";
+      switch (selectedFilterKey) {
+        case "open":
+          return status === "open";
+        case "inProgress":
+          return status === "in-progress";
+        case "closed":
+          return status === "closed";
+        default:
+          return false;
       }
-
-      // For In Progress tab, check if it's "In-Progress" (case-insensitive)
-      if (selectedFilterKey === "inProgress") {
-        return Taskstatus.toLowerCase() === "in-progress";
-      }
-
-      // For Closed tab, check if it's "Closed" (case-insensitive)
-      if (selectedFilterKey === "closed") {
-        return Taskstatus.toLowerCase() === "closed";
-      }
-
-      return false;
     });
-
-    // console.log(`Filtered to ${filtered.length} items`);
-    return filtered;
   }, [interactions, selectedFilterKey]);
 
-  const statusColors: Record<string, string> = {
-    Open: "#00C950",
-    "In-Progress": "#F57C00",
-    "In Progress": "#F57C00",
-    Closed: "#6A7282",
-  };
-
-  const getDisplayStatus = (TaskstatusName: string) => {
-    return STATUS_DISPLAY_MAP[TaskstatusName] || TaskstatusName;
-  };
-
-  const getStatusColor = (TaskstatusName: string) => {
-    // First get the display status name
-    const displayStatus = getDisplayStatus(TaskstatusName);
-
-    // Get color based on display status (case-insensitive)
-    const statusKey = Object.keys(statusColors).find(
-      (key) => key.toLowerCase() === displayStatus.toLowerCase(),
-    );
-    return statusKey ? statusColors[statusKey] : "#6A7282"; // Default gray
-  };
-
   /* ================= UI ================= */
+
+  const renderTaskCard = (item: any, index: number) => {
+    const displayStatus = getDisplayStatus(item.caseStatusName);
+    const statusColor = getStatusColor(item.caseStatusName);
+
+    return (
+      <View
+        key={index}
+        style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+      >
+        <View style={styles.rowBetween}>
+          <Text
+            style={[styles.cardTitle, { color: theme.colors.colorPrimary600 }]}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            Task No: {item.transactionNumber || "-"}
+          </Text>
+
+          <View style={[styles.tagBadge, { backgroundColor: statusColor }]}>
+            <Text style={styles.tagText}>{displayStatus}</Text>
+          </View>
+        </View>
+
+        <View style={styles.infoContainer}>
+          <Text style={[styles.cardText, styles.infoText]}>
+            {item.name || t("Tasks.unnamedCase")}
+          </Text>
+          <Text style={[styles.cardText, styles.infoText]}>
+            {t("Tasks.age")}: {item.age || "-"}
+          </Text>
+          <Text style={[styles.cardText, styles.infoText]}>
+            {t("Tasks.category")}: {item.categoryName || "-"}
+          </Text>
+        </View>
+
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <RemixIcon
+              name="map-pin-line"
+              size={moderateScale(16)}
+              color="#666"
+            />
+            <Text style={styles.metaText} numberOfLines={1}>
+              {item.districtName || "-"}
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <RemixIcon name="time-line" size={moderateScale(16)} color="#666" />
+            <Text style={styles.metaText} numberOfLines={1}>
+              {item.createdDate
+                ? new Date(item.createdDate).toLocaleString()
+                : "-"}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={[
+            styles.actionBtn,
+            { backgroundColor: theme.colors.colorPrimary600 },
+          ]}
+          onPress={() =>
+            router.push({
+              pathname: "/CaseDetailScreen",
+              params: { item: JSON.stringify(item) },
+            })
+          }
+        >
+          <Text style={styles.actionBtnText}>View Task</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <RemixIcon
+        name="inbox-line"
+        size={moderateScale(48)}
+        color={theme.colors.colorTextSecondary}
+      />
+      <Text
+        style={[styles.emptyText, { color: theme.colors.colorTextSecondary }]}
+      >
+        {selectedFilterKey !== "all"
+          ? `${t("Tasks.no")} ${t(`Tasks.${selectedFilterKey}`)} ${t("Tasks.tasksFound")}`
+          : t("Tasks.noTasksFound")}
+      </Text>
+    </View>
+  );
+
+  const renderLoadingState = () => (
+    <View style={styles.loadingContainer}>
+      <Text
+        style={[styles.loadingText, { color: theme.colors.colorTextSecondary }]}
+      >
+        {t("common.loading")}...
+      </Text>
+    </View>
+  );
 
   return (
     <BodyLayout type="screen" screenName={t("Tasks.screenTitle")}>
@@ -209,7 +301,6 @@ export default function TasksScreen() {
               key={tab.key}
               ref={(el: any) => (tabRefs.current[index] = el)}
               onPress={() => {
-                // console.log(`Tab clicked: ${tab.key} (${tab.displayKey})`);
                 setActiveTab(index);
               }}
               style={[
@@ -242,101 +333,14 @@ export default function TasksScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
       >
-        {filteredData.map((item, idx) => {
-          const displayStatus = getDisplayStatus(item.TaskstatusName);
-          const statusColor = getStatusColor(item.TaskstatusName);
-
-          return (
-            <View
-              key={idx}
-              style={[
-                styles.card,
-                { backgroundColor: theme.colors.colorBgPage },
-              ]}
-            >
-              <View style={styles.rowBetween}>
-                <Text
-                  style={[
-                    styles.cardTitle,
-                    { color: theme.colors.colorPrimary600 },
-                  ]}
-                  numberOfLines={2}
-                  ellipsizeMode="tail"
-                >
-                  {t("Tasks.ticket")}: {item.transactionNumber || "-"}
-                </Text>
-
-                <View
-                  style={[styles.tagBadge, { backgroundColor: statusColor }]}
-                >
-                  <Text style={styles.tagText}>{displayStatus}</Text>
-                </View>
-              </View>
-
-              <View style={styles.infoContainer}>
-                <Text style={[styles.cardText, styles.infoText]}>
-                  {item.name || "Unnamed Case"}
-                </Text>
-                <Text style={[styles.cardText, styles.infoText]}>
-                  {t("Tasks.age")}: {item.age || "-"}
-                </Text>
-                <Text style={[styles.cardText, styles.infoText]}>
-                  {t("Tasks.category")}: {item.categoryName || "-"}
-                </Text>
-              </View>
-
-              <View style={styles.metaRow}>
-                <View style={styles.metaItem}>
-                  <RemixIcon name="map-pin-line" size={moderateScale(16)} />
-                  <Text style={styles.metaText} numberOfLines={1}>
-                    {item.districtName || "-"}
-                  </Text>
-                </View>
-                <View style={styles.metaItem}>
-                  <RemixIcon name="time-line" size={moderateScale(16)} />
-                  <Text style={styles.metaText} numberOfLines={1}>
-                    {item.createdDate
-                      ? new Date(item.createdDate).toLocaleString()
-                      : "-"}
-                  </Text>
-                </View>
-              </View>
-
-              <TouchableOpacity
-                style={[
-                  styles.actionBtn,
-                  { backgroundColor: theme.colors.colorPrimary600 },
-                ]}
-                onPress={() =>
-                  router.push({
-                    pathname: "/CaseDetailScreen",
-                    params: { item: JSON.stringify(item) },
-                  })
-                }
-              >
-                <Text style={styles.actionBtnText}>{t("Tasks.viewCase")}</Text>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-
-        {/* Empty state */}
-        {filteredData.length === 0 && !loading && (
-          <View style={styles.emptyContainer}>
-            <Text
-              style={[
-                styles.emptyText,
-                { color: theme.colors.colorTextSecondary },
-              ]}
-            >
-              No {selectedFilterKey !== "all" ? selectedFilterKey : ""} Tasks
-              found
-            </Text>
-          </View>
-        )}
+        {loading
+          ? renderLoadingState()
+          : filteredData.length > 0
+            ? filteredData.map(renderTaskCard)
+            : renderEmptyState()}
       </ScrollView>
 
-      {/* ---------------- MODALS (UNCHANGED) ---------------- */}
+      {/* ---------------- MODALS ---------------- */}
       <NewCasePopupModal
         visible={showPopUp}
         name="New Case Assigned"
@@ -516,6 +520,17 @@ const styles = StyleSheet.create({
     paddingVertical: verticalScale(40),
   },
   emptyText: {
+    fontSize: moderateScale(15),
+    textAlign: "center",
+    marginTop: verticalScale(10),
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: verticalScale(40),
+  },
+  loadingText: {
     fontSize: moderateScale(15),
     textAlign: "center",
   },

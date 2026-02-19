@@ -413,23 +413,10 @@ export default function ProfileScreen() {
         </View>
 
         {renderItem(
-          t("profile.menuOfficerDetails"),
+          "Profile",
           "user-settings-line",
           () => router.push("/profileDetails"),
           theme.colors.validationInfoText,
-        )}
-
-        {renderItem(
-          "Leaves",
-          "bar-chart-line",
-          () => router.push("/(fro)/(profile)/leave"),
-          theme.colors.colorWarning400,
-        )}
-        {renderItem(
-          "Knowledge Management",
-          "building-line",
-          () => router.push("/knowledgeManagement"),
-          theme.colors.colorAccent500,
         )}
 
         {renderItem(

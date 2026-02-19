@@ -1,13 +1,13 @@
 {
   "expo": {
-    "name": "FRO",
-    "slug": "fro",
+    "name": "FIELD TRACK",
+    "slug": "field-track",
     "version": "1.0.0",
     "orientation": "portrait",
 
-    "icon": "./assets/images/saarthi-logo.png",
+    "icon": "./assets/images/staffTrackLogo.png",
 
-    "scheme": "froapp",
+    "scheme": "fieldtrackapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
 
@@ -16,10 +16,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/saarthi-logo.png",
+          "image": "./assets/images/staffTrackLogo.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
+
           "dark": {
             "backgroundColor": "#000000"
           },
@@ -32,10 +33,10 @@
       "backgroundColor": "#ffffff",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.gautam1008.fro",
+      "package": "com.gautam1008.fieldtrack",
 
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/saarthi-logo.png",
+        "foregroundImage": "./assets/images/staffTrackLogo.png",
         "backgroundColor": "#ffffff"
       },
 
@@ -48,7 +49,7 @@
 
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gautam1008.fro",
+      "bundleIdentifier": "com.gautam1008.fieldtrack",
       "config": {
         "googleMapsApiKey": "PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE"
       }
@@ -56,7 +57,7 @@
 
     "web": {
       "output": "static",
-      "favicon": "./assets/images/saarthi-logo.png"
+      "favicon": "./assets/images/staffTrackLogo.png"
     },
 
     "experiments": {

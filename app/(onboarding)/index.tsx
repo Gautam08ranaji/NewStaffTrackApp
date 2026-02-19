@@ -16,7 +16,7 @@ export default function OnboardingScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const [appReady, setAppReady] = useState(false);
-  const authState = useAppSelector((state) => state.auth);
+  const authState = useAppSelector((state: { auth: any }) => state.auth);
   const antiforgeryToken = useAppSelector(
     (state: RootState) => state.antiForgery.antiforgeryToken,
   );
@@ -64,27 +64,10 @@ export default function OnboardingScreen() {
           from={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ type: "timing", duration: 1000 }}
-          source={require("../../assets/images/welcomeAppIcon.png")}
+          source={require("../../assets/images/splashLogo.png")}
           style={styles.logo}
           resizeMode="contain"
         />
-
-        {/* Animated Titles */}
-        <MotiText
-          from={{ opacity: 0, translateY: 15 }}
-          animate={{ opacity: 1, translateY: 0 }}
-          transition={{ delay: 400, duration: 800 }}
-          style={[
-            theme.typography.fontH1,
-            {
-              color: theme.colors.colorSuccess600,
-              textAlign: "center",
-              marginBottom: 6,
-            },
-          ]}
-        >
-          {"National Senior Citizen"}
-        </MotiText>
 
         <MotiText
           from={{ opacity: 0, translateY: 15 }}
@@ -98,7 +81,7 @@ export default function OnboardingScreen() {
             },
           ]}
         >
-          {"Help Desk"}
+          {"FIELD TRACK"}
         </MotiText>
       </MotiView>
     </SafeAreaView>

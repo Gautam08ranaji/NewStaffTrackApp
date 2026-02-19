@@ -4,7 +4,7 @@ import { Redirect } from "expo-router";
 import React from "react";
 
 export default function Index() {
-  const { token, role } = useAppSelector((state) => state.auth);
+  const { token, role } = useAppSelector((state: any) => state.auth);
 
   // Wait until redux persist rehydrates
   if (token === undefined) return null;
