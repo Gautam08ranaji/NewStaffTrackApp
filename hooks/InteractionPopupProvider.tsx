@@ -6,8 +6,8 @@ import { useTheme } from "@/theme/ThemeContext";
 import { addAndUpdateFROLocation } from "@/features/fro/froLocationApi";
 import { addInteractionActivityHistory } from "@/features/fro/interaction/ActivityHistory";
 import {
-  getInteractionsListByAssignToId,
-  updateInteraction,
+    getInteractionsListByAssignToId,
+    updateInteraction,
 } from "@/features/fro/interactionApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { updateFROLatLong } from "@/features/fro/updateFROLatLongApi";
@@ -344,7 +344,7 @@ export const useInteractionPopupPoller = () => {
           TaskstatusId: 2,
           TaskstatusName: "In-Progress",
           subStatusId: 22,
-          subStatusName: "Case Accepted",
+          subStatusName: "TaskAccepted",
           comment: "Accepted By FRO",
           callBack: "",
           assignToId: String(authState.userId),
@@ -358,7 +358,7 @@ export const useInteractionPopupPoller = () => {
         oldTaskstatus: current.TaskstatusName,
         newTaskstatus: "In-Progress",
         oldSubStatus: current.subStatusName,
-        newSubStatus: "Case Accepted",
+        newSubStatus: "TaskAccepted",
         activityStatus: "Busy",
         transactionNumber: current?.transactionNumber,
       });
@@ -447,7 +447,7 @@ export const useInteractionPopupPoller = () => {
 
       <StatusModal
         visible={showAcceptedStatusModal}
-        title="Case Accepted"
+        title="TaskAccepted"
         iconName="check-line"
         iconColor="#00796B"
         iconBgColor="#E0F2F1"
@@ -457,7 +457,7 @@ export const useInteractionPopupPoller = () => {
 
       <StatusModal
         visible={showDeclinedStatusModal}
-        title="Case Declined"
+        title="TaskDeclined"
         iconName="check-line"
         iconColor={theme.colors.validationErrorText}
         iconBgColor={theme.colors.validationErrorText + "22"}

@@ -66,7 +66,7 @@ const recentAlerts: {
 }[] = [
   {
     id: 1,
-    title: "High Priority Case Pending",
+    title: "High Priority TaskPending",
     time: "5 min ago",
     icon: "error-warning-line",
     bg: "#FFEAEA",
@@ -82,7 +82,7 @@ const recentAlerts: {
   },
   {
     id: 3,
-    title: "Case Resolved Successfully",
+    title: "TaskResolved Successfully",
     time: "1 hour ago",
     icon: "checkbox-circle-line",
     bg: "#EAF7ED",
@@ -307,7 +307,7 @@ export default function HomeScreen() {
           { color: theme.colors.colorPrimary600, marginTop: 20 },
         ]}
       >
-        Case Status Overview
+        TaskStatus Overview
       </Text>
       <Card
         titleColor={theme.colors.colorTextSecondary}

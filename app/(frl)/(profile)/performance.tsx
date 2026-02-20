@@ -47,7 +47,7 @@ export default function Performance() {
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.alertTitleRed}>High Priority Case Pending</Text>
+            <Text style={styles.alertTitleRed}>High Priority TaskPending</Text>
             <Text style={styles.alertDesc}>
               3 FRO below target (less than 5 Tasks/day)
             </Text>

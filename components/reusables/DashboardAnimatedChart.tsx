@@ -48,7 +48,7 @@ export default function DashboardAnimatedChart({
           { color: theme.colors.colorPrimary600, marginBottom: 8 },
         ]}
       >
-        Case Performance Trend
+        TaskPerformance Trend
       </Text>
 
       {/* ✅ Chart */}

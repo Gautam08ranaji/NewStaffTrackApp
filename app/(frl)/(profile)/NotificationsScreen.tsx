@@ -139,7 +139,7 @@ export default function NotificationsScreen() {
       </Section>
 
       <Section
-        title="Case Assignment & Updates"
+        title="TaskAssignment & Updates"
         subtitle="Notifications related to Tasks assigned to you."
       >
         <Row
@@ -149,13 +149,13 @@ export default function NotificationsScreen() {
         />
         <Divider />
         <Row
-          label="Case reassigned or removed"
+          label="Taskreassigned or removed"
           value={toggles.reassigned}
           onToggle={() => toggle("reassigned")}
         />
         <Divider />
         <Row
-          label="Case status updated"
+          label="Taskstatus updated"
           value={toggles.statusUpdated}
           onToggle={() => toggle("statusUpdated")}
         />

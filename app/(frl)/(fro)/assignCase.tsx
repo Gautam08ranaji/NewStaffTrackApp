@@ -343,7 +343,7 @@ export default function AssignTaskscreen() {
             </View>
 
             <Text style={styles.popupText}>
-              Case {assignedCase.id} Assigned Successfully
+              Task{assignedCase.id} Assigned Successfully
             </Text>
           </View>
         </View>

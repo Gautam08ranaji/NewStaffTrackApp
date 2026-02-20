@@ -3,19 +3,19 @@ import { useTheme } from "@/theme/ThemeContext";
 import { useRouter } from "expo-router";
 import React from "react";
 import {
-    Dimensions,
-    ScrollView,
-    StyleProp,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    ViewStyle,
+  Dimensions,
+  ScrollView,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
 } from "react-native";
 import RemixIcon from "react-native-remix-icon";
 import {
-    SafeAreaView,
-    useSafeAreaInsets,
+  SafeAreaView,
+  useSafeAreaInsets,
 } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -149,7 +149,7 @@ export default function BodyLayout({
                 )}
               </TouchableOpacity>
 
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={[
                   styles.iconCircle,
                   { backgroundColor: theme.colors.colorBgSurface },
@@ -161,7 +161,7 @@ export default function BodyLayout({
                   size={22}
                   color={theme.colors.colorPrimary600}
                 />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
 
               {type !== "frl" && (
                 <TouchableOpacity

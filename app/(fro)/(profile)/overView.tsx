@@ -4,22 +4,22 @@ import RemixIcon from "react-native-remix-icon";
 
 /* ---------------- MAIN FILE ---------------- */
 
-export default function CaseOverview() {
+export default function MyOverview() {
   return (
     <>
-      {/* ✅ TEAM PERFORMANCE SUMMARY */}
+      {/* ✅ MY PERFORMANCE SUMMARY */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Team Performance Summary</Text>
+        <Text style={styles.sectionTitle}>My Performance Summary</Text>
 
         <View style={styles.statsGrid}>
-          <StatBox title="Total FROs" value="24" bg="#e6f6f4" color="#00796B" />
-          <StatBox title="On Duty" value="18" bg="#fff3e0" color="#ef6c00" />
           <StatBox
-            title="Active Tasks"
+            title="Total Tasks"
             value="42"
-            bg="#e3f2fd"
-            color="#1976d2"
+            bg="#e6f6f4"
+            color="#00796B"
           />
+          <StatBox title="Completed" value="36" bg="#e3f2fd" color="#1976d2" />
+          <StatBox title="Pending" value="6" bg="#fff3e0" color="#ef6c00" />
           <StatBox
             title="Resolution Rate"
             value="87%"
@@ -31,31 +31,31 @@ export default function CaseOverview() {
 
       {/* ✅ AVERAGE RESPONSE TIME */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Average Response Time</Text>
+        <Text style={styles.sectionTitle}>My Average Task Time</Text>
 
         <ProgressRow
-          label="Case Acceptance"
+          label="Task Acceptance"
           value="8 min"
           percent={35}
           color="#1e88e5"
         />
         <ProgressRow
           label="Arrival Time"
-          value="08 min"
+          value="12 min"
           percent={45}
           color="#2e7d32"
         />
         <ProgressRow
-          label="Case Resolution"
+          label="Task Resolution"
           value="45 min"
           percent={55}
           color="#ef6c00"
         />
       </View>
 
-      {/* ✅ WEEKLY TREND */}
-      <View style={[styles.card]}>
-        <Text style={styles.sectionTitle}>Case Resolved - Weekly Trend</Text>
+      {/* ✅ WEEKLY TASK TREND */}
+      <View style={styles.card}>
+        <Text style={styles.sectionTitle}>Tasks Resolved - Weekly Trend</Text>
         <View style={styles.weekRow}>
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
             <Text key={day} style={styles.weekText}>
@@ -65,51 +65,20 @@ export default function CaseOverview() {
         </View>
       </View>
 
-      {/* ✅ TOP PERFORMERS */}
+      {/* ✅ TODAY'S PERFORMANCE */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Top 5 Performers This Today</Text>
+        <Text style={styles.sectionTitle}>{"Today's Performance"}</Text>
 
-        <PerformerCard
-          rank={1}
-          name="Ashish Tomar"
-          id="FRO-001"
-          Tasks="28"
-          rating="4.8"
-        />
-        <PerformerCard
-          rank={2}
-          name="Gautam Rana"
-          id="FRO-005"
-          Tasks="25"
-          rating="4.7"
-        />
-        <PerformerCard
-          rank={3}
-          name="Abhishek Mishra"
-          id="FRO-012"
-          Tasks="23"
-          rating="4.6"
-        />
-        <PerformerCard
-          rank={4}
-          name="Bhupinder"
-          id="FRO-014"
-          Tasks="22"
-          rating="4.5"
-        />
-        <PerformerCard
-          rank={5}
-          name="Jagjeet Singh"
-          id="FRO-044"
-          Tasks="20"
-          rating="4.1"
-        />
+        <InfoRow label="Tasks Assigned" value="10" />
+        <InfoRow label="Tasks Completed" value="8" />
+        <InfoRow label="Pending Tasks" value="2" />
+        <InfoRow label="Average Rating" value="⭐ 4.7" />
       </View>
 
       {/* ✅ EXPORT BUTTON */}
       <TouchableOpacity style={styles.exportBtn}>
         <RemixIcon name="download-line" size={20} color="#fff" />
-        <Text style={styles.exportText}>Export Report (PDF)</Text>
+        <Text style={styles.exportText}>Export My Report (PDF)</Text>
       </TouchableOpacity>
     </>
   );
@@ -142,21 +111,10 @@ const ProgressRow = ({ label, value, percent, color }: any) => (
   </View>
 );
 
-const PerformerCard = ({ rank, name, id, Tasks, rating }: any) => (
-  <View style={styles.performerRow}>
-    <View style={styles.rankCircle}>
-      <Text style={styles.rankText}>#{rank}</Text>
-    </View>
-
-    <View style={{ flex: 1 }}>
-      <Text style={styles.performerName}>{name}</Text>
-      <Text style={styles.performerId}>{id}</Text>
-    </View>
-
-    <View style={{ alignItems: "flex-end" }}>
-      <Text style={styles.caseCount}>{Tasks} Tasks</Text>
-      <Text style={styles.rating}>⭐ {rating}</Text>
-    </View>
+const InfoRow = ({ label, value }: any) => (
+  <View style={styles.infoRow}>
+    <Text style={styles.infoLabel}>{label}</Text>
+    <Text style={styles.infoValue}>{value}</Text>
   </View>
 );
 
@@ -223,32 +181,14 @@ const styles = StyleSheet.create({
 
   weekText: { fontSize: 12, color: "#6b7280" },
 
-  performerRow: {
+  infoRow: {
     flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#e6f6f4",
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 10,
+    justifyContent: "space-between",
+    paddingVertical: 6,
   },
 
-  rankCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: "#00695c",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-
-  rankText: { color: "#fff", fontWeight: "700" },
-
-  performerName: { fontWeight: "700" },
-  performerId: { fontSize: 12, color: "#6b7280" },
-
-  caseCount: { fontWeight: "700", color: "#00695c" },
-  rating: { fontSize: 12, color: "#f59e0b" },
+  infoLabel: { fontSize: 13 },
+  infoValue: { fontWeight: "700" },
 
   exportBtn: {
     flexDirection: "row",

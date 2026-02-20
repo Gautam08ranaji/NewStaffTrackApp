@@ -58,7 +58,7 @@ export default function CaseDetailScreen() {
   const comment = item?.comment;
   const priority = item?.priority;
   const callType = item?.callTypeName;
-  const Taskstatus = item?.TaskstatusName;
+  const Taskstatus = item?.caseStatusName;
   const subStatus = item?.subStatusName;
 
   const caseId = item?.id;
@@ -691,6 +691,7 @@ export default function CaseDetailScreen() {
                 params: {
                   ContactId: String(ContactId),
                   caseId: String(caseId),
+                  item: JSON.stringify(item),
                 },
               });
             }}

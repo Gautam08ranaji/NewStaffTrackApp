@@ -5,20 +5,20 @@ import RemixIcon from "react-native-remix-icon";
 export default function Performance() {
   return (
     <>
-      {/* ✅ TEAM KPIs */}
+      {/* ✅ MY KPIs */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Team KPIs</Text>
+        <Text style={styles.sectionTitle}>My Performance KPIs</Text>
 
         <KPIRow
-          label="Average Resolution Rate"
+          label="Task Resolution Rate"
           value="87%"
           percent={87}
           color="#1e88e5"
         />
 
         <KPIRow
-          label="Customer Satisfaction"
-          value="4.6/5.0"
+          label="Customer Rating"
+          value="4.6 / 5"
           percent={92}
           color="#2e7d32"
         />
@@ -31,25 +31,25 @@ export default function Performance() {
         />
       </View>
 
-      {/* ✅ PERFORMANCE ALERT */}
+      {/* ✅ PERSONAL PERFORMANCE ALERT */}
       <View style={styles.card}>
         <View style={styles.alertHeader}>
-          <Text style={styles.sectionTitle}>Performance Alert</Text>
+          <Text style={styles.sectionTitle}>My Performance Alerts</Text>
           <View style={styles.issueBadge}>
-            <Text style={styles.issueText}>2 Issues</Text>
+            <Text style={styles.issueText}>2 Alerts</Text>
           </View>
         </View>
 
-        {/* 🔴 High Priority */}
+        {/* 🔴 Pending Tasks */}
         <View style={[styles.alertRow, { backgroundColor: "#fdecea" }]}>
           <View style={styles.alertIconRed}>
             <RemixIcon name="error-warning-line" size={18} color="#c62828" />
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.alertTitleRed}>High Priority Case Pending</Text>
+            <Text style={styles.alertTitleRed}>Pending Tasks</Text>
             <Text style={styles.alertDesc}>
-              3 FRO below target (less than 5 Tasks/day)
+              You have 3 tasks pending resolution
             </Text>
           </View>
         </View>
@@ -61,10 +61,8 @@ export default function Performance() {
           </View>
 
           <View style={{ flex: 1 }}>
-            <Text style={styles.alertTitleBlue}>TAT Breach Warning</Text>
-            <Text style={styles.alertDesc}>
-              2 Tasks approaching SLA deadline
-            </Text>
+            <Text style={styles.alertTitleBlue}>SLA Warning</Text>
+            <Text style={styles.alertDesc}>2 tasks nearing SLA deadline</Text>
           </View>
         </View>
       </View>
@@ -72,13 +70,13 @@ export default function Performance() {
       {/* ✅ EXPORT BUTTON */}
       <TouchableOpacity style={styles.exportBtn}>
         <RemixIcon name="download-line" size={20} color="#fff" />
-        <Text style={styles.exportText}>Export Report (PDF)</Text>
+        <Text style={styles.exportText}>Export My Performance Report</Text>
       </TouchableOpacity>
     </>
   );
 }
 
-/* ---------------- SMALL COMPONENTS ---------------- */
+/* KPI COMPONENT */
 
 const KPIRow = ({ label, value, percent, color }: any) => (
   <View style={{ marginBottom: 14 }}>
@@ -98,7 +96,7 @@ const KPIRow = ({ label, value, percent, color }: any) => (
   </View>
 );
 
-/* ---------------- STYLES ---------------- */
+/* STYLES */
 
 const styles = StyleSheet.create({
   card: {
@@ -115,18 +113,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  /* KPI Styles */
-
   kpiHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 6,
   },
 
-  kpiLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
+  kpiLabel: { fontSize: 12, fontWeight: "600" },
 
   kpiValue: {
     fontSize: 12,
@@ -144,8 +137,6 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 8,
   },
-
-  /* Alert Styles */
 
   alertHeader: {
     flexDirection: "row",
@@ -212,8 +203,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
     marginTop: 2,
   },
-
-  /* Export Button */
 
   exportBtn: {
     flexDirection: "row",

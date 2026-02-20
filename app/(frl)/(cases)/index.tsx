@@ -186,7 +186,7 @@ export default function CaseManagementScreen() {
   }, []);
 
   return (
-    <BodyLayout type="screen" screenName="Case Management">
+    <BodyLayout type="screen" screenName="TaskManagement">
       {/* SEARCH + CALENDAR */}
       <View style={styles.searchRow}>
         <View style={[styles.searchBox, { flex: 1 }]}>

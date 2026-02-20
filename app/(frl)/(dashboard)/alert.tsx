@@ -3,17 +3,17 @@ import { useTheme } from "@/theme/ThemeContext";
 import { router } from "expo-router";
 import React, { useMemo, useRef, useState } from "react";
 import {
-  LayoutChangeEvent,
-  Linking,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    LayoutChangeEvent,
+    Linking,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import RemixIcon from "react-native-remix-icon";
 
-const FILTERS = ["All Alerts", "Urgent", "Case Alerts", "FRO Alerts"] as const;
+const FILTERS = ["All Alerts", "Urgent", "TaskAlerts", "FRO Alerts"] as const;
 type FilterType = (typeof FILTERS)[number];
 
 type AlertType = {
@@ -28,24 +28,24 @@ type AlertType = {
   contactNumber?: string; // ✅ ADDED
   type: "danger" | "warning" | "info";
   outline?: boolean;
-  category: "Case Alerts" | "FRO Alerts";
+  category: "TaskAlerts" | "FRO Alerts";
 };
 
 /* ✅ ALERT DATA */
 const ALERTS_DATA: AlertType[] = [
   {
     id: 1,
-    title: "High Priority Case - Unassigned",
+    title: "High Priority Task- Unassigned",
     badge: "High",
     description:
       "Medical emergency case pending for 8 minutes. No FRO assigned yet.",
     time: "2 min ago",
     location: "Hazratganj, Lucknow",
-    caseId: "Case TKT-14567-001",
+    caseId: "TaskTKT-14567-001",
     actionText: "Assign to FRO",
     contactNumber: "9876543210",
     type: "danger",
-    category: "Case Alerts",
+    category: "TaskAlerts",
   },
   {
     id: 2,
@@ -64,18 +64,18 @@ const ALERTS_DATA: AlertType[] = [
     id: 3,
     title: "TAT Breach Warning",
     badge: "Medium",
-    description: "Case TKT-14567-015 approaching SLA deadline in 10 minutes",
+    description: "TaskTKT-14567-015 approaching SLA deadline in 10 minutes",
     time: "5 min ago",
     location: "Ghazipur, Lucknow",
     caseId: "Case: TKT-14567-015",
     actionText: "Assign Now",
     contactNumber: "9988776655",
     type: "warning",
-    category: "Case Alerts",
+    category: "TaskAlerts",
   },
   {
     id: 4,
-    title: "Case Successfully Resolved",
+    title: "TaskSuccessfully Resolved",
     badge: "Low",
     description: "Priya Singh (FRO-002) marked case TKT-14567-024 as resolved",
     time: "10 min ago",
@@ -84,7 +84,7 @@ const ALERTS_DATA: AlertType[] = [
     contactNumber: "9000011111",
     type: "info",
     outline: true,
-    category: "Case Alerts",
+    category: "TaskAlerts",
   },
 ];
 
@@ -101,8 +101,7 @@ export default function AlertsScreen() {
     return {
       "All Alerts": ALERTS_DATA.length,
       Urgent: ALERTS_DATA.filter((i) => i.badge === "High").length,
-      "Case Alerts": ALERTS_DATA.filter((i) => i.category === "Case Alerts")
-        .length,
+      TaskAlerts: ALERTS_DATA.filter((i) => i.category === "TaskAlerts").length,
       "FRO Alerts": ALERTS_DATA.filter((i) => i.category === "FRO Alerts")
         .length,
     };
@@ -112,8 +111,8 @@ export default function AlertsScreen() {
     switch (activeTab) {
       case "Urgent":
         return ALERTS_DATA.filter((i) => i.badge === "High");
-      case "Case Alerts":
-        return ALERTS_DATA.filter((i) => i.category === "Case Alerts");
+      case "TaskAlerts":
+        return ALERTS_DATA.filter((i) => i.category === "TaskAlerts");
       case "FRO Alerts":
         return ALERTS_DATA.filter((i) => i.category === "FRO Alerts");
       default:
@@ -317,7 +316,6 @@ const AlertCard = ({
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   tabsRow: { marginVertical: 8 },

@@ -94,7 +94,7 @@ export default function TasksScreen() {
       key: "inProgress",
       displayKey: "In-Progress",
     },
-    { label: "closed", key: "closed", displayKey: "Closed" },
+    { label: "Closed", key: "Closed", displayKey: "Closed" },
   ];
 
   const initialTabIndex = tabs.findIndex((t) => t.key === params.filter);
@@ -270,8 +270,8 @@ export default function TasksScreen() {
         style={[styles.emptyText, { color: theme.colors.colorTextSecondary }]}
       >
         {selectedFilterKey !== "all"
-          ? `${t("Tasks.no")} ${t(`Tasks.${selectedFilterKey}`)} ${t("Tasks.tasksFound")}`
-          : t("Tasks.noTasksFound")}
+          ? `No ${tabs[activeTab].label} tasks found`
+          : "No tasks found"}
       </Text>
     </View>
   );
@@ -281,7 +281,7 @@ export default function TasksScreen() {
       <Text
         style={[styles.loadingText, { color: theme.colors.colorTextSecondary }]}
       >
-        {t("common.loading")}...
+        Loading...
       </Text>
     </View>
   );
@@ -343,7 +343,7 @@ export default function TasksScreen() {
       {/* ---------------- MODALS ---------------- */}
       <NewCasePopupModal
         visible={showPopUp}
-        name="New Case Assigned"
+        name="New TaskAssigned"
         age={72}
         timerSeconds={30}
         details={[{ label: "Ticket Number:", value: "Auto Assigned" }]}
@@ -359,7 +359,7 @@ export default function TasksScreen() {
 
       <StatusModal
         visible={showStatusModal}
-        title="Case Accepted"
+        title="TaskAccepted"
         iconName="check-line"
         iconColor="#00796B"
         iconBgColor="#E0F2F1"
@@ -369,7 +369,7 @@ export default function TasksScreen() {
 
       <StatusModal
         visible={showDeclinedStatusModal}
-        title="Case Declined"
+        title="TaskDeclined"
         iconName="check-line"
         iconColor={theme.colors.validationErrorText}
         iconBgColor={theme.colors.validationErrorText + "22"}

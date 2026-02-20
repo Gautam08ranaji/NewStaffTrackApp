@@ -6,13 +6,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 /* ================= TYPES ================= */
@@ -192,7 +192,7 @@ export default function NotesHistoryScreen() {
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Case No: {item.relatedToName}
+                TaskNo: {item.relatedToName}
               </Text>
 
               <Text

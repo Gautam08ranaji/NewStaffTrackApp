@@ -5,118 +5,73 @@ import RemixIcon from "react-native-remix-icon";
 export default function Attendance() {
   return (
     <>
-      {/* ✅ TODAY'S ATTENDANCE SUMMARY */}
+      {/* ✅ MY ATTENDANCE SUMMARY */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>{"Today's Attendance Summary"}</Text>
+        <Text style={styles.sectionTitle}>My Attendance Today</Text>
 
         <View style={styles.summaryRow}>
           <View style={[styles.summaryBox, { backgroundColor: "#e0f2f1" }]}>
-            <Text style={[styles.summaryValue, { color: "#00695c" }]}>18</Text>
-            <Text style={[styles.summaryLabel, { color: "#00695c" }]}>
+            <Text style={[styles.summaryValue, { color: "#00695c" }]}>
               Present
+            </Text>
+            <Text style={[styles.summaryLabel, { color: "#00695c" }]}>
+              Checked In
             </Text>
           </View>
 
-          <View style={[styles.summaryBox, { backgroundColor: "#fdecea" }]}>
-            <Text style={[styles.summaryValue, { color: "#c62828" }]}>06</Text>
-            <Text style={[styles.summaryLabel, { color: "#c62828" }]}>
-              Absent
+          <View style={[styles.summaryBox, { backgroundColor: "#e3f2fd" }]}>
+            <Text style={[styles.summaryValue, { color: "#1976d2" }]}>
+              09:05 AM
+            </Text>
+            <Text style={[styles.summaryLabel, { color: "#1976d2" }]}>
+              Check-in Time
             </Text>
           </View>
         </View>
 
         <View style={styles.attendanceTrack}>
-          <View style={[styles.attendanceFill, { width: "75%" }]} />
+          <View style={[styles.attendanceFill, { width: "92%" }]} />
         </View>
 
-        <Text style={styles.attendanceText}>75% Attendance Rate</Text>
+        <Text style={styles.attendanceText}>92% Monthly Attendance</Text>
       </View>
 
-      {/* ✅ LATE CHECK-INS TODAY */}
+      {/* ✅ LATE CHECK-IN DETAILS */}
       <View style={styles.card}>
-        <View style={styles.lateHeader}>
-          <Text style={styles.sectionTitle}>Late Check-ins Today</Text>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>3 FROs</Text>
-          </View>
-        </View>
+        <Text style={styles.sectionTitle}>Late Check-in Details</Text>
 
-        <LateRow
-          name="Amit Sharma"
-          id="FRO-001"
-          time="09:45 AM"
-          lateText="Late by 45 min"
-        />
-        <LateRow
-          name="Ravi Kumar"
-          id="FRO-001"
-          time="09:30 AM"
-          lateText="Late by 30 min"
-        />
-        <LateRow
-          name="Pooja Devi"
-          id="FRO-001"
-          time="09:15 AM"
-          lateText="Late by 15 min"
-        />
+        <LateRow date="12 Feb 2026" time="09:45 AM" lateText="Late by 45 min" />
+        <LateRow date="05 Feb 2026" time="09:30 AM" lateText="Late by 30 min" />
       </View>
 
       {/* ✅ WEEKLY ATTENDANCE */}
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Weekly Attendance</Text>
 
-        <WeekRow day="Monday" value="22/24" percent={92} />
-        <WeekRow day="Tuesday" value="21/24" percent={88} />
-        <WeekRow day="Wednesday" value="23/24" percent={96} />
-        <WeekRow day="Thursday" value="20/24" percent={83} />
-        <WeekRow day="Friday" value="18/24" percent={75} />
-        <WeekRow day="Saturday" value="17/24" percent={71} />
-        <WeekRow day="Sunday" value="21/24" percent={88} />
+        <WeekRow day="Monday" value="Present" percent={100} />
+        <WeekRow day="Tuesday" value="Present" percent={100} />
+        <WeekRow day="Wednesday" value="Late" percent={70} />
+        <WeekRow day="Thursday" value="Present" percent={100} />
+        <WeekRow day="Friday" value="Present" percent={100} />
+        <WeekRow day="Saturday" value="Absent" percent={0} />
+        <WeekRow day="Sunday" value="Holiday" percent={0} />
       </View>
 
-      {/* ✅ ATTENDANCE BY FROs */}
-      <View style={styles.card}>
-        <View style={styles.froHeader}>
-          <Text style={styles.sectionTitle}>Attendance by FROs</Text>
-          <Text style={styles.link}>See Full List</Text>
-        </View>
-
-        <FRORow
-          name="Amit Sharma"
-          id="FRO-001"
-          days="20/24 Days"
-          absent="02 Days Absent"
-        />
-        <FRORow
-          name="Ravi Kumar"
-          id="FRO-001"
-          days="23/24 Days"
-          absent="01 Days Absent"
-        />
-        <FRORow
-          name="Pooja Devi"
-          id="FRO-001"
-          days="19/24 Days"
-          absent="05 Days Absent"
-        />
-      </View>
-
-      {/* ✅ EXPORT BUTTON */}
+      {/* ✅ EXPORT */}
       <TouchableOpacity style={styles.exportBtn}>
         <RemixIcon name="download-line" size={20} color="#fff" />
-        <Text style={styles.exportText}>Export Report (PDF)</Text>
+        <Text style={styles.exportText}>Export My Attendance</Text>
       </TouchableOpacity>
     </>
   );
 }
 
-/* ---------------- COMPONENTS ---------------- */
+/* COMPONENTS */
 
-const LateRow = ({ name, id, time, lateText }: any) => (
+const LateRow = ({ date, time, lateText }: any) => (
   <View style={styles.lateRow}>
     <View>
-      <Text style={styles.lateName}>{name}</Text>
-      <Text style={styles.lateId}>{id}</Text>
+      <Text style={styles.lateName}>{date}</Text>
     </View>
 
     <View style={{ alignItems: "flex-end" }}>
@@ -139,26 +94,13 @@ const WeekRow = ({ day, value, percent }: any) => (
   </View>
 );
 
-const FRORow = ({ name, id, days, absent }: any) => (
-  <View style={styles.froRow}>
-    <View>
-      <Text style={styles.froName}>{name}</Text>
-      <Text style={styles.froId}>{id}</Text>
-    </View>
-
-    <View style={{ alignItems: "flex-end" }}>
-      <Text style={styles.froDays}>{days}</Text>
-      <Text style={styles.froAbsent}>{absent}</Text>
-    </View>
-  </View>
-);
-
-/* ---------------- STYLES ---------------- */
+/* STYLES */
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#FAFAFA",
-    elevation: 2,    borderRadius: 14,
+    elevation: 2,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 14,
   },
@@ -169,8 +111,6 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
 
-  /* Summary */
-
   summaryRow: { flexDirection: "row", gap: 12 },
 
   summaryBox: {
@@ -180,7 +120,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  summaryValue: { fontSize: 24, fontWeight: "900" },
+  summaryValue: { fontSize: 18, fontWeight: "900" },
   summaryLabel: { fontSize: 12, marginTop: 4, fontWeight: "600" },
 
   attendanceTrack: {
@@ -204,28 +144,6 @@ const styles = StyleSheet.create({
     color: "#6b7280",
   },
 
-  /* Late Check-ins */
-
-  lateHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-
-  badge: {
-    backgroundColor: "#fff3e0",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#fb8c00",
-  },
-
   lateRow: {
     backgroundColor: "#fff7e6",
     borderRadius: 10,
@@ -236,12 +154,8 @@ const styles = StyleSheet.create({
   },
 
   lateName: { fontWeight: "700", color: "#fb8c00" },
-  lateId: { fontSize: 12, color: "#6b7280" },
-
   lateTime: { fontWeight: "700", color: "#fb8c00" },
   lateText: { fontSize: 12, color: "#6b7280" },
-
-  /* Weekly */
 
   weekHeader: {
     flexDirection: "row",
@@ -263,38 +177,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#2e7d32",
   },
-
-  /* FRO List */
-
-  froHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-
-  link: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#00695c",
-  },
-
-  froRow: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-  },
-
-  froName: { fontWeight: "700" },
-  froId: { fontSize: 12, color: "#9ca3af" },
-
-  froDays: { fontWeight: "700" },
-  froAbsent: { fontSize: 12, color: "#9ca3af" },
-
-  /* Export */
 
   exportBtn: {
     flexDirection: "row",

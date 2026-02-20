@@ -99,7 +99,7 @@ const achievements: Achievement[] = [
   },
   {
     id: 3,
-    title: "1000+ Case Resolved",
+    title: "1000+ TaskResolved",
     date: "September 2024",
     icon: "target-line",
   },

@@ -69,6 +69,33 @@ interface ActivityItem {
   activityRelatedToName: string;
 }
 
+interface CaseItem {
+  id: number;
+  name: string;
+  gender: string;
+  age: string;
+  contactId: number;
+  contactName: string;
+  mobileNo: string;
+  alternateNo: string;
+  emailId: string;
+  stateName: string;
+  districtName: string;
+  pinCode: string;
+  area: string;
+  completeAddress: string;
+  createdDate: string;
+  transactionNumber: string;
+  caseStatusName: string;
+  subStatusName: string;
+  categoryName: string;
+  subCategoryName: string;
+  subSubCategoryName: string;
+  assignToName: string;
+  priority: string;
+  source: string;
+}
+
 const getRelationshipColors = (relationship: string, theme: any) => {
   const colors = {
     Daughter: {
@@ -139,11 +166,14 @@ export default function CustomerDetailScreen() {
   const params = useLocalSearchParams();
   const contactId = params?.ContactId as string;
   const caseId = params?.caseId as string;
+  const caseItemData = params?.item ? JSON.parse(params.item as string) : null;
+
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState(0);
   const [familyMembers, setFamilyMembers] = useState<FamilyMember[]>([]);
   const [medicalDetails, setMedicalDetails] = useState<MedicalDetail[]>([]);
   const [activityHistory, setActivityHistory] = useState<ActivityItem[]>([]);
+  const [caseDetails, setCaseDetails] = useState<CaseItem | null>(caseItemData);
   const [loading, setLoading] = useState({
     family: false,
     medical: false,
@@ -151,15 +181,8 @@ export default function CustomerDetailScreen() {
   });
   const authState = useAppSelector((state) => state.auth);
 
-  const customer = {
-    name: "Rahul Sharma",
-    age: 72,
-    gender: "Male",
-    phone: "9876543210",
-    emergency: "9123456780",
-    address: "Delhi, India",
-    id: "CUST-1023",
-  };
+  console.log("params", params);
+  console.log("caseDetails", caseDetails);
 
   const tabs = [
     "Family Details",
@@ -169,10 +192,12 @@ export default function CustomerDetailScreen() {
   ];
 
   useEffect(() => {
-    fetchMemberList();
-    fetchMedicalDetails();
+    if (contactId) {
+      fetchMemberList();
+      fetchMedicalDetails();
+    }
     if (caseId) fetchActivityHistory();
-  }, [caseId]);
+  }, [contactId, caseId]);
 
   const fetchActivityHistory = async () => {
     try {
@@ -198,7 +223,7 @@ export default function CustomerDetailScreen() {
     try {
       setLoading((prev) => ({ ...prev, family: true }));
       const response = await getElderUserMemberList({
-        relatedToId: "1",
+        relatedToId: contactId || "1",
         token: String(authState?.token),
         csrfToken: String(authState?.antiforgeryToken),
         pageNumber: 1,
@@ -217,7 +242,7 @@ export default function CustomerDetailScreen() {
     try {
       setLoading((prev) => ({ ...prev, medical: true }));
       const response = await getMedicationDetails({
-        relatedToId: "1",
+        relatedToId: contactId || "1",
         token: String(authState?.token),
         csrfToken: String(authState?.antiforgeryToken),
         pageNumber: 1,
@@ -284,6 +309,10 @@ export default function CustomerDetailScreen() {
     return item.activityActionName === "INSERT"
       ? "Activity recorded"
       : "Activity updated";
+  };
+
+  const calculateAge = (age: string) => {
+    return age || "N/A";
   };
 
   const renderFamilyMember = ({
@@ -744,26 +773,6 @@ export default function CustomerDetailScreen() {
                   >
                     Add family members to keep track of your loved ones
                   </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.addButton,
-                      { backgroundColor: t.colorPrimary600 },
-                    ]}
-                  >
-                    <RemixIcon
-                      name="add-line"
-                      size={20}
-                      color={t.colorTextInverse}
-                    />
-                    <Text
-                      style={[
-                        styles.addButtonText,
-                        { color: t.colorTextInverse },
-                      ]}
-                    >
-                      Add Family Member
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             )}
@@ -831,26 +840,6 @@ export default function CustomerDetailScreen() {
                   >
                     Add medical conditions and medications
                   </Text>
-                  <TouchableOpacity
-                    style={[
-                      styles.addButton,
-                      { backgroundColor: t.colorPrimary600 },
-                    ]}
-                  >
-                    <RemixIcon
-                      name="add-line"
-                      size={20}
-                      color={t.colorTextInverse}
-                    />
-                    <Text
-                      style={[
-                        styles.addButtonText,
-                        { color: t.colorTextInverse },
-                      ]}
-                    >
-                      Add Medical Record
-                    </Text>
-                  </TouchableOpacity>
                 </View>
               </View>
             )}
@@ -927,24 +916,8 @@ export default function CustomerDetailScreen() {
       case 3:
         return (
           <View style={styles.documentsContainer}>
-            {[
-              {
-                name: "Medical History.pdf",
-                size: "2.4 MB",
-                date: "12 Feb 2026",
-                icon: "file-pdf-line",
-                color: t.colorError600,
-              },
-              {
-                name: "Prescription_Feb2026.jpg",
-                size: "1.1 MB",
-                date: "15 Feb 2026",
-                icon: "file-image-line",
-                color: t.colorPrimary600,
-              },
-            ].map((doc, i) => (
+            {caseDetails?.emailId && (
               <View
-                key={i}
                 style={[
                   styles.documentCard,
                   { backgroundColor: t.colorBgSurface },
@@ -957,16 +930,16 @@ export default function CustomerDetailScreen() {
                   ]}
                 >
                   <RemixIcon
-                    name={doc.icon as any}
+                    name="mail-line"
                     size={32}
-                    color={doc.color}
+                    color={t.colorPrimary600}
                   />
                 </View>
                 <View style={styles.documentInfo}>
                   <Text
                     style={[styles.documentName, { color: t.colorTextPrimary }]}
                   >
-                    {doc.name}
+                    Email ID
                   </Text>
                   <Text
                     style={[
@@ -974,18 +947,59 @@ export default function CustomerDetailScreen() {
                       { color: t.colorTextSecondary },
                     ]}
                   >
-                    {doc.size} • Uploaded {doc.date}
+                    {caseDetails.emailId}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.documentAction}>
+              </View>
+            )}
+
+            {caseDetails?.alternateNo && (
+              <View
+                style={[
+                  styles.documentCard,
+                  { backgroundColor: t.colorBgSurface },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.documentIcon,
+                    { backgroundColor: t.colorBgAlt },
+                  ]}
+                >
                   <RemixIcon
-                    name="download-line"
+                    name="phone-line"
+                    size={32}
+                    color={t.colorSuccess600}
+                  />
+                </View>
+                <View style={styles.documentInfo}>
+                  <Text
+                    style={[styles.documentName, { color: t.colorTextPrimary }]}
+                  >
+                    Alternate Number
+                  </Text>
+                  <Text
+                    style={[
+                      styles.documentSize,
+                      { color: t.colorTextSecondary },
+                    ]}
+                  >
+                    {caseDetails.alternateNo}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={styles.documentAction}
+                  onPress={() => handleCall(caseDetails.alternateNo)}
+                >
+                  <RemixIcon
+                    name="phone-fill"
                     size={20}
-                    color={t.colorPrimary600}
+                    color={t.colorSuccess600}
                   />
                 </TouchableOpacity>
               </View>
-            ))}
+            )}
+
             <TouchableOpacity
               style={[
                 styles.uploadButton,
@@ -1017,128 +1031,195 @@ export default function CustomerDetailScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View
-          style={[
-            styles.profileCard,
-            {
-              backgroundColor: theme.colors.colorPrimary50,
-              shadowColor: theme.colors.colorShadow,
-            },
-          ]}
-        >
-          <View style={styles.profileHeader}>
-            <View style={styles.profileAvatarWrapper}>
-              <View
-                style={[
-                  styles.profileAvatar,
-                  { backgroundColor: theme.colors.colorPrimary100 },
-                ]}
-              >
-                <RemixIcon
-                  name="user-3-fill"
-                  size={36}
-                  color={theme.colors.colorPrimary600}
-                />
+        {caseDetails && (
+          <View
+            style={[
+              styles.profileCard,
+              {
+                backgroundColor: theme.colors.colorPrimary50,
+                shadowColor: theme.colors.colorShadow,
+              },
+            ]}
+          >
+            <View style={styles.profileHeader}>
+              <View style={styles.profileAvatarWrapper}>
+                <View
+                  style={[
+                    styles.profileAvatar,
+                    { backgroundColor: theme.colors.colorPrimary100 },
+                  ]}
+                >
+                  <RemixIcon
+                    name="user-3-fill"
+                    size={36}
+                    color={theme.colors.colorPrimary600}
+                  />
+                </View>
+                <View
+                  style={[
+                    styles.profileBadge,
+                    { backgroundColor: theme.colors.colorPrimary600 },
+                  ]}
+                >
+                  <RemixIcon
+                    name="verified-badge-fill"
+                    size={16}
+                    color={theme.colors.colorTextInverse}
+                  />
+                </View>
               </View>
-              <View
-                style={[
-                  styles.profileBadge,
-                  { backgroundColor: theme.colors.colorPrimary600 },
-                ]}
-              >
-                <RemixIcon
-                  name="verified-badge-fill"
-                  size={16}
-                  color={theme.colors.colorTextInverse}
-                />
+              <View style={styles.profileInfo}>
+                <Text
+                  style={[
+                    styles.profileName,
+                    { color: theme.colors.colorTextPrimary },
+                  ]}
+                >
+                  {caseDetails.name || caseDetails.contactName}
+                </Text>
+                <View style={styles.profileTags}>
+                  {caseDetails.age && (
+                    <View
+                      style={[
+                        styles.profileTag,
+                        { backgroundColor: theme.colors.colorPrimary100 },
+                      ]}
+                    >
+                      <RemixIcon
+                        name="cake-line"
+                        size={14}
+                        color={theme.colors.colorPrimary600}
+                      />
+                      <Text
+                        style={[
+                          styles.profileTagText,
+                          { color: theme.colors.colorPrimary600 },
+                        ]}
+                      >
+                        {calculateAge(caseDetails.age)} yrs
+                      </Text>
+                    </View>
+                  )}
+                  {caseDetails.gender && (
+                    <View
+                      style={[
+                        styles.profileTag,
+                        { backgroundColor: theme.colors.colorPrimary100 },
+                      ]}
+                    >
+                      <RemixIcon
+                        name="user-3-line"
+                        size={14}
+                        color={theme.colors.colorPrimary600}
+                      />
+                      <Text
+                        style={[
+                          styles.profileTagText,
+                          { color: theme.colors.colorPrimary600 },
+                        ]}
+                      >
+                        {caseDetails.gender}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <View style={styles.profileContact}>
+                  {caseDetails.mobileNo && (
+                    <View style={styles.profileContactItem}>
+                      <RemixIcon
+                        name="phone-line"
+                        size={14}
+                        color={theme.colors.colorTextSecondary}
+                      />
+                      <Text
+                        style={[
+                          styles.profileContactText,
+                          { color: theme.colors.colorTextSecondary },
+                        ]}
+                      >
+                        {caseDetails.mobileNo}
+                      </Text>
+                    </View>
+                  )}
+                  <View style={styles.profileContactItem}>
+                    <RemixIcon
+                      name="map-pin-line"
+                      size={14}
+                      color={theme.colors.colorTextSecondary}
+                    />
+                    <Text
+                      style={[
+                        styles.profileContactText,
+                        { color: theme.colors.colorTextSecondary },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {caseDetails.area ||
+                        [caseDetails.districtName, caseDetails.stateName]
+                          .filter(Boolean)
+                          .join(", ")}
+                    </Text>
+                  </View>
+                </View>
               </View>
             </View>
-            <View style={styles.profileInfo}>
+
+            {/* Case Summary Section */}
+            <View
+              style={[
+                styles.caseSummary,
+                {
+                  marginTop: verticalScale(16),
+                  borderTopWidth: 1,
+                  borderTopColor: theme.colors.colorPrimary200,
+                  paddingTop: verticalScale(12),
+                },
+              ]}
+            >
               <Text
                 style={[
-                  styles.profileName,
+                  styles.caseId,
+                  { color: theme.colors.colorTextSecondary },
+                ]}
+              >
+                Case #{caseDetails.transactionNumber}
+              </Text>
+              <View style={styles.caseStatusRow}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: theme.colors.colorWarning100 },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusText,
+                      { color: theme.colors.colorWarning600 },
+                    ]}
+                  >
+                    {caseDetails.caseStatusName}
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.priority,
+                    { color: theme.colors.colorTextTertiary },
+                  ]}
+                >
+                  Priority: {caseDetails.priority}
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.category,
                   { color: theme.colors.colorTextPrimary },
                 ]}
               >
-                {customer.name}
+                {caseDetails.categoryName} - {caseDetails.subCategoryName}
               </Text>
-              <View style={styles.profileTags}>
-                <View
-                  style={[
-                    styles.profileTag,
-                    { backgroundColor: theme.colors.colorPrimary100 },
-                  ]}
-                >
-                  <RemixIcon
-                    name="cake-line"
-                    size={14}
-                    color={theme.colors.colorPrimary600}
-                  />
-                  <Text
-                    style={[
-                      styles.profileTagText,
-                      { color: theme.colors.colorPrimary600 },
-                    ]}
-                  >
-                    {customer.age} yrs
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.profileTag,
-                    { backgroundColor: theme.colors.colorPrimary100 },
-                  ]}
-                >
-                  <RemixIcon
-                    name="user-3-line"
-                    size={14}
-                    color={theme.colors.colorPrimary600}
-                  />
-                  <Text
-                    style={[
-                      styles.profileTagText,
-                      { color: theme.colors.colorPrimary600 },
-                    ]}
-                  >
-                    {customer.gender}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.profileContact}>
-                <View style={styles.profileContactItem}>
-                  <RemixIcon
-                    name="phone-line"
-                    size={14}
-                    color={theme.colors.colorTextSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.profileContactText,
-                      { color: theme.colors.colorTextSecondary },
-                    ]}
-                  >
-                    {customer.phone}
-                  </Text>
-                </View>
-                <View style={styles.profileContactItem}>
-                  <RemixIcon
-                    name="map-pin-line"
-                    size={14}
-                    color={theme.colors.colorTextSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.profileContactText,
-                      { color: theme.colors.colorTextSecondary },
-                    ]}
-                  >
-                    {customer.address}
-                  </Text>
-                </View>
-              </View>
             </View>
           </View>
-        </View>
+        )}
 
         <ScrollView
           horizontal
@@ -1231,7 +1312,35 @@ const styles = StyleSheet.create({
   profileTagText: { fontSize: 12, fontWeight: "600", marginLeft: 4 },
   profileContact: { gap: 4 },
   profileContactItem: { flexDirection: "row", alignItems: "center" },
-  profileContactText: { fontSize: 13, marginLeft: 6 },
+  profileContactText: { fontSize: 13, marginLeft: 6, flex: 1 },
+  caseSummary: {
+    gap: 8,
+  },
+  caseId: {
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  caseStatusRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 16,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  priority: {
+    fontSize: 12,
+  },
+  category: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
   tabsWrapper: { marginTop: 20 },
   tabsContent: { paddingHorizontal: moderateScale(16), gap: 8 },
   tab: {

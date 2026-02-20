@@ -10,15 +10,15 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import {
-  Alert,
-  Modal,
-  Platform,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Modal,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 /* ---------- NOTE TYPES ---------- */
@@ -128,7 +128,7 @@ export default function AddNoteScreen() {
     }
 
     if (!caseId) {
-      Alert.alert("Error", "Case ID not found");
+      Alert.alert("Error", "TaskID not found");
       return;
     }
 

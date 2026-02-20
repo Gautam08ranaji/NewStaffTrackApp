@@ -2,11 +2,11 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import { useTheme } from "@/theme/ThemeContext";
 import React, { useState } from "react";
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import Attendance from "./attendanceScreen";
@@ -14,7 +14,7 @@ import CaseAnalytics from "./caseAnalytics";
 import CaseOverview from "./overview";
 import Performance from "./performance";
 
-const tabs = ["Team Overview", "Case Analytics", "Attendance", "Performance"];
+const tabs = ["Team Overview", "TaskAnalytics", "Attendance", "Performance"];
 
 export default function TeamOverviewScreen() {
   const { theme } = useTheme();
@@ -25,14 +25,14 @@ export default function TeamOverviewScreen() {
       case "Team Overview":
         return <CaseOverview />;
 
-      case "Case Analytics":
+      case "TaskAnalytics":
         return <CaseAnalytics />;
 
       case "Attendance":
         return <Attendance />;
 
-        case "Performance":
-  return <Performance />;
+      case "Performance":
+        return <Performance />;
 
       default:
         return null;
@@ -64,9 +64,7 @@ export default function TeamOverviewScreen() {
                   styles.tabText,
                   {
                     color:
-                      activeTab === tab
-                        ? "#fff"
-                        : theme.colors.colorPrimary600,
+                      activeTab === tab ? "#fff" : theme.colors.colorPrimary600,
                   },
                 ]}
               >

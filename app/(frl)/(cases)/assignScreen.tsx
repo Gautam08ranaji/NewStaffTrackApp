@@ -396,7 +396,7 @@ export default function AssignTaskscreen() {
             </View>
 
             <Text style={styles.popupText}>
-              Case TKT-14567-001 Assigned to{"\n"}
+              TaskTKT-14567-001 Assigned to{"\n"}
               {assignedFRO.name} ({assignedFRO.id})
             </Text>
           </View>

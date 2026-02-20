@@ -38,8 +38,8 @@
     "step2Title": "Navigate to location easily",
     "step2Subtitle": "Use GPS to navigate directly to the citizen's location.",
 
-    "step3Title": "Update case status",
-    "step3Subtitle": "Complete the case by adding photos, notes and evidence.",
+    "step3Title": "Update Task status",
+    "step3Subtitle": "Complete the Task by adding photos, notes and evidence.",
 
     "prev": "Previous",
     "next": "Next",
@@ -97,7 +97,7 @@
     "aboutApp": "Learn about the app"
   },
   "home": {
-    "TasksOverview": "Case Overview",
+    "TasksOverview": "TaskOverview",
 
     "newTasks": "New Tasks",
     "approvedTasks": "Approved Tasks",
@@ -110,7 +110,7 @@
     "totalTasks": "Total Tasks",
     "highPriority": "High Priority Tasks:",
     "quickActions": "Quick Actions",
-    "addNewCase": "Add New Case",
+    "addNewCase": "Add New Task",
     "viewMap": "View Map"
   },
   "escalation": {
@@ -140,7 +140,7 @@
   "notifications": {
     "screenTitle": "Notifications",
 
-    "newCaseAssigned": "A new case has been assigned to you",
+    "newCaseAssigned": "A new Task has been assigned to you",
     "ticketUpdated": "Ticket has been updated",
     "supervisorComment": "Supervisor added a comment",
 
@@ -165,9 +165,9 @@
 
     "age": "Age",
     "category": "Category",
-    "ticket": "Case No",
+    "ticket": "TaskNo",
     "away": "away",
-    "viewCase": "View Case",
+    "viewCase": "View Task",
 
     "timeMinutesAgo": "minutes ago",
     "timeHoursAgo": "hours ago"
@@ -199,7 +199,7 @@
     "addNote": "Add Note",
     "addVoice": "Add Voice Note",
     "scheduleFollowup": "Schedule Follow-Up",
-    "closeCase": "Close Case",
+    "closeCase": "Close Task",
 
     "genderMale": "Male",
     "years": "years",
@@ -229,9 +229,9 @@
   "statusUpdate": {
     "screenTitle": "Update Status",
 
-    "step1Title": "Case Approved",
-    "step1Subtitle": "Accept the case and continue",
-    "acceptCase": "Accept Case",
+    "step1Title": "TaskApproved",
+    "step1Subtitle": "Accept the Task and continue",
+    "acceptCase": "Accept Task",
 
     "step2Title": "I'm on the way",
     "step2Subtitle": "Your location is being shared.",
@@ -522,7 +522,7 @@
       "item3": {
         "title": "Improvement in legal support",
         "tag": "Legal Aid",
-        "desc": "Legal assistance made simpler with faster case hearings for senior citizens."
+        "desc": "Legal assistance made simpler with faster Task hearings for senior citizens."
       },
       "item4": {
         "title": "New rights improvements for senior citizens",
@@ -668,7 +668,7 @@
       "totalTasks": "Total Tasks",
       "highPriority": "High Priority",
       "quickActions": "Quick Actions",
-      "addNewCase": "Add New Case",
+      "addNewCase": "Add New Task",
       "viewMap": "View Map"
     }
   }

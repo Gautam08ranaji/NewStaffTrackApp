@@ -34,7 +34,7 @@ export default function CaseOverview() {
         <Text style={styles.sectionTitle}>Average Response Time</Text>
 
         <ProgressRow
-          label="Case Acceptance"
+          label="TaskAcceptance"
           value="8 min"
           percent={35}
           color="#1e88e5"
@@ -46,7 +46,7 @@ export default function CaseOverview() {
           color="#2e7d32"
         />
         <ProgressRow
-          label="Case Resolution"
+          label="TaskResolution"
           value="45 min"
           percent={55}
           color="#ef6c00"
@@ -55,7 +55,7 @@ export default function CaseOverview() {
 
       {/* ✅ WEEKLY TREND */}
       <View style={[styles.card]}>
-        <Text style={styles.sectionTitle}>Case Resolved - Weekly Trend</Text>
+        <Text style={styles.sectionTitle}>TaskResolved - Weekly Trend</Text>
         <View style={styles.weekRow}>
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
             <Text key={day} style={styles.weekText}>

@@ -129,6 +129,9 @@ export default function ProfileScreen() {
       });
 
       const data: UserApiResponse = response?.data;
+
+      console.log("data", data);
+
       setUserProfile(data);
 
       setForm({
@@ -149,7 +152,7 @@ export default function ProfileScreen() {
         photoBase64: null,
       });
 
-      console.log("response", response);
+      // console.log("response", response);
     } catch (error) {
       console.error("Failed to fetch user data", error);
     } finally {
@@ -307,7 +310,7 @@ export default function ProfileScreen() {
           {form.email}
         </Text>
         <Text style={[styles.role, { color: theme.colors.colorBgPage }]}>
-          {form.department}
+          {form.phone}
         </Text>
       </View>
 
@@ -420,17 +423,10 @@ export default function ProfileScreen() {
         )}
 
         {renderItem(
-          "Your Performance",
+          "My Performance",
           "bar-chart-line",
           () => router.push("/(fro)/(profile)/teamOverView"),
           theme.colors.colorWarning400,
-        )}
-
-        {renderItem(
-          t("profile.menuWorkArea"),
-          "map-pin-line",
-          () => router.push("/location"),
-          theme.colors.colorPrimary600,
         )}
 
         {renderItem(

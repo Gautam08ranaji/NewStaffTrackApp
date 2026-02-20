@@ -14,13 +14,13 @@ import { router, useLocalSearchParams } from "expo-router";
 import { t } from "i18next";
 import React, { useState } from "react";
 import {
-  Alert,
-  Image,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    Image,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 /* ---------- TYPES ---------- */
@@ -178,7 +178,7 @@ export default function UpdateDocumentScreen() {
     }
 
     if (!caseId) {
-      Alert.alert("Error", "Case ID not found");
+      Alert.alert("Error", "TaskID not found");
       return;
     }
 

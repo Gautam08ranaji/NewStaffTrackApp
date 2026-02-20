@@ -7,7 +7,7 @@ export default function CaseAnalytics() {
     <>
       {/* ✅ CASE CATEGORY DISTRIBUTION */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Case Category Distribution</Text>
+        <Text style={styles.sectionTitle}>TaskCategory Distribution</Text>
 
         <CategoryRow
           label="Medical Emergency"

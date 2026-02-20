@@ -233,7 +233,7 @@ export default function HomeScreen() {
           <CircularKPIChart percentage={completionRate} label="Leaves" />
         </View>
 
-        {/* Case Overview */}
+        {/* TaskOverview */}
         <Text
           style={[
             theme.typography.fontH6,
@@ -243,7 +243,7 @@ export default function HomeScreen() {
           Task Overview
         </Text>
 
-        {/* Case Cards */}
+        {/* TaskCards */}
         <View style={styles.row}>
           <ReusableCard
             icon={caseCardConfig.Total.icon}

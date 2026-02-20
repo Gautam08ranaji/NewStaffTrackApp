@@ -37,7 +37,7 @@ export default function StatusModal({
   iconColor,
   iconBgColor,
 
-  title = "Case Accepted",
+  title = "TaskAccepted",
   description,
 
   titleColor,

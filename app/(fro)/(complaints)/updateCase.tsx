@@ -173,7 +173,7 @@ const UpdateStatusScreen = () => {
       // Check if case status changed
       if (oldTaskstatus !== newTaskstatus) {
         changes.push(
-          `Case Status changed from "${oldTaskstatus || "None"}" to "${newTaskstatus || "None"}"`,
+          `TaskStatus changed from "${oldTaskstatus || "None"}" to "${newTaskstatus || "None"}"`,
         );
       }
 
@@ -223,7 +223,7 @@ const UpdateStatusScreen = () => {
         activityByName,
         activityRelatedTo: "CAS",
         activityRelatedToId: interactionId,
-        activityRelatedToName: transactionNumber || `Case ${interactionId}`,
+        activityRelatedToName: transactionNumber || `Task${interactionId}`,
       };
 
       console.log("📤 Status Update Activity Payload:", payload);
@@ -284,7 +284,7 @@ const UpdateStatusScreen = () => {
           transactionNumber,
         });
 
-        Alert.alert("Case Updated", "Case Updated Successfully", [
+        Alert.alert("TaskUpdated", "TaskUpdated Successfully", [
           {
             text: "OK",
             onPress: () => router.replace("/(fro)/(complaints)"),
@@ -544,7 +544,7 @@ const UpdateStatusScreen = () => {
                   { color: theme.colors.colorBgPage },
                 ]}
               >
-                Update Case {caseId}
+                Update Task{caseId}
               </Text>
               {!!interactionItem.subject && (
                 <Text
@@ -569,7 +569,7 @@ const UpdateStatusScreen = () => {
             <Text
               style={[styles.label, { color: theme.colors.colorTextSecondary }]}
             >
-              Select Case Status *
+              Select TaskStatus *
             </Text>
             <TouchableOpacity
               style={[
@@ -592,7 +592,7 @@ const UpdateStatusScreen = () => {
                   },
                 ]}
               >
-                {Taskstatus?.name || "Select Case Status"}
+                {Taskstatus?.name || "Select TaskStatus"}
               </Text>
               <Ionicons
                 name="chevron-down"
@@ -633,7 +633,7 @@ const UpdateStatusScreen = () => {
                       { color: theme.colors.colorAccent700 },
                     ]}
                   >
-                    Please select Case Status first
+                    Please select TaskStatus first
                   </Text>
                 </View>
               )}
