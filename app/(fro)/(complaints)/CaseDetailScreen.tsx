@@ -33,39 +33,41 @@ export default function CaseDetailScreen() {
   const item = params.item ? JSON.parse(params.item as string) : null;
   const authState = useAppSelector((state) => state.auth);
 
+  console.log("params", params);
+  console.log("Parsed item:", item);
+
   const { theme } = useTheme();
   const [documents, setDocuments] = useState<any[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
+  
+  // Extract data with proper field names based on your actual data structure
   const ticketNo = item?.transactionNumber;
   const elderName = item?.name || item?.contactName;
-  const age = item?.age;
+  const age = item?.age; // Note: age might not be in your data
   const gender = item?.gender;
   const ContactId = item?.contactId;
 
   const phone = item?.mobileNo;
-  const emergencyPhone = item?.alternateNo || item?.contactAmbulance;
+  const emergencyPhone = item?.alternateNo;
   const category = item?.categoryName;
   const subCategory = item?.subCategoryName;
-  const subSubCategory = item?.subSubCategoryName;
-  const details =
-    item?.caseDescription || item?.problemReported || item?.reasonForCalling;
+  // subSubCategory might not exist in your data
+  const details = item?.taskDescription || item?.caseDescription;
 
-  const address = item?.area || item?.location;
+  const address = item?.address;
   const state = item?.stateName;
   const district = item?.districtName;
-  const agentRemarks = item?.agentRemarks;
-  const comment = item?.comment;
   const priority = item?.priority;
-  const callType = item?.callTypeName;
-  const Taskstatus = item?.caseStatusName;
+  const Taskstatus = item?.statusName;
   const subStatus = item?.subStatusName;
+  const source = item?.source;
 
   const caseId = item?.id;
 
-  // Extract coordinates with fallback
-  const lat = item?.latitude || item?.lat || 19.076;
-  const lng = item?.longitude || item?.lng || 72.8777;
+  // Extract coordinates with fallback (using Mumbai as default)
+  const lat = item?.latitude || 19.076;
+  const lng = item?.longitude || 72.8777;
   const latitude = typeof lat === "string" ? parseFloat(lat) : lat;
   const longitude = typeof lng === "string" ? parseFloat(lng) : lng;
 
@@ -76,13 +78,22 @@ export default function CaseDetailScreen() {
     longitudeDelta: 0.01,
   };
 
+  // Status steps mapping based on statusId
+  const getCurrentStepIndex = () => {
+    const statusId = item?.statusId;
+    if (statusId === 1) return 0; // Open
+    if (statusId === 2) return 1; // In-Progress
+    if (statusId === 4) return 2; // Closed
+    return 0;
+  };
+
   const steps = [
     { title: "Open", icon: "file-list-line" },
     { title: "In-Progress", icon: "loader-3-line" },
     { title: "Closed", icon: "checkbox-circle-line" },
   ];
 
-  const completedSteps = item?.TaskstatusId - 1;
+  const completedSteps = getCurrentStepIndex();
 
   const animatedProgress = useRef(new Animated.Value(0)).current;
 
@@ -94,16 +105,20 @@ export default function CaseDetailScreen() {
       easing: Easing.out(Easing.exp),
       useNativeDriver: false,
     }).start();
-  }, [animatedProgress]);
+  }, [completedSteps]);
 
   useFocusEffect(
     useCallback(() => {
-      loadDocuments();
-      loadNotes();
-    }, []),
+      if (caseId) {
+        loadDocuments();
+        loadNotes();
+      }
+    }, [caseId]),
   );
 
   const loadNotes = async () => {
+    if (!caseId) return;
+    
     try {
       setLoadingNotes(true);
       const res = await getNotesRecordList({
@@ -114,7 +129,7 @@ export default function CaseDetailScreen() {
         relatedToId: String(caseId),
       });
 
-      // console.log("res notes", res?.data);
+      console.log("res notes", res?.data);
 
       if (res?.data?.notesList && Array.isArray(res.data.notesList)) {
         setNotes(res.data.notesList);
@@ -150,6 +165,8 @@ export default function CaseDetailScreen() {
   };
 
   const loadDocuments = async (pageNumber = 1) => {
+    if (!caseId) return;
+    
     try {
       const res = await getCommonDocumentList({
         pageNumber,
@@ -172,6 +189,8 @@ export default function CaseDetailScreen() {
     const type = documentType.toLowerCase();
 
     switch (type) {
+      case "pdf":
+        return "file-pdf-line";
       case "word":
       case "doc":
       case "docx":
@@ -184,6 +203,12 @@ export default function CaseDetailScreen() {
       case "ppt":
       case "pptx":
         return "file-ppt-line";
+      case "image":
+      case "jpg":
+      case "jpeg":
+      case "png":
+      case "gif":
+        return "file-image-line";
       case "text":
       case "txt":
         return "file-text-line";
@@ -215,6 +240,9 @@ export default function CaseDetailScreen() {
       case "pdf":
         return "#FF6B6B";
       case "image":
+      case "jpg":
+      case "jpeg":
+      case "png":
         return "#10B981";
       case "word":
       case "doc":
@@ -243,6 +271,9 @@ export default function CaseDetailScreen() {
       case "pdf":
         return "#FEE2E2";
       case "image":
+      case "jpg":
+      case "jpeg":
+      case "png":
         return "#D1FAE5";
       case "word":
       case "doc":
@@ -283,7 +314,7 @@ export default function CaseDetailScreen() {
           documentType: "pdf",
         },
       });
-    } else if (type === "image") {
+    } else if (type === "image" || type === "jpg" || type === "jpeg" || type === "png") {
       router.push({
         pathname: "/(fro)/(complaints)/DocumentListScreen",
         params: {
@@ -319,7 +350,7 @@ export default function CaseDetailScreen() {
     const hasFileData = doc.fileData && typeof doc.fileData === "string";
     const hasFileUrl = doc.fileUrl && typeof doc.fileUrl === "string";
 
-    const isImage = type === "image";
+    const isImage = type === "image" || type === "jpg" || type === "jpeg" || type === "png";
     const isPDF = type === "pdf";
 
     const fileColor = getFileColor(documentType);
@@ -332,7 +363,7 @@ export default function CaseDetailScreen() {
 
     return (
       <TouchableOpacity
-        key={doc.id}
+        key={doc.id || index}
         style={styles.attachmentThumb}
         onPress={() => handleAttachmentPress(doc, index)}
       >
@@ -352,7 +383,7 @@ export default function CaseDetailScreen() {
           <View
             style={[styles.fileIconContainer, { backgroundColor: bgColor }]}
           >
-            <RemixIcon name={iconName as any} size={32} color={fileColor} />
+            <RemixIcon name={iconName as any} size={24} color={fileColor} />
             <Text
               style={[styles.fileNameText, { color: fileColor }]}
               numberOfLines={1}
@@ -361,11 +392,6 @@ export default function CaseDetailScreen() {
                 ? fileName.substring(0, 8) + "..."
                 : fileName}
             </Text>
-            {documentType && (
-              <Text style={[styles.fileTypeText, { color: fileColor }]}>
-                {type.toUpperCase()}
-              </Text>
-            )}
           </View>
         )}
 
@@ -402,12 +428,7 @@ export default function CaseDetailScreen() {
   };
 
   // Render individual note item
-  const renderNoteItem = (
-    note: Note,
-    index: number,
-    isLast: boolean,
-    extraCount: number,
-  ) => {
+  const renderNoteItem = (note: Note, index: number) => {
     const formatDate = (dateString: string) => {
       try {
         const date = new Date(dateString);
@@ -488,12 +509,6 @@ export default function CaseDetailScreen() {
             )}
           </View>
         </View>
-
-        {isLast && extraCount > 0 && (
-          <View style={styles.noteExtraOverlay}>
-            <Text style={styles.noteExtraText}>+{extraCount}</Text>
-          </View>
-        )}
       </TouchableOpacity>
     );
   };
@@ -541,10 +556,30 @@ export default function CaseDetailScreen() {
 
     return (
       <View style={styles.notesContainer}>
-        {firstTwo.map((note, index) => {
-          const isLast = index === 1 && extraCount > 0;
-          return renderNoteItem(note, index, isLast, extraCount);
-        })}
+        {firstTwo.map((note, index) => renderNoteItem(note, index))}
+        {extraCount > 0 && (
+          <TouchableOpacity
+            style={styles.viewAllNotesBtn}
+            onPress={() => {
+              router.push({
+                pathname: "/(fro)/(complaints)/NoteHistory",
+                params: {
+                  caseId: caseId,
+                  item: JSON.stringify(item),
+                },
+              });
+            }}
+          >
+            <Text style={[styles.viewAllNotesText, { color: theme.colors.colorPrimary600 }]}>
+              View all {notes.length} notes
+            </Text>
+            <RemixIcon
+              name="arrow-right-s-line"
+              size={16}
+              color={theme.colors.colorPrimary600}
+            />
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -612,7 +647,12 @@ export default function CaseDetailScreen() {
       icon: "phone-line",
       color: "#27AE60",
       bgColor: "#E8F8F0",
-      onPress: () => console.log("Call pressed"),
+      onPress: () => {
+        if (phone) {
+          // Implement call functionality
+          console.log("Call pressed", phone);
+        }
+      },
     },
   ];
 
@@ -637,9 +677,8 @@ export default function CaseDetailScreen() {
             >
               <RemixIcon
                 name={action.icon as any}
-                size={16}
+                size={20}
                 color={action.color}
-                style={styles.actionIcon}
               />
               <Text
                 style={[styles.actionBtnText, { color: action.color }]}
@@ -655,8 +694,18 @@ export default function CaseDetailScreen() {
     return rows;
   };
 
+  if (!item) {
+    return (
+      <BodyLayout type="screen" screenName="Task Details">
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>No task data available</Text>
+        </View>
+      </BodyLayout>
+    );
+  }
+
   return (
-    <BodyLayout type="screen" screenName={`Task Details - ${ticketNo}`}>
+    <BodyLayout type="screen" screenName={`Task Details - ${ticketNo || ''}`}>
       {/* ELDER DETAILS */}
       <View
         style={[
@@ -737,7 +786,6 @@ export default function CaseDetailScreen() {
                   name="user-line"
                   size={14}
                   color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
                 />
                 <Text
                   style={[
@@ -754,63 +802,65 @@ export default function CaseDetailScreen() {
                   { color: theme.colors.colorTextPrimary },
                 ]}
               >
-                {elderName}
+                {elderName || '-'}
               </Text>
             </View>
 
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="calendar-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
-                />
+            {age && (
+              <View style={styles.keyValueRow}>
+                <View style={styles.labelContainer}>
+                  <RemixIcon
+                    name="calendar-line"
+                    size={14}
+                    color={theme.colors.colorTextSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.labelKey,
+                      { color: theme.colors.colorTextSecondary },
+                    ]}
+                  >
+                    Age:
+                  </Text>
+                </View>
                 <Text
                   style={[
-                    styles.labelKey,
-                    { color: theme.colors.colorTextSecondary },
+                    styles.labelValue,
+                    { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  Age:
+                  {age}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.labelValue,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {age}
-              </Text>
-            </View>
+            )}
 
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="genderless-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
-                />
+            {gender && (
+              <View style={styles.keyValueRow}>
+                <View style={styles.labelContainer}>
+                  <RemixIcon
+                    name="genderless-line"
+                    size={14}
+                    color={theme.colors.colorTextSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.labelKey,
+                      { color: theme.colors.colorTextSecondary },
+                    ]}
+                  >
+                    Gender:
+                  </Text>
+                </View>
                 <Text
                   style={[
-                    styles.labelKey,
-                    { color: theme.colors.colorTextSecondary },
+                    styles.labelValue,
+                    { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  Gender:
+                  {gender}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.labelValue,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {gender}
-              </Text>
-            </View>
+            )}
 
             <View style={styles.keyValueRow}>
               <View style={styles.labelContainer}>
@@ -818,7 +868,6 @@ export default function CaseDetailScreen() {
                   name="phone-line"
                   size={14}
                   color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
                 />
                 <Text
                   style={[
@@ -835,36 +884,37 @@ export default function CaseDetailScreen() {
                   { color: theme.colors.colorTextPrimary },
                 ]}
               >
-                {phone}
+                {phone || '-'}
               </Text>
             </View>
 
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="alert-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
-                />
+            {emergencyPhone && (
+              <View style={styles.keyValueRow}>
+                <View style={styles.labelContainer}>
+                  <RemixIcon
+                    name="alert-line"
+                    size={14}
+                    color={theme.colors.colorTextSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.labelKey,
+                      { color: theme.colors.colorTextSecondary },
+                    ]}
+                  >
+                    Emergency:
+                  </Text>
+                </View>
                 <Text
                   style={[
-                    styles.labelKey,
-                    { color: theme.colors.colorTextSecondary },
+                    styles.labelValue,
+                    { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  Emergency:
+                  {emergencyPhone}
                 </Text>
               </View>
-              <Text
-                style={[
-                  styles.labelValue,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {emergencyPhone}
-              </Text>
-            </View>
+            )}
           </View>
         </View>
       </View>
@@ -902,7 +952,6 @@ export default function CaseDetailScreen() {
                 name="folder-line"
                 size={14}
                 color={theme.colors.colorTextSecondary}
-                style={styles.labelIcon}
               />
               <Text
                 style={[
@@ -922,7 +971,7 @@ export default function CaseDetailScreen() {
                   },
                 ]}
               >
-                {category}
+                {category || '-'}
               </Text>
             </View>
           </View>
@@ -934,7 +983,6 @@ export default function CaseDetailScreen() {
                   name="folder-2-line"
                   size={14}
                   color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
                 />
                 <Text
                   style={[
@@ -956,42 +1004,12 @@ export default function CaseDetailScreen() {
             </View>
           )}
 
-          {subSubCategory && (
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="folder-3-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
-                />
-                <Text
-                  style={[
-                    styles.labelKey,
-                    { color: theme.colors.colorTextSecondary },
-                  ]}
-                >
-                  Sub Category:
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.labelValue,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {subSubCategory}
-              </Text>
-            </View>
-          )}
-
           <View style={styles.keyValueRow}>
             <View style={styles.labelContainer}>
               <RemixIcon
                 name="file-text-line"
                 size={14}
                 color={theme.colors.colorTextSecondary}
-                style={styles.labelIcon}
               />
               <Text
                 style={[
@@ -1008,67 +1026,9 @@ export default function CaseDetailScreen() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {details}
+              {details || '-'}
             </Text>
           </View>
-
-          {agentRemarks && (
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="chat-quote-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
-                />
-                <Text
-                  style={[
-                    styles.detailLabel,
-                    { color: theme.colors.colorTextSecondary },
-                  ]}
-                >
-                  Agent Remarks:
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.detailText,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {agentRemarks}
-              </Text>
-            </View>
-          )}
-
-          {comment && (
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="information-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
-                />
-                <Text
-                  style={[
-                    styles.detailLabel,
-                    { color: theme.colors.colorTextSecondary },
-                  ]}
-                >
-                  Current Status:
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.detailText,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {comment}
-              </Text>
-            </View>
-          )}
 
           <View style={styles.detailItem}>
             <View style={styles.labelContainer}>
@@ -1076,7 +1036,6 @@ export default function CaseDetailScreen() {
                 name="image-line"
                 size={14}
                 color={theme.colors.colorTextSecondary}
-                style={styles.labelIcon}
               />
               <Text
                 style={[
@@ -1096,7 +1055,6 @@ export default function CaseDetailScreen() {
                 name="sticky-note-line"
                 size={14}
                 color={theme.colors.colorTextSecondary}
-                style={styles.labelIcon}
               />
               <Text
                 style={[
@@ -1145,7 +1103,6 @@ export default function CaseDetailScreen() {
                 name="home-3-line"
                 size={14}
                 color={theme.colors.colorTextSecondary}
-                style={styles.labelIcon}
               />
               <Text
                 style={[
@@ -1162,7 +1119,7 @@ export default function CaseDetailScreen() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {address}
+              {address || '-'}
             </Text>
           </View>
 
@@ -1173,7 +1130,6 @@ export default function CaseDetailScreen() {
                   name="map-line"
                   size={14}
                   color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
                 />
                 <Text
                   style={[
@@ -1211,7 +1167,7 @@ export default function CaseDetailScreen() {
             >
               <Marker
                 coordinate={{ latitude, longitude }}
-                title={elderName}
+                title={elderName || 'Location'}
                 description={address}
               >
                 <View style={styles.markerContainer}>
@@ -1241,7 +1197,7 @@ export default function CaseDetailScreen() {
                   params: {
                     latitude: latitude.toString(),
                     longitude: longitude.toString(),
-                    title: elderName,
+                    title: elderName || 'Location',
                     description: address,
                   },
                 });
@@ -1313,6 +1269,8 @@ export default function CaseDetailScreen() {
               extrapolate: "clamp",
             });
 
+            const isActive = index <= completedSteps;
+
             return (
               <View key={index} style={styles.progressRow}>
                 {/* DOT + LINE */}
@@ -1321,13 +1279,9 @@ export default function CaseDetailScreen() {
                     style={[
                       styles.dot,
                       {
-                        backgroundColor: dotActive.interpolate({
-                          inputRange: [0, 1],
-                          outputRange: [
-                            theme.colors.colorBorder,
-                            theme.colors.colorPrimary600,
-                          ],
-                        }),
+                        backgroundColor: isActive
+                          ? theme.colors.colorPrimary600
+                          : theme.colors.colorBorder,
                       },
                     ]}
                   >
@@ -1335,7 +1289,6 @@ export default function CaseDetailScreen() {
                       name={step.icon as any}
                       size={12}
                       color="#FFF"
-                      style={styles.stepIcon}
                     />
                   </Animated.View>
 
@@ -1346,7 +1299,7 @@ export default function CaseDetailScreen() {
                           styles.lineFill,
                           {
                             backgroundColor: theme.colors.colorPrimary600,
-                            width: lineProgress,
+                            width: isActive ? "100%" : lineProgress,
                           },
                         ]}
                       />
@@ -1360,10 +1313,9 @@ export default function CaseDetailScreen() {
                     style={[
                       styles.progressTitle,
                       {
-                        color:
-                          index < completedSteps
-                            ? theme.colors.colorPrimary600
-                            : theme.colors.colorTextSecondary,
+                        color: isActive
+                          ? theme.colors.colorPrimary600
+                          : theme.colors.colorTextSecondary,
                       },
                     ]}
                   >
@@ -1403,93 +1355,99 @@ export default function CaseDetailScreen() {
         </View>
 
         <View style={styles.metadataGrid}>
-          <View
-            style={[
-              styles.metadataItem,
-              {
-                backgroundColor:
-                  priority === "High"
-                    ? "#FDEDE8"
-                    : priority === "Medium"
-                      ? "#FFF4E6"
-                      : "#E8F8F0",
-              },
-            ]}
-          >
-            <RemixIcon
-              name="flag-line"
-              size={16}
-              color={
-                priority === "High"
-                  ? theme.colors.validationErrorText
-                  : priority === "Medium"
-                    ? theme.colors.colorAccent500
-                    : theme.colors.colorSuccess600
-              }
-            />
-            <Text
+          {priority && (
+            <View
               style={[
-                styles.metadataValue,
+                styles.metadataItem,
                 {
-                  color:
+                  backgroundColor:
                     priority === "High"
-                      ? theme.colors.validationErrorText
+                      ? "#FDEDE8"
                       : priority === "Medium"
-                        ? theme.colors.colorAccent500
-                        : theme.colors.colorSuccess600,
+                        ? "#FFF4E6"
+                        : "#E8F8F0",
                 },
               ]}
             >
-              {priority}
-            </Text>
-            <Text style={styles.metadataLabel}>Priority</Text>
-          </View>
+              <RemixIcon
+                name="flag-line"
+                size={16}
+                color={
+                  priority === "High"
+                    ? "#DC2626"
+                    : priority === "Medium"
+                      ? "#F59E0B"
+                      : "#10B981"
+                }
+              />
+              <Text
+                style={[
+                  styles.metadataValue,
+                  {
+                    color:
+                      priority === "High"
+                        ? "#DC2626"
+                        : priority === "Medium"
+                          ? "#F59E0B"
+                          : "#10B981",
+                  },
+                ]}
+              >
+                {priority}
+              </Text>
+              <Text style={styles.metadataLabel}>Priority</Text>
+            </View>
+          )}
 
-          <View
-            style={[
-              styles.metadataItem,
-              { backgroundColor: theme.colors.colorPrimary50 },
-            ]}
-          >
-            <RemixIcon
-              name="checkbox-circle-line"
-              size={16}
-              color={theme.colors.colorPrimary600}
-            />
-            <Text
+          {Taskstatus && (
+            <View
               style={[
-                styles.metadataValue,
-                { color: theme.colors.colorPrimary600 },
+                styles.metadataItem,
+                { backgroundColor: theme.colors.colorPrimary50 },
               ]}
             >
-              {Taskstatus}
-            </Text>
-            <Text style={styles.metadataLabel}>Status</Text>
-          </View>
+              <RemixIcon
+                name="checkbox-circle-line"
+                size={16}
+                color={theme.colors.colorPrimary600}
+              />
+              <Text
+                style={[
+                  styles.metadataValue,
+                  { color: theme.colors.colorPrimary600 },
+                ]}
+              >
+                {Taskstatus}
+              </Text>
+              <Text style={styles.metadataLabel}>Status</Text>
+            </View>
+          )}
 
-          <View
-            style={[
-              styles.metadataItem,
-              { backgroundColor: theme.colors.colorAccent50 },
-            ]}
-          >
-            <RemixIcon
-              name="flag-line"
-              size={16}
-              color={theme.colors.colorAccent700}
-            />
-            <Text
+          {subStatus && (
+            <View
               style={[
-                styles.metadataValue,
-                { color: theme.colors.colorAccent700 },
+                styles.metadataItem,
+                { backgroundColor: theme.colors.colorAccent50 },
               ]}
             >
-              {subStatus}
-            </Text>
-            <Text style={styles.metadataLabel}>Sub Status</Text>
-          </View>
+              <RemixIcon
+                name="flag-line"
+                size={16}
+                color={theme.colors.colorAccent700}
+              />
+              <Text
+                style={[
+                  styles.metadataValue,
+                  { color: theme.colors.colorAccent700 },
+                ]}
+              >
+                {subStatus}
+              </Text>
+              <Text style={styles.metadataLabel}>Sub Status</Text>
+            </View>
+          )}
 
-          {callType && (
+          {source && (
             <View
               style={[
                 styles.metadataItem,
@@ -1507,9 +1465,9 @@ export default function CaseDetailScreen() {
                   { color: theme.colors.colorAccent700 },
                 ]}
               >
-                {callType}
+                {source}
               </Text>
-              <Text style={styles.metadataLabel}>Call Type</Text>
+              <Text style={styles.metadataLabel}>Source</Text>
             </View>
           )}
         </View>
@@ -1522,7 +1480,6 @@ export default function CaseDetailScreen() {
                   name="team-line"
                   size={14}
                   color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
                 />
                 <Text
                   style={[
@@ -1551,7 +1508,6 @@ export default function CaseDetailScreen() {
                   name="user-star-line"
                   size={14}
                   color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
                 />
                 <Text
                   style={[
@@ -1580,7 +1536,6 @@ export default function CaseDetailScreen() {
                   name="history-line"
                   size={14}
                   color={theme.colors.colorTextSecondary}
-                  style={styles.labelIcon}
                 />
                 <Text
                   style={[
@@ -1693,7 +1648,6 @@ const styles = StyleSheet.create({
     flex: 1,
     marginLeft: 12,
   },
-
   keyValueRow: {
     flexDirection: "row",
     alignItems: "flex-start",
@@ -1703,25 +1657,23 @@ const styles = StyleSheet.create({
   labelContainer: {
     flexDirection: "row",
     alignItems: "center",
-    minWidth: 140,
-    maxWidth: 140,
+    width: 90,
+    marginRight: 8,
   },
   labelIcon: {
-    marginRight: 6,
+    marginRight: 4,
   },
   labelKey: {
     fontSize: 13,
     fontWeight: "600",
     opacity: 0.8,
-    flexShrink: 1,
+    marginLeft: 4,
   },
   labelValue: {
     fontSize: 14,
     fontWeight: "500",
     flex: 1,
     flexWrap: "wrap",
-    paddingLeft: 8,
-    marginLeft: 0,
   },
   valueContainer: {
     flex: 1,
@@ -1742,13 +1694,16 @@ const styles = StyleSheet.create({
   detailLabel: {
     fontSize: 13,
     fontWeight: "600",
-    marginBottom: 4,
+    marginLeft: 4,
     opacity: 0.8,
   },
   detailText: {
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "500",
+    marginLeft: 98,
+    marginTop: -20,
+    marginBottom: 8,
   },
   attachmentBox: {
     height: 80,
@@ -1860,9 +1815,6 @@ const styles = StyleSheet.create({
     borderColor: "#FFF",
     zIndex: 2,
   },
-  stepIcon: {
-    position: "absolute",
-  },
   lineContainer: {
     width: 2,
     height: 40,
@@ -1872,12 +1824,12 @@ const styles = StyleSheet.create({
   },
   lineFill: {
     height: "100%",
-    width: "0%",
   },
   progressContent: {
     paddingLeft: 12,
     paddingBottom: 8,
     flex: 1,
+    justifyContent: "center",
   },
   progressTitle: {
     fontSize: 14,
@@ -1920,6 +1872,7 @@ const styles = StyleSheet.create({
   metadataKey: {
     fontSize: 13,
     fontWeight: "600",
+    marginLeft: 4,
     opacity: 0.8,
   },
   metadataDetailValue: {
@@ -1944,15 +1897,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1.5,
     minHeight: 70,
-  },
-  actionIcon: {
-    marginBottom: 6,
+    justifyContent: "center",
   },
   actionBtnText: {
     fontSize: 12,
     fontWeight: "600",
     textAlign: "center",
-    lineHeight: 14,
+    marginTop: 4,
   },
   attachmentRow: {
     flexDirection: "row",
@@ -1960,20 +1911,17 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-
   attachmentThumb: {
-    width: 75,
-    height: 75,
+    width: 70,
+    height: 70,
     borderRadius: 10,
     overflow: "hidden",
     marginBottom: 8,
   },
-
   attachmentImage: {
     width: "100%",
     height: "100%",
   },
-
   extraOverlay: {
     position: "absolute",
     top: 0,
@@ -1984,7 +1932,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-
   extraText: {
     color: "#fff",
     fontSize: 16,
@@ -1998,30 +1945,18 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    padding: 6,
+    padding: 4,
   },
-
   fileNameText: {
-    fontSize: 9,
-    marginTop: 4,
-    textAlign: "center",
-    fontWeight: "500",
-    maxWidth: "100%",
-  },
-
-  fileTypeText: {
-    fontSize: 7,
+    fontSize: 8,
     marginTop: 2,
     textAlign: "center",
-    fontWeight: "600",
-    opacity: 0.8,
+    fontWeight: "500",
   },
-
   // Notes styles
   notesContainer: {
     marginTop: 8,
   },
-
   notesLoadingContainer: {
     height: 80,
     borderRadius: 12,
@@ -2032,12 +1967,10 @@ const styles = StyleSheet.create({
     borderColor: "#E5E5E5",
     borderStyle: "dashed",
   },
-
   loadingText: {
     fontSize: 12,
     marginTop: 6,
   },
-
   noNotesContainer: {
     height: 80,
     borderRadius: 12,
@@ -2048,13 +1981,11 @@ const styles = StyleSheet.create({
     borderColor: "#E5E5E5",
     borderStyle: "dashed",
   },
-
   noNotesText: {
     fontSize: 12,
     color: "#888",
     marginTop: 6,
   },
-
   noteItem: {
     marginBottom: 8,
     borderRadius: 12,
@@ -2062,49 +1993,39 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
     backgroundColor: "#F9FAFB",
     padding: 12,
-    position: "relative",
-    overflow: "hidden",
   },
-
   noteContent: {
     flex: 1,
   },
-
   noteHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 6,
     gap: 8,
   },
-
   noteType: {
     fontSize: 12,
     fontWeight: "600",
     flex: 1,
   },
-
   noteDate: {
     fontSize: 11,
     color: "#6B7280",
     fontWeight: "500",
   },
-
   noteDesc: {
     fontSize: 13,
     lineHeight: 18,
     marginBottom: 6,
   },
-
   noteFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-
   noteTime: {
     fontSize: 11,
   },
-
   followUpBadge: {
     flexDirection: "row",
     alignItems: "center",
@@ -2114,27 +2035,31 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     gap: 4,
   },
-
   followUpText: {
     fontSize: 10,
     color: "#DC2626",
     fontWeight: "500",
   },
-
-  noteExtraOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+  viewAllNotesBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  viewAllNotesText: {
+    fontSize: 13,
+    fontWeight: "600",
+    marginRight: 4,
+  },
+  errorContainer: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 20,
   },
-
-  noteExtraText: {
+  errorText: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#027A61",
+    color: "#666",
   },
 });
