@@ -6,8 +6,8 @@ import { useTheme } from "@/theme/ThemeContext";
 import { addAndUpdateFROLocation } from "@/features/fro/froLocationApi";
 import { addInteractionActivityHistory } from "@/features/fro/interaction/ActivityHistory";
 import {
-    getInteractionsListByAssignToId,
-    updateInteraction,
+  getInteractionsListByAssignToId,
+  updateInteraction,
 } from "@/features/fro/interactionApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { updateFROLatLong } from "@/features/fro/updateFROLatLongApi";

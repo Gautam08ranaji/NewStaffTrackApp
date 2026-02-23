@@ -105,6 +105,9 @@ export default function TasksScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const tabRefs = useRef<(View | null)[]>([]);
 
+  console.log(authState.userId);
+  
+
   /* ---------------- FETCH DATA ---------------- */
 
   useFocusEffect(

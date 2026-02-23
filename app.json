@@ -4,13 +4,10 @@
     "slug": "field-track",
     "version": "1.0.0",
     "orientation": "portrait",
-
     "icon": "./assets/images/staffTrackLogo.png",
-
     "scheme": "fieldtrackapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "plugins": [
       "expo-router",
       [
@@ -20,7 +17,6 @@
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
-
           "dark": {
             "backgroundColor": "#000000"
           },
@@ -28,41 +24,44 @@
         }
       ]
     ],
-
     "android": {
       "backgroundColor": "#ffffff",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "package": "com.gautam1008.fieldtrack",
-
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/staffTrackLogo.png",
         "backgroundColor": "#ffffff"
       },
-
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyDVl4s2zlYODWTIpEfzYePa_hj5nrWksuE"
         }
       }
     },
-
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gautam1008.fieldtrack",
       "config": {
-        "googleMapsApiKey": "PASTE_YOUR_GOOGLE_MAPS_API_KEY_HERE"
+        "googleMapsApiKey": "AIzaSyDVl4s2zlYODWTIpEfzYePa_hj5nrWksuE"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/staffTrackLogo.png"
     },
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e78f6d86-da99-4130-8d49-4017fd05aacc"
+      }
     }
   }
 }

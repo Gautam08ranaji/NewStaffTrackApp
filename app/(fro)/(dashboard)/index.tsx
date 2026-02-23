@@ -5,7 +5,7 @@ import PunchInCard from "@/components/reusables/PunchInCard";
 import ReusableCard from "@/components/reusables/ReusableCard";
 import { getDashCount } from "@/features/fro/interaction/countApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
-import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
+// import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
 import { useFROLocationUpdater } from "@/hooks/useFROLocationUpdater";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
@@ -32,7 +32,7 @@ export default function HomeScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
-  const { Popup } = useInteractionPopupPoller();
+  // const { Popup } = useInteractionPopupPoller();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -205,7 +205,7 @@ export default function HomeScreen() {
 
   return (
     <>
-      {Popup}
+      {/* {Popup} */}
 
       <BodyLayout
         type="dashboard"
