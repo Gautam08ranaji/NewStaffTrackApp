@@ -11,9 +11,17 @@ import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  Alert,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import RemixIcon from "react-native-remix-icon";
 
@@ -50,6 +58,10 @@ export default function HomeScreen() {
   } | null>(null);
   const [locationAddress, setLocationAddress] = useState("");
   const [loadingLocation, setLoadingLocation] = useState(true);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  // Refresh state
+  const [refreshing, setRefreshing] = useState(false);
 
   /* 🔴 Demo Attendance Values (replace with API later) */
   const presentDays = 20;
@@ -71,19 +83,31 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([fetchUserData(), fetchCountData(), getCurrentLocation()]);
+      loadInitialData();
     }, []),
   );
+
+  const loadInitialData = async () => {
+    await Promise.all([fetchUserData(), fetchCountData(), getCurrentLocation()]);
+  };
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadInitialData();
+    setRefreshing(false);
+  }, []);
 
   /* ================= LOCATION ================= */
 
   const getCurrentLocation = async () => {
     try {
       setLoadingLocation(true);
+      setLocationError(null);
 
       // Request permission
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
+        setLocationError("Location permission denied");
         console.log("Permission to access location was denied");
         setLoadingLocation(false);
         return;
@@ -117,6 +141,12 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error("Error getting location:", error);
+      setLocationError("Failed to get location");
+      Alert.alert(
+        "Location Error",
+        "Unable to get your current location. Please check your device settings.",
+        [{ text: "OK" }]
+      );
     } finally {
       setLoadingLocation(false);
     }
@@ -135,15 +165,16 @@ export default function HomeScreen() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      console.log("use Data", response);
+      console.log("User Data", response);
 
       setFirstName(response?.data?.firstName || "User");
       setLastName(response?.data?.lastName || "");
     } catch (error) {
       console.error("User fetch error:", error);
-      alert(
+      Alert.alert(
+        "Error",
         "Failed to fetch user data. " +
-          (error instanceof Error ? error?.message : "Unknown error"),
+          (error instanceof Error ? error?.message : "Unknown error")
       );
     }
   };
@@ -158,6 +189,8 @@ export default function HomeScreen() {
 
       if (response?.success) {
         setCount(response.data);
+      } else {
+        console.error("Failed to fetch counts:", response?.message);
       }
     } catch (error) {
       console.error("Count fetch error:", error);
@@ -166,14 +199,14 @@ export default function HomeScreen() {
 
   /* ================= CARD CONFIG ================= */
 
-  const caseCardConfig = {
+  const caseCardConfig = useMemo(() => ({
     open: {
       title: "Open",
       icon: "folder-check-line",
       iconBg: "#00C950",
       cardBg: theme.colors.validationSuccessBg,
       countColor: theme.colors.colorPrimary600,
-      filter: "Open",
+      filter: "open",
     },
     InProgress: {
       title: "In-Progress",
@@ -197,9 +230,9 @@ export default function HomeScreen() {
       iconBg: "#6A7282",
       cardBg: theme.colors.navDivider,
       countColor: theme.colors.colorTextSecondary,
-      filter: "Closed",
+      filter: "closed",
     },
-  };
+  }), [theme]);
 
   /* ================= UI ================= */
 
@@ -215,274 +248,287 @@ export default function HomeScreen() {
         totalTasks={count.tickets}
         notificationCount={3}
       >
-        {/* Attendance */}
-        <Text
-          style={[
-            theme.typography.fontH5,
-            { color: theme.colors.colorPrimary600 },
-          ]}
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.colorPrimary600]}
+              tintColor={theme.colors.colorPrimary600}
+            />
+          }
         >
-          Attendance
-        </Text>
+          {/* Attendance */}
+          <Text
+            style={[
+              theme.typography.fontH5,
+              { color: theme.colors.colorPrimary600 },
+            ]}
+          >
+            Attendance
+          </Text>
 
-        <PunchInCard />
+          <PunchInCard />
 
-        {/* KPI Circular Charts */}
-        <View style={styles.kpiRow}>
-          <CircularKPIChart percentage={attendanceRateNum} label="Attendance" />
-          <CircularKPIChart percentage={completionRate} label="Leaves" />
-        </View>
-
-        {/* TaskOverview */}
-        <Text
-          style={[
-            theme.typography.fontH6,
-            { color: theme.colors.colorPrimary600, marginTop: 20 },
-          ]}
-        >
-          Task Overview
-        </Text>
-
-        {/* TaskCards */}
-        <View style={styles.row}>
-          <ReusableCard
-            icon={caseCardConfig.Total.icon}
-            count={String(count.tickets)}
-            title={caseCardConfig.Total.title}
-            iconBg={caseCardConfig.Total.iconBg}
-            cardBg={caseCardConfig.Total.cardBg}
-            countColor={caseCardConfig.Total.countColor}
-            titleColor={theme.colors.colorTextSecondary}
-            onPress={() =>
-              router.push({
-                pathname: "/(fro)/(complaints)",
-                params: { filter: caseCardConfig.Total.filter },
-              })
-            }
-          />
-          <ReusableCard
-            icon={caseCardConfig.open.icon}
-            count={String(count.open)}
-            title={caseCardConfig.open.title}
-            iconBg={caseCardConfig.open.iconBg}
-            cardBg={caseCardConfig.open.cardBg}
-            countColor={caseCardConfig.open.countColor}
-            titleColor={theme.colors.colorTextSecondary}
-            onPress={() =>
-              router.push({
-                pathname: "/(fro)/(complaints)",
-                params: { filter: caseCardConfig.open.filter },
-              })
-            }
-          />
-        </View>
-
-        <View style={styles.row}>
-          <ReusableCard
-            icon={caseCardConfig.InProgress.icon}
-            count={String(count.inProgress)}
-            title={caseCardConfig.InProgress.title}
-            iconBg={caseCardConfig.InProgress.iconBg}
-            cardBg={caseCardConfig.InProgress.cardBg}
-            countColor={caseCardConfig.InProgress.countColor}
-            titleColor={theme.colors.colorTextSecondary}
-            onPress={() =>
-              router.push({
-                pathname: "/(fro)/(complaints)",
-                params: { filter: caseCardConfig.InProgress.filter },
-              })
-            }
-          />
-
-          <ReusableCard
-            icon={caseCardConfig.closed.icon}
-            count={String(count.closed)}
-            title={caseCardConfig.closed.title}
-            iconBg={caseCardConfig.closed.iconBg}
-            cardBg={caseCardConfig.closed.cardBg}
-            countColor={caseCardConfig.closed.countColor}
-            titleColor={theme.colors.colorTextSecondary}
-            onPress={() =>
-              router.push({
-                pathname: "/(fro)/(complaints)",
-                params: { filter: caseCardConfig.closed.filter },
-              })
-            }
-          />
-        </View>
-
-        {/* Performance Card */}
-        <FROPerformanceCard
-          total={count.tickets}
-          closed={count.closed}
-          open={count.open}
-          inProgress={count.inProgress}
-        />
-
-        {/* Location Map Section - Added at bottom */}
-        <View
-          style={[
-            styles.mapCard,
-            {
-              backgroundColor: theme.colors.colorBgSurface,
-              borderColor: theme.colors.inputBorder,
-            },
-          ]}
-        >
-          <View style={styles.mapHeader}>
-            <View style={styles.mapTitleContainer}>
-              <RemixIcon
-                name="map-pin-line"
-                size={20}
-                color={theme.colors.colorPrimary600}
-              />
-              <Text
-                style={[
-                  styles.mapTitle,
-                  { color: theme.colors.colorPrimary600 },
-                ]}
-              >
-                Current Location
-              </Text>
-            </View>
-            <TouchableOpacity
-              onPress={getCurrentLocation}
-              style={styles.refreshBtn}
-            >
-              <RemixIcon
-                name="refresh-line"
-                size={16}
-                color={theme.colors.colorPrimary600}
-              />
-            </TouchableOpacity>
+          {/* KPI Circular Charts */}
+          <View style={styles.kpiRow}>
+            <CircularKPIChart percentage={attendanceRateNum} label="Attendance" />
+            <CircularKPIChart percentage={completionRate} label="Completion Rate" />
           </View>
 
-          {currentLocation && (
-            <>
-              <View style={styles.addressContainer}>
+          {/* TaskOverview */}
+          <Text
+            style={[
+              theme.typography.fontH6,
+              { color: theme.colors.colorPrimary600, marginTop: 20 },
+            ]}
+          >
+            Task Overview
+          </Text>
+
+          {/* TaskCards */}
+          <View style={styles.row}>
+            <ReusableCard
+              icon={caseCardConfig.Total.icon}
+              count={String(count.tickets)}
+              title={caseCardConfig.Total.title}
+              iconBg={caseCardConfig.Total.iconBg}
+              cardBg={caseCardConfig.Total.cardBg}
+              countColor={caseCardConfig.Total.countColor}
+              titleColor={theme.colors.colorTextSecondary}
+              onPress={() =>
+                router.push({
+                  pathname: "/(fro)/(complaints)",
+                  params: { filter: caseCardConfig.Total.filter },
+                })
+              }
+            />
+            <ReusableCard
+              icon={caseCardConfig.open.icon}
+              count={String(count.open)}
+              title={caseCardConfig.open.title}
+              iconBg={caseCardConfig.open.iconBg}
+              cardBg={caseCardConfig.open.cardBg}
+              countColor={caseCardConfig.open.countColor}
+              titleColor={theme.colors.colorTextSecondary}
+              onPress={() =>
+                router.push({
+                  pathname: "/(fro)/(complaints)",
+                  params: { filter: caseCardConfig.open.filter },
+                })
+              }
+            />
+          </View>
+
+          <View style={styles.row}>
+            <ReusableCard
+              icon={caseCardConfig.InProgress.icon}
+              count={String(count.inProgress)}
+              title={caseCardConfig.InProgress.title}
+              iconBg={caseCardConfig.InProgress.iconBg}
+              cardBg={caseCardConfig.InProgress.cardBg}
+              countColor={caseCardConfig.InProgress.countColor}
+              titleColor={theme.colors.colorTextSecondary}
+              onPress={() =>
+                router.push({
+                  pathname: "/(fro)/(complaints)",
+                  params: { filter: caseCardConfig.InProgress.filter },
+                })
+              }
+            />
+
+            <ReusableCard
+              icon={caseCardConfig.closed.icon}
+              count={String(count.closed)}
+              title={caseCardConfig.closed.title}
+              iconBg={caseCardConfig.closed.iconBg}
+              cardBg={caseCardConfig.closed.cardBg}
+              countColor={caseCardConfig.closed.countColor}
+              titleColor={theme.colors.colorTextSecondary}
+              onPress={() =>
+                router.push({
+                  pathname: "/(fro)/(complaints)",
+                  params: { filter: caseCardConfig.closed.filter },
+                })
+              }
+            />
+          </View>
+
+          {/* Performance Card */}
+          <FROPerformanceCard
+            total={count.tickets}
+            closed={count.closed}
+            open={count.open}
+            inProgress={count.inProgress}
+          />
+
+          {/* Location Map Section - Added at bottom */}
+          <View
+            style={[
+              styles.mapCard,
+              {
+                backgroundColor: theme.colors.colorBgSurface,
+                borderColor: theme.colors.inputBorder,
+              },
+            ]}
+          >
+            <View style={styles.mapHeader}>
+              <View style={styles.mapTitleContainer}>
                 <RemixIcon
-                  name="home-3-line"
-                  size={14}
+                  name="map-pin-line"
+                  size={20}
+                  color={theme.colors.colorPrimary600}
+                />
+                <Text
+                  style={[
+                    styles.mapTitle,
+                    { color: theme.colors.colorPrimary600 },
+                  ]}
+                >
+                  Current Location
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={getCurrentLocation}
+                style={styles.refreshBtn}
+              >
+                <RemixIcon
+                  name="refresh-line"
+                  size={16}
+                  color={theme.colors.colorPrimary600}
+                />
+              </TouchableOpacity>
+            </View>
+
+            {currentLocation && !locationError && (
+              <>
+                <View style={styles.addressContainer}>
+                  <RemixIcon
+                    name="home-3-line"
+                    size={14}
+                    color={theme.colors.colorTextSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.addressText,
+                      { color: theme.colors.colorTextSecondary },
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {loadingLocation ? "Loading..." : locationAddress}
+                  </Text>
+                </View>
+
+                <View style={styles.mapContainer}>
+                  <MapView
+                    provider={PROVIDER_GOOGLE}
+                    style={styles.map}
+                    initialRegion={{
+                      latitude: currentLocation.latitude,
+                      longitude: currentLocation.longitude,
+                      latitudeDelta: 0.01,
+                      longitudeDelta: 0.01,
+                    }}
+                    scrollEnabled={true}
+                    zoomEnabled={true}
+                    rotateEnabled={false}
+                    pitchEnabled={false}
+                    loadingEnabled={true}
+                    loadingIndicatorColor={theme.colors.colorPrimary600}
+                  >
+                    <Marker
+                      coordinate={{
+                        latitude: currentLocation.latitude,
+                        longitude: currentLocation.longitude,
+                      }}
+                      title="You are here"
+                      description={locationAddress}
+                    >
+                      <View style={styles.markerContainer}>
+                        <View
+                          style={[
+                            styles.markerPin,
+                            { backgroundColor: theme.colors.colorPrimary600 },
+                          ]}
+                        >
+                          <RemixIcon name="map-pin-fill" size={16} color="#FFF" />
+                        </View>
+                        <View
+                          style={[
+                            styles.markerTail,
+                            { borderTopColor: theme.colors.colorPrimary600 },
+                          ]}
+                        />
+                      </View>
+                    </Marker>
+                  </MapView>
+
+                  <TouchableOpacity
+                    style={styles.mapOverlayButton}
+                    onPress={() => {
+                      if (currentLocation) {
+                        router.push({
+                          pathname: "/FullMapScreen",
+                          params: {
+                            latitude: currentLocation.latitude.toString(),
+                            longitude: currentLocation.longitude.toString(),
+                            title: "Current Location",
+                            description: locationAddress,
+                          },
+                        });
+                      }
+                    }}
+                  >
+                    <RemixIcon name="fullscreen-line" size={16} color="#027A61" />
+                    <Text style={styles.mapOverlayText}>Full Map</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
+            {(!currentLocation || locationError) && !loadingLocation && (
+              <View style={styles.noLocationContainer}>
+                <RemixIcon
+                  name="map-pin-line"
+                  size={32}
                   color={theme.colors.colorTextSecondary}
                 />
                 <Text
                   style={[
-                    styles.addressText,
+                    styles.noLocationText,
                     { color: theme.colors.colorTextSecondary },
                   ]}
-                  numberOfLines={1}
                 >
-                  {loadingLocation ? "Loading..." : locationAddress}
+                  {locationError || "Unable to get current location"}
                 </Text>
-              </View>
-
-              <View style={styles.mapContainer}>
-                <MapView
-                  provider={PROVIDER_GOOGLE}
-                  style={styles.map}
-                  initialRegion={{
-                    latitude: currentLocation.latitude,
-                    longitude: currentLocation.longitude,
-                    latitudeDelta: 0.01,
-                    longitudeDelta: 0.01,
-                  }}
-                  scrollEnabled={true}
-                  zoomEnabled={true}
-                  rotateEnabled={false}
-                  pitchEnabled={false}
-                  loadingEnabled={true}
-                  loadingIndicatorColor={theme.colors.colorPrimary600}
-                >
-                  <Marker
-                    coordinate={{
-                      latitude: currentLocation.latitude,
-                      longitude: currentLocation.longitude,
-                    }}
-                    title="You are here"
-                    description={locationAddress}
-                  >
-                    <View style={styles.markerContainer}>
-                      <View
-                        style={[
-                          styles.markerPin,
-                          { backgroundColor: theme.colors.colorPrimary600 },
-                        ]}
-                      >
-                        <RemixIcon name="map-pin-fill" size={16} color="#FFF" />
-                      </View>
-                      <View
-                        style={[
-                          styles.markerTail,
-                          { borderTopColor: theme.colors.colorPrimary600 },
-                        ]}
-                      />
-                    </View>
-                  </Marker>
-                </MapView>
-
                 <TouchableOpacity
-                  style={styles.mapOverlayButton}
-                  onPress={() => {
-                    if (currentLocation) {
-                      router.push({
-                        pathname: "/FullMapScreen",
-                        params: {
-                          latitude: currentLocation.latitude.toString(),
-                          longitude: currentLocation.longitude.toString(),
-                          title: "Current Location",
-                          description: locationAddress,
-                        },
-                      });
-                    }
-                  }}
+                  style={[
+                    styles.retryBtn,
+                    { backgroundColor: theme.colors.colorPrimary600 },
+                  ]}
+                  onPress={getCurrentLocation}
                 >
-                  <RemixIcon name="fullscreen-line" size={16} color="#027A61" />
-                  <Text style={styles.mapOverlayText}>Full Map</Text>
+                  <Text style={styles.retryBtnText}>Retry</Text>
                 </TouchableOpacity>
               </View>
-            </>
-          )}
+            )}
 
-          {!currentLocation && !loadingLocation && (
-            <View style={styles.noLocationContainer}>
-              <RemixIcon
-                name="map-pin-line"
-                size={32}
-                color={theme.colors.colorTextSecondary}
-              />
-              <Text
-                style={[
-                  styles.noLocationText,
-                  { color: theme.colors.colorTextSecondary },
-                ]}
-              >
-                Unable to get current location
-              </Text>
-              <TouchableOpacity
-                style={[
-                  styles.retryBtn,
-                  { backgroundColor: theme.colors.colorPrimary600 },
-                ]}
-                onPress={getCurrentLocation}
-              >
-                <Text style={styles.retryBtnText}>Retry</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {loadingLocation && (
-            <View style={styles.loadingContainer}>
-              <Text
-                style={[
-                  styles.loadingText,
-                  { color: theme.colors.colorTextSecondary },
-                ]}
-              >
-                Getting your location...
-              </Text>
-            </View>
-          )}
-        </View>
+            {loadingLocation && (
+              <View style={styles.loadingContainer}>
+                <Text
+                  style={[
+                    styles.loadingText,
+                    { color: theme.colors.colorTextSecondary },
+                  ]}
+                >
+                  Getting your location...
+                </Text>
+              </View>
+            )}
+          </View>
+          <View style={{ height: 20 }} />
+        </ScrollView>
       </BodyLayout>
     </>
   );

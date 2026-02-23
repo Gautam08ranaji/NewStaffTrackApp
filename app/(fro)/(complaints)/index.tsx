@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import {
   Dimensions,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -47,25 +48,34 @@ const statusColors: Record<string, string> = {
   Closed: "#6A7282",
 };
 
-// Helper function to safely get status
+// Helper function to safely get status from your actual data structure
 const getSafeStatus = (item: any): string => {
-  return item?.TaskstatusName?.toLowerCase() || "";
+  // Check all possible status field names
+  return item?.statusName || item?.TaskstatusName || item?.caseStatusName || "";
 };
 
 // Helper function to get display status
-const getDisplayStatus = (TaskstatusName: string): string => {
-  if (!TaskstatusName) return "Unknown";
-  return STATUS_DISPLAY_MAP[TaskstatusName] || TaskstatusName;
+const getDisplayStatus = (statusName: string): string => {
+  if (!statusName) return "Unknown";
+  return STATUS_DISPLAY_MAP[statusName] || statusName;
 };
 
 // Helper function to get status color
-const getStatusColor = (TaskstatusName: string): string => {
-  if (!TaskstatusName) return "#6A7282"; // Default gray
+const getStatusColor = (statusName: string): string => {
+  if (!statusName) return "#6A7282"; // Default gray
 
-  const displayStatus = getDisplayStatus(TaskstatusName);
+  const displayStatus = getDisplayStatus(statusName);
+  
+  // Check if we have a color defined for this status
+  if (statusColors[statusName]) {
+    return statusColors[statusName];
+  }
+  
+  // Check by display status
   const statusKey = Object.keys(statusColors).find(
     (key) => key.toLowerCase() === displayStatus.toLowerCase(),
   );
+  
   return statusKey ? statusColors[statusKey] : "#6A7282";
 };
 
@@ -84,6 +94,7 @@ export default function TasksScreen() {
   /* ---------------- DATA STATE ---------------- */
   const [interactions, setInteractions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   /* ---------------- 4 TABS ---------------- */
   const tabs = [
@@ -94,7 +105,7 @@ export default function TasksScreen() {
       key: "inProgress",
       displayKey: "In-Progress",
     },
-    { label: "Closed", key: "Closed", displayKey: "Closed" },
+    { label: "Closed", key: "closed", displayKey: "Closed" },
   ];
 
   const initialTabIndex = tabs.findIndex((t) => t.key === params.filter);
@@ -104,9 +115,6 @@ export default function TasksScreen() {
 
   const scrollRef = useRef<ScrollView>(null);
   const tabRefs = useRef<(View | null)[]>([]);
-
-  console.log(authState.userId);
-  
 
   /* ---------------- FETCH DATA ---------------- */
 
@@ -134,8 +142,14 @@ export default function TasksScreen() {
       console.error("❌ Failed to fetch Tasks:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchInteractions();
+  }, []);
 
   /* ---------------- SYNC TAB FROM ROUTE ---------------- */
 
@@ -172,14 +186,19 @@ export default function TasksScreen() {
 
     return interactions.filter((item) => {
       const status = getSafeStatus(item);
+      
+      // Convert to lowercase for case-insensitive comparison
+      const statusLower = status.toLowerCase();
 
       switch (selectedFilterKey) {
         case "open":
-          return status === "open";
+          return statusLower === "open";
         case "inProgress":
-          return status === "in-progress";
+          return statusLower === "in-progress" || 
+                 statusLower === "inprogress" || 
+                 statusLower === "in progress";
         case "closed":
-          return status === "closed";
+          return statusLower === "closed";
         default:
           return false;
       }
@@ -189,8 +208,9 @@ export default function TasksScreen() {
   /* ================= UI ================= */
 
   const renderTaskCard = (item: any, index: number) => {
-    const displayStatus = getDisplayStatus(item.caseStatusName);
-    const statusColor = getStatusColor(item.caseStatusName);
+    const statusName = getSafeStatus(item);
+    const displayStatus = getDisplayStatus(statusName);
+    const statusColor = getStatusColor(statusName);
 
     return (
       <View
@@ -216,10 +236,10 @@ export default function TasksScreen() {
             {item.name || t("Tasks.unnamedCase")}
           </Text>
           <Text style={[styles.cardText, styles.infoText]}>
-            {t("Tasks.age")}: {item.age || "-"}
+            {t("Tasks.category")}: {item.categoryName || "-"}
           </Text>
           <Text style={[styles.cardText, styles.infoText]}>
-            {t("Tasks.category")}: {item.categoryName || "-"}
+            {t("Tasks.priority")}: {item.priority || "-"}
           </Text>
         </View>
 
@@ -335,8 +355,16 @@ export default function TasksScreen() {
         style={styles.listContainer}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.colorPrimary600]}
+            tintColor={theme.colors.colorPrimary600}
+          />
+        }
       >
-        {loading
+        {loading && !refreshing
           ? renderLoadingState()
           : filteredData.length > 0
             ? filteredData.map(renderTaskCard)
