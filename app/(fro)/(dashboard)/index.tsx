@@ -188,6 +188,8 @@ export default function HomeScreen() {
       });
 
       if (response?.success) {
+        console.log("response",response);
+        
         setCount(response.data);
       } else {
         console.error("Failed to fetch counts:", response?.message);
