@@ -2,7 +2,6 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import { addCommonDocument } from "@/features/fro/complaints/addDocument";
 import { addInteractionActivityHistory } from "@/features/fro/interaction/ActivityHistory";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
-
 import { useAppSelector } from "@/store/hooks";
 import type { Theme } from "@/theme/ThemeContext";
 import { useTheme } from "@/theme/ThemeContext";
@@ -11,26 +10,23 @@ import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
-import { t } from "i18next";
 import React, { useState } from "react";
 import {
-    Alert,
-    Image,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Image,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
-/* ---------- TYPES ---------- */
 type SelectedFile = {
   uri: string;
   name: string;
   type: "image" | "pdf";
 };
 
-/* ---------- SCREEN ---------- */
 export default function UpdateDocumentScreen() {
   const { theme } = useTheme();
   const styles = createStyles(theme);
@@ -43,22 +39,18 @@ export default function UpdateDocumentScreen() {
   const [file, setFile] = useState<SelectedFile | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // console.log("nav case", caseId);
-
   /* ---------- SAVE ACTIVITY HISTORY ---------- */
   const saveActivity = async ({
     interactionId,
-    documentType,
     documentName,
-    description: docDescription,
-    activityStatus,
+    documentDescription,
+    documentType,
     transactionNumber,
   }: {
     interactionId: number;
-    documentType: string;
     documentName: string;
-    description: string;
-    activityStatus: string;
+    documentDescription: string;
+    documentType: string;
     transactionNumber: string;
   }) => {
     try {
@@ -74,7 +66,7 @@ export default function UpdateDocumentScreen() {
       const activityByName = `${firstName} ${lastName}`.trim();
 
       /* ---------------- BUILD ACTIVITY DESCRIPTION ---------------- */
-      const activityDescription = `${documentType} "${documentName}" uploaded with comment: "${docDescription}"`;
+      const activityDescription = `Document uploaded: "${documentName}" - ${documentDescription} (Type: ${documentType})`;
 
       /* ---------------- ACTIVITY PAYLOAD ---------------- */
       const payload = {
@@ -82,7 +74,7 @@ export default function UpdateDocumentScreen() {
         activityInteractionId: interactionId,
         activityActionName: "INSERT",
         activityDescription,
-        activityStatus,
+        activityStatus: "Busy",
         activityById: String(authState?.userId),
         activityByName,
         activityRelatedTo: "CAS",
@@ -104,52 +96,54 @@ export default function UpdateDocumentScreen() {
     }
   };
 
-  /* ---------- BASE64 ---------- */
+  /* BASE64 CLEAN */
   const fileToBase64 = async (uri: string) => {
-    return await FileSystem.readAsStringAsync(uri, {
-      encoding: "base64",
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
     });
+
+    return base64.replace(/\n/g, "").replace(/\r/g, "").replace(/\s/g, "");
   };
 
-  /* ---------- CAMERA ---------- */
+  /* CAMERA */
   const openCamera = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Permission required", "Camera access is required");
+      Alert.alert("Camera permission required");
       return;
     }
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
+      quality: 0.4,
     });
 
     if (!result.canceled) {
       setFile({
         uri: result.assets[0].uri,
-        name: "Camera Image.jpg",
+        name: "Camera_Image.jpg",
         type: "image",
       });
     }
   };
 
-  /* ---------- GALLERY ---------- */
+  /* GALLERY */
   const openGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.7,
+      quality: 0.4,
     });
 
     if (!result.canceled) {
       setFile({
         uri: result.assets[0].uri,
-        name: "Gallery Image.jpg",
+        name: "Gallery_Image.jpg",
         type: "image",
       });
     }
   };
 
-  /* ---------- PDF ---------- */
+  /* PDF */
   const openPdf = async () => {
     const result = await DocumentPicker.getDocumentAsync({
       type: "application/pdf",
@@ -159,26 +153,21 @@ export default function UpdateDocumentScreen() {
     if (result.assets?.length) {
       setFile({
         uri: result.assets[0].uri,
-        name: result.assets[0].name ?? "Document.pdf",
+        name: result.assets[0].name.replace(/\s/g, "_"),
         type: "pdf",
       });
     }
   };
 
-  /* ---------- SUBMIT ---------- */
+  /* SUBMIT */
   const onSubmit = async () => {
     if (!description.trim()) {
-      Alert.alert("Validation", "Please enter description");
+      Alert.alert("Enter description");
       return;
     }
 
-    if (!file) {
-      Alert.alert("Validation", "Please attach a document");
-      return;
-    }
-
-    if (!caseId) {
-      Alert.alert("Error", "TaskID not found");
+    if (!file || !caseId) {
+      Alert.alert("Missing file or case ID");
       return;
     }
 
@@ -186,59 +175,48 @@ export default function UpdateDocumentScreen() {
 
     try {
       const base64 = await fileToBase64(file.uri);
+      console.log("BASE64 SIZE:", base64.length);
 
-      console.log("lndkl", caseId);
+      const cleanName = file.name.replace(/\s/g, "_");
 
       const payload = {
         relatedTo: "CAS",
-        relatedToId: Number(caseId),
-        documentType: file.type === "pdf" ? "PDF" : "Image",
-        documentName: file.name,
+        relatedToId: caseId,
+        documentType: file.type === "pdf" ? "PDF" : "IMAGE",
+        documentName: cleanName,
         documentDescription: description,
-        fileName: file.name,
+        fileName: cleanName,
         fileData: base64,
         createdBy: String(authState?.userId),
       };
 
-      // console.log("FINAL PAYLOAD STRING", JSON.stringify(payload));
+      const res = await addCommonDocument(
+        payload,
+        String(authState?.token),
+        String(authState?.antiforgeryToken)
+      );
 
-      const res = await addCommonDocument(payload);
-      // console.log("res", res);
-
-      // Save activity history after successful upload
+      // Save activity history after successful document upload
       await saveActivity({
-        interactionId: Number(caseId),
-        documentType: file.type === "pdf" ? "PDF Document" : "Image",
-        documentName: file.name,
-        description: description,
-        activityStatus: "Busy",
+        interactionId: caseId,
+        documentName: cleanName,
+        documentDescription: description,
+        documentType: file.type === "pdf" ? "PDF" : "Image",
         transactionNumber: transactionNumber,
       });
 
-      Alert.alert("Success", res.message || "Document uploaded successfully");
+      Alert.alert("Success", res?.message || "Uploaded successfully");
+
       router.push({
         pathname: "/(fro)/(complaints)/DocumentListScreen",
         params: { caseId },
       });
+
       setDescription("");
       setFile(null);
     } catch (error) {
-      console.log("err", error);
-
-      // Save failed activity
-      if (caseId && file) {
-        await saveActivity({
-          interactionId: Number(caseId),
-          documentType: file.type === "pdf" ? "PDF Document" : "Image",
-          documentName: file.name,
-          description: description,
-          activityStatus: "FAILED",
-          transactionNumber: transactionNumber,
-        });
-      }
-
-      // ❌ DO NOTHING
-      // Global interceptor already shows error alert
+      console.log("UPLOAD ERROR:", error);
+      Alert.alert("Upload failed");
     } finally {
       setLoading(false);
     }
@@ -247,30 +225,29 @@ export default function UpdateDocumentScreen() {
   return (
     <BodyLayout
       type="screen"
-      screenName={t("addPhoto.screenTitle")}
+      screenName="Upload Document"
       scrollContentStyle={{ paddingHorizontal: 20 }}
     >
-      {/* ---------- DESCRIPTION ---------- */}
+      {/* DESCRIPTION */}
       <Text style={styles.label}>Description</Text>
       <TextInput
         style={styles.textArea}
-        placeholder="Enter document description"
-        placeholderTextColor={theme.colors.inputPlaceholder}
         value={description}
         onChangeText={setDescription}
+        placeholder="Enter document description"
+        placeholderTextColor={theme.colors.inputPlaceholder}
         multiline
       />
 
-      {/* ---------- ATTACH ---------- */}
+      {/* ATTACH DOCUMENT */}
       <Text style={styles.label}>Attach Document</Text>
-
       <View style={styles.row}>
         <ActionButton icon="camera" label="Camera" onPress={openCamera} />
         <ActionButton icon="image" label="Gallery" onPress={openGallery} />
         <ActionButton icon="document" label="PDF" onPress={openPdf} />
       </View>
 
-      {/* ---------- PREVIEW ---------- */}
+      {/* PREVIEW */}
       {file && (
         <View style={styles.previewCard}>
           {file.type === "image" ? (
@@ -299,21 +276,21 @@ export default function UpdateDocumentScreen() {
         </View>
       )}
 
-      {/* ---------- SUBMIT ---------- */}
+      {/* SUBMIT BUTTON */}
       <TouchableOpacity
         style={[styles.submitBtn, loading && { opacity: 0.6 }]}
         onPress={onSubmit}
         disabled={loading}
       >
         <Text style={styles.submitText}>
-          {loading ? "Uploading..." : "Update Document"}
+          {loading ? "Uploading..." : "Upload Document"}
         </Text>
       </TouchableOpacity>
     </BodyLayout>
   );
 }
 
-/* ---------- REUSABLE BUTTON ---------- */
+/* REUSABLE BUTTON */
 const ActionButton = ({
   icon,
   label,
@@ -334,7 +311,7 @@ const ActionButton = ({
   );
 };
 
-/* ---------- STYLES ---------- */
+/* STYLES */
 const createStyles = (theme: Theme) =>
   StyleSheet.create({
     label: {
@@ -343,7 +320,6 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.colorTextPrimary,
       marginBottom: 6,
     },
-
     textArea: {
       backgroundColor: theme.colors.inputBg,
       borderRadius: 12,
@@ -355,13 +331,11 @@ const createStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.colors.inputBorder,
     },
-
     row: {
       flexDirection: "row",
       justifyContent: "space-between",
       marginBottom: 16,
     },
-
     actionBtn: {
       flex: 1,
       backgroundColor: theme.colors.btnSecondaryBg,
@@ -372,14 +346,12 @@ const createStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.colors.btnSecondaryBorder,
     },
-
     actionText: {
       fontSize: 12,
       color: theme.colors.colorPrimary500,
       marginTop: 4,
       fontWeight: "600",
     },
-
     previewCard: {
       backgroundColor: theme.colors.colorBgSurface,
       borderRadius: 14,
@@ -389,24 +361,20 @@ const createStyles = (theme: Theme) =>
       borderWidth: 1,
       borderColor: theme.colors.colorBorder,
     },
-
     previewImage: {
       width: "100%",
       height: 200,
       borderRadius: 10,
     },
-
     pdfPreview: {
       alignItems: "center",
       paddingVertical: 30,
     },
-
     pdfName: {
       marginTop: 8,
       fontSize: 13,
       color: theme.colors.colorTextPrimary,
     },
-
     removeBtn: {
       position: "absolute",
       top: 8,
@@ -415,14 +383,12 @@ const createStyles = (theme: Theme) =>
       borderRadius: 14,
       padding: 4,
     },
-
     submitBtn: {
       backgroundColor: theme.colors.btnPrimaryBg,
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: "center",
     },
-
     submitText: {
       color: theme.colors.btnPrimaryText,
       fontSize: 16,

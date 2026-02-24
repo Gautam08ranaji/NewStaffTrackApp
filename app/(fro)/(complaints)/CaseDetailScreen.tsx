@@ -33,8 +33,8 @@ export default function CaseDetailScreen() {
   const item = params.item ? JSON.parse(params.item as string) : null;
   const authState = useAppSelector((state) => state.auth);
 
-  console.log("params", params);
-  console.log("Parsed item:", item);
+  // console.log("params", params);
+  // console.log("Parsed item:", item);
 
   const { theme } = useTheme();
   const [documents, setDocuments] = useState<any[]>([]);
@@ -64,6 +64,10 @@ export default function CaseDetailScreen() {
   const source = item?.source;
 
   const caseId = item?.id;
+  const statusId = item?.statusId;
+
+  // Check if task is closed
+  const isTaskClosed = Taskstatus === "Closed" || statusId === 4;
 
   // Extract coordinates with fallback (using Mumbai as default)
   const lat = item?.latitude || 19.076;
@@ -129,7 +133,7 @@ export default function CaseDetailScreen() {
         relatedToId: String(caseId),
       });
 
-      console.log("res notes", res?.data);
+      // console.log("res notes", res?.data);
 
       if (res?.data?.notesList && Array.isArray(res.data.notesList)) {
         setNotes(res.data.notesList);
@@ -165,22 +169,27 @@ export default function CaseDetailScreen() {
   };
 
   const loadDocuments = async (pageNumber = 1) => {
-    if (!caseId) return;
-    
-    try {
-      const res = await getCommonDocumentList({
-        pageNumber,
-        pageSize: 10,
-        relatedToId: Number(caseId),
-      });
+  if (!caseId) return;
 
-      if (res?.list) {
-        setDocuments(res.list);
-      }
-    } catch (error) {
-      console.error("Failed to load documents", error);
+  try {
+    const res = await getCommonDocumentList({
+      pageNumber,
+      pageSize: 10,
+      relatedToId: Number(caseId),
+      csrfToken: String(authState?.antiforgeryToken),
+      authToken: String(authState?.token), // ✅ ADD THIS
+    });
+
+    // console.log("res",res);
+    
+
+    if (res?.list) {
+      setDocuments(res.list);
     }
-  };
+  } catch (error) {
+    console.error("Failed to load documents", error);
+  }
+};
 
   // Helper function to get appropriate icon based on document type
   const getFileIcon = (documentType: string) => {
@@ -730,36 +739,10 @@ export default function CaseDetailScreen() {
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Client Details
+              Seller Details
             </Text>
           </View>
-          <TouchableOpacity
-            onPress={() => {
-              router.push({
-                pathname: "/(fro)/(complaints)/ElderDetails",
-                params: {
-                  ContactId: String(ContactId),
-                  caseId: String(caseId),
-                  item: JSON.stringify(item),
-                },
-              });
-            }}
-            style={styles.viewMoreBtn}
-          >
-            <Text
-              style={[
-                styles.viewMoreText,
-                { color: theme.colors.colorPrimary600 },
-              ]}
-            >
-              View More
-            </Text>
-            <RemixIcon
-              name="arrow-right-s-line"
-              size={16}
-              color={theme.colors.colorPrimary600}
-            />
-          </TouchableOpacity>
+        
         </View>
 
         <View style={styles.row}>
@@ -1559,34 +1542,36 @@ export default function CaseDetailScreen() {
         </View>
       </View>
 
-      {/* ACTIONS */}
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.colors.colorBgSurface },
-          styles.cardShadow,
-        ]}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.titleContainer}>
-            <RemixIcon
-              name="flashlight-line"
-              size={20}
-              color={theme.colors.colorPrimary600}
-            />
-            <Text
-              style={[
-                styles.cardTitle,
-                { color: theme.colors.colorPrimary600 },
-              ]}
-            >
-              Quick Actions
-            </Text>
+      {/* ACTIONS - Only show if task is not closed */}
+      {!isTaskClosed && (
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme.colors.colorBgSurface },
+            styles.cardShadow,
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            <View style={styles.titleContainer}>
+              <RemixIcon
+                name="flashlight-line"
+                size={20}
+                color={theme.colors.colorPrimary600}
+              />
+              <Text
+                style={[
+                  styles.cardTitle,
+                  { color: theme.colors.colorPrimary600 },
+                ]}
+              >
+                Quick Actions
+              </Text>
+            </View>
           </View>
-        </View>
 
-        <View style={styles.actionsGrid}>{renderActionButtons()}</View>
-      </View>
+          <View style={styles.actionsGrid}>{renderActionButtons()}</View>
+        </View>
+      )}
     </BodyLayout>
   );
 }

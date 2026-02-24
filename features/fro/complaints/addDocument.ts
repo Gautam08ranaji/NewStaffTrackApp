@@ -13,20 +13,24 @@ interface AddCommonDocumentPayload {
   documentName: string;
   documentDescription: string;
   fileName: string;
-  fileData: string; // base64 string
-  createdBy: string; // GUID
+  fileData: string;
+  createdBy: string;
 }
 
 export const addCommonDocument = (
   payload: AddCommonDocumentPayload,
+  token: string,
+  csrfToken: string
 ): Promise<AddCommonDocumentResponse> => {
   return apiRequest<AddCommonDocumentResponse>({
-    url: "/MobileApp/AddCommonDocument",
+    url: "/Common/AddCommonDocument",
     method: "POST",
     headers: {
-      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      "X-CSRF-TOKEN": csrfToken,
       accept: "application/json",
+      "Content-Type": "application/json-patch+json",
     },
-    data: payload,
+    data: JSON.stringify(payload), // ⭐ CRITICAL FIX
   });
 };

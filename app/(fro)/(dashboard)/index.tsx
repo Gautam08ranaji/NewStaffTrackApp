@@ -187,6 +187,9 @@ export default function HomeScreen() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
+      console.log("res",response);
+      
+
       if (response?.success) {
         console.log("response",response);
         

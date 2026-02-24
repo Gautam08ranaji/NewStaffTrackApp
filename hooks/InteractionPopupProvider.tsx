@@ -136,7 +136,7 @@ export const useInteractionPopupPoller = () => {
       const res = await addAndUpdateFROLocation(payload);
       console.log("✅ Location Response:", res);
     } catch (error) {
-      console.error("❌ Location update error:", error);
+      // console.error("❌ Location update error:", error);
     }
   };
 

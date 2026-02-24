@@ -30,7 +30,7 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         const res = await addAndUpdateFROLocation(payload);
         // console.log("✅ Location update success:", res);
       } catch (error) {
-        console.error("❌ Location update error:", error);
+        // console.error("❌ Location update error:", error);
       }
     };
 

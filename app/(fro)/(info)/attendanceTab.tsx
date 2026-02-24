@@ -1,14 +1,14 @@
 import ReusableButton from "@/components/reusables/ReusableButton";
 import i18n from "@/i18n";
 import { useTheme } from "@/theme/ThemeContext";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getAttendanceHistory } from "@/features/fro/addAttendance";
 import { addAttendance } from "@/features/fro/addAttendanceStatus";
 import { useAppSelector } from "@/store/hooks";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 
 /* ================= TYPES ================= */
@@ -239,9 +239,11 @@ export default function AttendanceTab() {
     }
   };
 
-  useEffect(() => {
+  useFocusEffect(
+  useCallback(() => {
     loadAttendance();
-  }, []);
+  }, [])
+);
 
   /* ================= LIVE TIMER ================= */
 

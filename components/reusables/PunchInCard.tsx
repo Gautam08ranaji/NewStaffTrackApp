@@ -2,8 +2,8 @@ import { getAttendanceHistory } from "@/features/fro/addAttendance";
 import { addAttendance } from "@/features/fro/addAttendanceStatus";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
-import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import { Alert, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -130,10 +130,11 @@ export default function PunchInCard() {
     }
   };
 
-  useEffect(() => {
+useFocusEffect(
+  useCallback(() => {
     loadAttendance();
-  }, []);
-
+  }, [])
+);
   /* ================= TIMER ================= */
 
   useEffect(() => {
@@ -163,7 +164,7 @@ export default function PunchInCard() {
       const currentDateTime = now.toISOString();
       const action: "start" | "end" = isPunchedIn ? "end" : "start";
 
-      await addAttendance({
+    const res =  await addAttendance({
         data: {
           attendancedate: formatDateOnly(now),
           checkintime: action === "start" ? currentDateTime : "",
@@ -176,6 +177,9 @@ export default function PunchInCard() {
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
       });
+
+      console.log("res",res);
+      
 
       if (action === "start") {
         setPunchInTime(now);

@@ -18,7 +18,7 @@ export const getInteractionsListByAssignToId = async ({
 }: GetInteractionsParams) => {
   return apiRequest({
     method: "GET",
-    url: "MobileApp/GetInteractionsListMobile",
+    url: "MobileApp/GetTaskListMobile",
     params: {
       PageNumber: pageNumber,
       PageSize: pageSize,
@@ -35,13 +35,13 @@ export const getInteractionsListByAssignToId = async ({
 export type UpdateInteractionPayload = {
   id: number;
 
-  TaskstatusId: number;
-  TaskstatusName: string;
+  statusId: number;
+  statusName: string;
 
   subStatusId: number;
   subStatusName: string;
 
-  comment?: string;
+  closeRemarks?: string;
   callBack?: string;
   assignToId?: string;
 };
@@ -60,7 +60,7 @@ export const updateInteraction = async ({
   return apiRequest({
     method: "PUT",
     // ✅ MATCHES cURL
-    url: "MobileApp/UpdateInteractionMobile",
+    url: "MobileApp/UpdateTaskMobile",
     data,
     headers: {
       Authorization: `Bearer ${token}`,

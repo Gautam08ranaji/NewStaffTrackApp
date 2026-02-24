@@ -16,6 +16,8 @@ export interface GetCommonDocumentListParams {
   pageNumber: number;
   pageSize: number;
   relatedToId: number;
+  csrfToken: string;
+  authToken: string;
 }
 
 interface GetCommonDocumentListResponse {
@@ -31,24 +33,31 @@ interface GetCommonDocumentListResponse {
 /* ---------- API ---------- */
 
 export const getCommonDocumentList = async (
-  params: GetCommonDocumentListParams,
+  params: GetCommonDocumentListParams
 ): Promise<{
   list: CommonDocument[];
   totalRecords: number;
 }> => {
   const response = await apiClient.get<GetCommonDocumentListResponse>(
-    "/MobileApp/GetCommonDocumentList",
+    "/Common/GetCommonDocumentList",
     {
       params: {
         PageNumber: params.pageNumber,
         PageSize: params.pageSize,
         RelatedToId: params.relatedToId,
       },
-    },
+      headers: {
+        accept: "application/json",
+        "X-CSRF-TOKEN": params.csrfToken,
+        Authorization: `Bearer ${params.authToken}`,
+      },
+    }
   );
 
+  const apiData = response.data?.data;
+
   return {
-    list: response.data.data.documentList,
-    totalRecords: response.data.data.totalRecords,
+    list: apiData?.documentList ?? [],
+    totalRecords: apiData?.totalRecords ?? 0,
   };
 };

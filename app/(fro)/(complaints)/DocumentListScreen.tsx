@@ -44,10 +44,12 @@ export default function CommonDocumentListScreen() {
       setLoading(true);
 
       const res = await getCommonDocumentList({
-        pageNumber,
-        pageSize: PAGE_SIZE,
-        relatedToId: Number(caseId),
-      });
+          pageNumber,
+          pageSize: 10,
+          relatedToId: Number(caseId),
+          csrfToken: String(authState?.antiforgeryToken),
+          authToken: String(authState?.token), // ✅ ADD THIS
+        });
 
       console.log("cmn", caseId);
 

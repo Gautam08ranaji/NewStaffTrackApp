@@ -44,22 +44,54 @@ type Attachment = {
 
 type InteractionItem = {
   id: number;
-  assignToId?: string;
-  TaskstatusId?: number;
-  TaskstatusName?: string;
+  transactionNumber?: string;
+  statusId?: number;
+  statusName?: string;
   subStatusId?: number;
   subStatusName?: string;
-  transactionNumber?: string;
+  categoryId?: number;
   categoryName?: string;
+  subCategoryId?: number;
   subCategoryName?: string;
   subject?: string;
   name?: string;
-  mobileNo?: string;
+  gender?: string;
+  stateId?: number;
+  stateName?: string;
+  districtId?: number;
+  districtName?: string;
+  closeRemarks?: string;
+  callBackDateTime?: string | null;
+  callBack?: string;
   priority?: string;
+  contactId?: number;
+  contactName?: string;
+  teamId?: number;
   teamName?: string;
-  agentRemarks?: string;
+  source?: string;
+  emailId?: string;
+  mobileNo?: string;
+  assignToId?: string;
+  assignToName?: string;
+  taskDescription?: string;
+  openTime?: string;
+  closeTime?: string | null;
+  taskTime?: string;
+  activityByName?: string;
+  pinCode?: string;
+  alternateNo?: string;
+  latitude?: string | null;
+  longitude?: string | null;
+  pinLocation?: string;
+  address?: string;
+  closeRemarks?: string | null; // This maps to comments
+  createdByName?: string | null;
+  companyName?: string;
+  createdBy?: string;
+  createdDate?: string;
   comment?: string;
   caseDescription?: string;
+  agentRemarks?: string;
 };
 
 /* ================= RESPONSIVE SCALING ================= */
@@ -82,9 +114,27 @@ const UpdateStatusScreen = () => {
   const caseId = params.caseId ? Number(params.caseId) : null;
   const itemString = params.item as string;
 
+  // Parse the item data properly
+  const [interactionItem, setInteractionItem] = useState<InteractionItem | null>(null);
+  const [isParsing, setIsParsing] = useState(true);
+
   useEffect(() => {
+    if (itemString) {
+      try {
+        const parsedItem = JSON.parse(itemString);
+        console.log("✅ Parsed item:", parsedItem);
+        setInteractionItem(parsedItem);
+      } catch (error) {
+        console.error("❌ Failed to parse item:", error);
+        Alert.alert("Error", "Failed to load case data");
+      } finally {
+        setIsParsing(false);
+      }
+    } else {
+      setIsParsing(false);
+    }
     fetchStatusDropdown();
-  }, []);
+  }, [itemString]);
 
   const fetchStatusDropdown = async () => {
     try {
@@ -184,22 +234,27 @@ const UpdateStatusScreen = () => {
         );
       }
 
-      // Check if comment changed (only if both have values)
-      if (oldComment !== newComment && oldComment && newComment) {
-        // Truncate long comments for readability
-        const truncateComment = (comment: string) => {
-          if (comment.length <= 50) return comment;
-          return comment.substring(0, 50) + "...";
-        };
-        changes.push(
-          `Comment updated from "${truncateComment(oldComment)}" to "${truncateComment(newComment)}"`,
-        );
-      } else if (oldComment && !newComment) {
-        changes.push(`Comment removed`);
-      } else if (!oldComment && newComment) {
-        changes.push(
-          `Comment added: "${newComment.length > 50 ? newComment.substring(0, 50) + "..." : newComment}"`,
-        );
+      // Check if comment changed (closeRemarks field)
+      if (oldComment !== newComment) {
+        if (oldComment && !newComment) {
+          changes.push(`Comment removed`);
+        } else if (!oldComment && newComment) {
+          // Truncate long comments for readability
+          const truncateComment = (comment: string) => {
+            if (comment.length <= 50) return comment;
+            return comment.substring(0, 50) + "...";
+          };
+          changes.push(
+            `Comment added: "${truncateComment(newComment)}"`,
+          );
+        } else if (oldComment && newComment) {
+          // Both have values and they're different
+          const truncateOld = oldComment.length <= 30 ? oldComment : oldComment.substring(0, 30) + "...";
+          const truncateNew = newComment.length <= 30 ? newComment : newComment.substring(0, 30) + "...";
+          changes.push(
+            `Comment updated from "${truncateOld}" to "${truncateNew}"`,
+          );
+        }
       }
 
       // Build activity description
@@ -247,9 +302,9 @@ const UpdateStatusScreen = () => {
     }
 
     // Capture old values before making API call
-    const oldTaskstatus = interactionItem?.TaskstatusName || "";
+    const oldTaskstatus = interactionItem?.statusName || "";
     const oldSubStatus = interactionItem?.subStatusName || "";
-    const oldComment = interactionItem?.comment || "";
+    const oldComment = interactionItem?.closeRemarks || ""; // Map closeRemarks to comment
     const transactionNumber = interactionItem?.transactionNumber || "";
 
     try {
@@ -260,15 +315,16 @@ const UpdateStatusScreen = () => {
         csrfToken: String(authState.antiforgeryToken),
         data: {
           id: Number(caseId),
-          TaskstatusId: Taskstatus.id,
-          TaskstatusName: Taskstatus.name,
+          statusId: Taskstatus.id,
+          statusName: Taskstatus.name,
           subStatusId: subStatus?.id ?? 0,
           subStatusName: subStatus?.name ?? "",
-          comment: notes.trim(),
+          closeRemarks: notes.trim(), // This maps to comments in the API
           callBack: "",
           assignToId: String(authState.userId),
         },
       });
+      
 
       if (res?.success) {
         // Save activity history after successful update
@@ -284,7 +340,7 @@ const UpdateStatusScreen = () => {
           transactionNumber,
         });
 
-        Alert.alert("TaskUpdated", "TaskUpdated Successfully", [
+        Alert.alert("Success", "Task Updated Successfully", [
           {
             text: "OK",
             onPress: () => router.replace("/(fro)/(complaints)"),
@@ -359,15 +415,6 @@ const UpdateStatusScreen = () => {
     }
   };
 
-  const interactionItem = React.useMemo<InteractionItem | null>(() => {
-    if (!itemString) return null;
-    try {
-      return JSON.parse(itemString);
-    } catch {
-      return null;
-    }
-  }, [itemString]);
-
   const [Taskstatus, setTaskstatus] = useState<{
     id: number;
     name: string;
@@ -387,28 +434,38 @@ const UpdateStatusScreen = () => {
   const notesInputRef = useRef<TextInput>(null);
   const initializedRef = useRef(false);
 
+  console.log("params", params);
+
   useEffect(() => {
     if (!interactionItem || initializedRef.current) {
       setIsInitializing(false);
       return;
     }
 
-    if (interactionItem.TaskstatusId && interactionItem.TaskstatusName) {
+    // Map statusId/statusName to Taskstatus (using the actual field names from your data)
+    if (interactionItem.statusId !== undefined && interactionItem.statusName) {
+      console.log("Setting status:", interactionItem.statusId, interactionItem.statusName);
       setTaskstatus({
-        id: interactionItem.TaskstatusId,
-        name: interactionItem.TaskstatusName,
+        id: interactionItem.statusId,
+        name: interactionItem.statusName,
       });
-      fetchSubStatusDropdown(interactionItem.TaskstatusId);
+      fetchSubStatusDropdown(interactionItem.statusId);
     }
 
-    if (interactionItem.subStatusId && interactionItem.subStatusName) {
+    // Map subStatusId/subStatusName to subStatus (using the actual field names from your data)
+    if (interactionItem.subStatusId !== undefined && interactionItem.subStatusName) {
+      console.log("Setting subStatus:", interactionItem.subStatusId, interactionItem.subStatusName);
       setSubStatus({
         id: interactionItem.subStatusId,
         name: interactionItem.subStatusName,
       });
     }
 
-    if (interactionItem.comment) setNotes(interactionItem.comment);
+    // Map closeRemarks to notes (comment field)
+    if (interactionItem.closeRemarks) {
+      console.log("Setting comment from closeRemarks:", interactionItem.closeRemarks);
+      setNotes(interactionItem.closeRemarks);
+    }
 
     initializedRef.current = true;
     setIsInitializing(false);
@@ -433,7 +490,7 @@ const UpdateStatusScreen = () => {
       const res = await addAndUpdateFROLocation(payload);
       // console.log("✅ Update Ticket:", res);
     } catch (error) {
-      console.error("❌ Location update error:", error);
+      // console.error("❌ Location update error:", error);
     }
   };
 
@@ -452,7 +509,7 @@ const UpdateStatusScreen = () => {
     }
 
     if (!notes.trim()) {
-      Alert.alert("Error", "Please enter notes");
+      Alert.alert("Error", "Please enter comment");
       return;
     }
 
@@ -460,7 +517,8 @@ const UpdateStatusScreen = () => {
     handleUpdate();
   }, [Taskstatus, subStatus, notes]);
 
-  if (isInitializing) {
+  // Show loading while parsing
+  if (isParsing || isInitializing) {
     return (
       <View
         style={[
@@ -544,7 +602,7 @@ const UpdateStatusScreen = () => {
                   { color: theme.colors.colorBgPage },
                 ]}
               >
-                Update Task{caseId}
+                Update Task {caseId}
               </Text>
               {!!interactionItem.subject && (
                 <Text
