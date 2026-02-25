@@ -637,32 +637,32 @@ export default function CaseDetailScreen() {
           },
         }),
     },
-    {
-      label: "Add Voice",
-      icon: "mic-line",
-      color: "#D35400",
-      bgColor: "#FDEDE8",
-      onPress: () => console.log("Add voice pressed"),
-    },
-    {
-      label: "Schedule",
-      icon: "calendar-line",
-      color: "#8E44AD",
-      bgColor: "#F3E8F7",
-      onPress: () => console.log("Schedule followup pressed"),
-    },
-    {
-      label: "Call",
-      icon: "phone-line",
-      color: "#27AE60",
-      bgColor: "#E8F8F0",
-      onPress: () => {
-        if (phone) {
-          // Implement call functionality
-          console.log("Call pressed", phone);
-        }
-      },
-    },
+    // {
+    //   label: "Add Voice",
+    //   icon: "mic-line",
+    //   color: "#D35400",
+    //   bgColor: "#FDEDE8",
+    //   onPress: () => console.log("Add voice pressed"),
+    // },
+    // {
+    //   label: "Schedule",
+    //   icon: "calendar-line",
+    //   color: "#8E44AD",
+    //   bgColor: "#F3E8F7",
+    //   onPress: () => console.log("Schedule followup pressed"),
+    // },
+    // {
+    //   label: "Call",
+    //   icon: "phone-line",
+    //   color: "#27AE60",
+    //   bgColor: "#E8F8F0",
+    //   onPress: () => {
+    //     if (phone) {
+    //       // Implement call functionality
+    //       console.log("Call pressed", phone);
+    //     }
+    //   },
+    // },
   ];
 
   // Function to render action buttons in grid

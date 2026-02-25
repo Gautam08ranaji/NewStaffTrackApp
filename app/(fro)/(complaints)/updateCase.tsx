@@ -84,7 +84,6 @@ type InteractionItem = {
   longitude?: string | null;
   pinLocation?: string;
   address?: string;
-  closeRemarks?: string | null; // This maps to comments
   createdByName?: string | null;
   companyName?: string;
   createdBy?: string;
@@ -301,41 +300,62 @@ const UpdateStatusScreen = () => {
       return;
     }
 
+    // Check if selected status is "Closed" (value 4)
+    const isClosed = Taskstatus.id === 4;
+
+    // If status is Closed, validate that comment is provided
+    if (isClosed && !notes.trim()) {
+      Alert.alert("Validation Error", "Please enter comment for closed status");
+      return;
+    }
+
+    proceedWithUpdate(isClosed);
+  };
+
+  const proceedWithUpdate = async (isClosed: boolean) => {
     // Capture old values before making API call
     const oldTaskstatus = interactionItem?.statusName || "";
     const oldSubStatus = interactionItem?.subStatusName || "";
-    const oldComment = interactionItem?.closeRemarks || ""; // Map closeRemarks to comment
+    const oldComment = interactionItem?.closeRemarks || "";
     const transactionNumber = interactionItem?.transactionNumber || "";
 
     try {
       setIsLoading(true);
 
+      // Prepare update payload
+      const updatePayload: any = {
+        id: Number(caseId),
+        statusId: Taskstatus!.id,
+        statusName: Taskstatus!.name,
+        subStatusId: subStatus?.id ?? 0,
+        subStatusName: subStatus?.name ?? "",
+        callBack: "",
+        assignToId: String(authState.userId),
+      };
+
+      // Only pass closeRemarks if status is Closed (value 4)
+      if (isClosed) {
+        updatePayload.closeRemarks = notes.trim();
+      }
+
+      console.log("📤 Update Payload:", updatePayload);
+
       const res = await updateInteraction({
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
-        data: {
-          id: Number(caseId),
-          statusId: Taskstatus.id,
-          statusName: Taskstatus.name,
-          subStatusId: subStatus?.id ?? 0,
-          subStatusName: subStatus?.name ?? "",
-          closeRemarks: notes.trim(), // This maps to comments in the API
-          callBack: "",
-          assignToId: String(authState.userId),
-        },
+        data: updatePayload,
       });
-      
 
       if (res?.success) {
         // Save activity history after successful update
         await saveActivity({
           interactionId: Number(caseId),
           oldTaskstatus,
-          newTaskstatus: Taskstatus.name,
+          newTaskstatus: Taskstatus!.name,
           oldSubStatus,
           newSubStatus: subStatus?.name || "",
           oldComment,
-          newComment: notes.trim(),
+          newComment: isClosed ? notes.trim() : "",
           activityStatus: "SUCCESS",
           transactionNumber,
         });
@@ -354,11 +374,11 @@ const UpdateStatusScreen = () => {
       await saveActivity({
         interactionId: Number(caseId),
         oldTaskstatus,
-        newTaskstatus: Taskstatus.name,
+        newTaskstatus: Taskstatus!.name,
         oldSubStatus,
         newSubStatus: subStatus?.name || "",
         oldComment,
-        newComment: notes.trim(),
+        newComment: isClosed ? notes.trim() : "",
         activityStatus: res?.status || "FAILED",
         transactionNumber,
       });
@@ -371,11 +391,11 @@ const UpdateStatusScreen = () => {
       await saveActivity({
         interactionId: Number(caseId),
         oldTaskstatus,
-        newTaskstatus: Taskstatus.name,
+        newTaskstatus: Taskstatus!.name,
         oldSubStatus,
         newSubStatus: subStatus?.name || "",
         oldComment,
-        newComment: notes.trim(),
+        newComment: isClosed ? notes.trim() : "",
         activityStatus: "FAILED",
         transactionNumber,
       });
@@ -434,7 +454,7 @@ const UpdateStatusScreen = () => {
   const notesInputRef = useRef<TextInput>(null);
   const initializedRef = useRef(false);
 
-  console.log("params", params);
+  // console.log("params", params);
 
   useEffect(() => {
     if (!interactionItem || initializedRef.current) {
@@ -508,12 +528,6 @@ const UpdateStatusScreen = () => {
       return;
     }
 
-    if (!notes.trim()) {
-      Alert.alert("Error", "Please enter comment");
-      return;
-    }
-
-    setIsLoading(true);
     handleUpdate();
   }, [Taskstatus, subStatus, notes]);
 
@@ -573,6 +587,9 @@ const UpdateStatusScreen = () => {
       </View>
     );
   }
+
+  // Check if current status is Closed (value 4)
+  const isClosedStatus = Taskstatus?.id === 4;
 
   return (
     <KeyboardAvoidingView
@@ -733,27 +750,32 @@ const UpdateStatusScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Text
-              style={[styles.label, { color: theme.colors.colorTextSecondary }]}
-            >
-              Comment *
-            </Text>
-            <TextInput
-              ref={notesInputRef}
-              style={[
-                styles.textArea,
-                {
-                  backgroundColor: theme.colors.colorBgSurface,
-                  borderColor: theme.colors.colorBorder,
-                  color: theme.colors.colorTextPrimary,
-                },
-              ]}
-              value={notes}
-              onChangeText={setNotes}
-              multiline
-              placeholder="Enter your comment..."
-              placeholderTextColor={theme.colors.inputPlaceholder}
-            />
+            {/* COMMENT FIELD - Only show when status is Closed */}
+            {isClosedStatus && (
+              <>
+                <Text
+                  style={[styles.label, { color: theme.colors.colorTextSecondary }]}
+                >
+                  Comment *
+                </Text>
+                <TextInput
+                  ref={notesInputRef}
+                  style={[
+                    styles.textArea,
+                    {
+                      backgroundColor: theme.colors.colorBgSurface,
+                      borderColor: theme.colors.colorBorder,
+                      color: theme.colors.colorTextPrimary,
+                    },
+                  ]}
+                  value={notes}
+                  onChangeText={setNotes}
+                  multiline
+                  placeholder="Enter closing remarks..."
+                  placeholderTextColor={theme.colors.inputPlaceholder}
+                />
+              </>
+            )}
 
             <TouchableOpacity
               style={[
