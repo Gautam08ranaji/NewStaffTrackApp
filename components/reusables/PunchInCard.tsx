@@ -1,312 +1,190 @@
-import { getAttendanceHistory } from "@/features/fro/addAttendance";
-import { addAttendance } from "@/features/fro/addAttendanceStatus";
-import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
-import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useEffect, useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import * as FaceDetector from "expo-face-detector";
+import React, { useEffect, useRef, useState } from "react";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
-
-/* ================= CONSTANTS ================= */
-
-const TARGET_MINUTES = 8 * 60;
-
-/* ================= HELPERS ================= */
-
-function formatMinutesToTime(minutes: number) {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  return `${h}h ${m}m`;
-}
-
-function formatTimeAMPM(date: Date) {
-  return date.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function formatDateOnly(date: Date) {
-  return date.toISOString().split("T")[0]; // YYYY-MM-DD
-}
-
-function isValidDate(value?: string | null) {
-  return value && value.trim().length > 0;
-}
-
-/* ================= COMPONENT ================= */
+import { Camera, useCameraDevice } from "react-native-vision-camera";
 
 export default function PunchInCard() {
   const { theme } = useTheme();
-  const authState = useAppSelector((state) => state.auth);
+  const device = useCameraDevice("front");
+  const cameraRef = useRef<Camera>(null);
 
-  const [punchInTime, setPunchInTime] = useState<Date | null>(null);
-  const [workedMinutes, setWorkedMinutes] = useState(0);
+  const [cameraVisible, setCameraVisible] = useState(false);
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [isPunchedIn, setIsPunchedIn] = useState(false);
   const [dutyEnded, setDutyEnded] = useState(false);
-  const [loading, setLoading] = useState(false);
 
-  /* ================= LOAD ATTENDANCE ================= */
-
-  const loadAttendance = async () => {
-    try {
-      setLoading(true);
-
-      const res = await getAttendanceHistory({
-        userId: String(authState.userId),
-        pageNumber: 1,
-        pageSize: 30,
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-      });
-
-      const list = Array.isArray(res?.data?.attendanceList)
-        ? res.data.attendanceList
-        : [];
-
-      const today = formatDateOnly(new Date());
-
-      // 🔍 Find today's attendance
-      const todayAttendance = list.find(
-        (item: any) => item.attendancedate === today,
-      );
-
-      if (!todayAttendance) {
-        setIsPunchedIn(false);
-        setPunchInTime(null);
-        setWorkedMinutes(0);
-        setDutyEnded(false);
-        return;
-      }
-
-      const hasCheckIn = isValidDate(todayAttendance.checkintime);
-      const hasCheckOut = isValidDate(todayAttendance.checkouttime);
-
-      if (hasCheckIn && !hasCheckOut) {
-        const checkInDate = new Date(todayAttendance.checkintime);
-
-        setPunchInTime(checkInDate);
-        setIsPunchedIn(true);
-        setDutyEnded(false);
-
-        const diffMs = Date.now() - checkInDate.getTime();
-        setWorkedMinutes(Math.floor(diffMs / 60000));
-      } else if (hasCheckIn && hasCheckOut) {
-        setIsPunchedIn(false);
-        setDutyEnded(true);
-        setPunchInTime(null);
-        setWorkedMinutes(0);
-      }
-    } catch (err: any) {
-      console.error("Attendance API error:", err);
-
-      const status = err?.status || err?.response?.status;
-
-      if (status === 401) {
-        Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                // Optional: clear auth state / redux
-                // dispatch(logout());
-
-                router.replace("/login");
-              },
-            },
-          ],
-        );
-        return;
-      }
-
-      Alert.alert(
-        "Error",
-        err?.message || "Unable to load attendance. Please try again.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-useFocusEffect(
-  useCallback(() => {
-    loadAttendance();
-  }, [])
-);
-  /* ================= TIMER ================= */
+  /* ================= CAMERA PERMISSION ================= */
 
   useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
+    checkPermission();
+  }, []);
 
-    if (isPunchedIn && punchInTime) {
-      interval = setInterval(() => {
-        const diffMs = Date.now() - punchInTime.getTime();
-        setWorkedMinutes(Math.floor(diffMs / 60000));
-      }, 60000);
-    }
+  const checkPermission = async () => {
+    const status = await Camera.getCameraPermissionStatus();
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isPunchedIn, punchInTime]);
-
-  /* ================= PUNCH HANDLER ================= */
-
-  const punchAttendance = async () => {
-    if (loading || dutyEnded) return;
-
-    setLoading(true);
-
-    try {
-      const now = new Date();
-      const currentDateTime = now.toISOString();
-      const action: "start" | "end" = isPunchedIn ? "end" : "start";
-
-    const res =  await addAttendance({
-        data: {
-          attendancedate: formatDateOnly(now),
-          checkintime: action === "start" ? currentDateTime : "",
-          checkouttime: action === "end" ? currentDateTime : "",
-          status: "Present",
-          totalworkinghours:
-            action === "end" ? formatMinutesToTime(workedMinutes) : "0h 0m",
-          userId: String(authState.userId),
-        },
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-      });
-
-      console.log("res",res);
-      
-
-      if (action === "start") {
-        setPunchInTime(now);
-        setWorkedMinutes(0);
-        setIsPunchedIn(true);
-
-        Toast.show({
-          type: "success",
-          text1: "Punch In Successful",
-          text2: `Started at ${formatTimeAMPM(now)}`,
-        });
-      } else {
-        setIsPunchedIn(false);
-        setDutyEnded(true);
-
-        Toast.show({
-          type: "success",
-          text1: "Punch Out Successful",
-          text2: `Worked ${formatMinutesToTime(workedMinutes)}`,
-        });
-      }
-    } catch (error: any) {
-      const statusCode = error?.response?.data?.statusCode;
-      const apiMessage =
-        error?.response?.data?.errors?.[0] ?? "Attendance already recorded";
-
-      if (statusCode === 409) {
-        setDutyEnded(true);
-        setIsPunchedIn(false);
-
-        Toast.show({
-          type: "info",
-          text1: "Already Recorded",
-          text2: apiMessage,
-        });
-        return;
-      }
-
-      Toast.show({
-        type: "error",
-        text1: "Attendance Failed",
-        text2: "Please try again",
-      });
-    } finally {
-      setLoading(false);
+    if (status === "granted") {
+      setHasPermission(true);
+    } else {
+      const newStatus = await Camera.requestCameraPermission();
+      setHasPermission(newStatus === "granted");
     }
   };
 
-  /* ================= UI ================= */
+  /* ================= AUTO FACE SCAN ================= */
 
-  return (
-    <View
-      style={{
-        padding: 12,
-        backgroundColor: theme.colors.validationWarningBg,
-        marginTop: 10,
-        borderRadius: 12,
-        borderColor: theme.colors.validationWarningText,
-        borderWidth: 1,
-        elevation: 2,
-      }}
-    >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
-        <View>
-          <Text style={{ color: theme.colors.colorTextSecondary }}>
-            Punched-in at
-          </Text>
+  useEffect(() => {
+    if (cameraVisible) {
+      const timer = setTimeout(() => {
+        detectFace();
+      }, 1500); // give camera time to initialize
 
-          <Text
-            style={[
-              theme.typography.fontH4,
-              {
-                color: theme.colors.validationWarningText,
-                marginTop: 5,
-              },
-            ]}
-          >
-            {punchInTime ? formatTimeAMPM(punchInTime) : "--:--"}
-          </Text>
-        </View>
+      return () => clearTimeout(timer);
+    }
+  }, [cameraVisible]);
 
+  const handlePunch = () => {
+    if (dutyEnded) return;
+    setCameraVisible(true);
+  };
+
+  /* ================= FACE DETECTION ================= */
+
+  const detectFace = async () => {
+    try {
+      if (!cameraRef.current) return;
+
+      const photo = await cameraRef.current.takePhoto();
+      const uri = `file://${photo.path}`;
+
+      const result = await FaceDetector.detectFacesAsync(uri, {
+        mode: FaceDetector.FaceDetectorMode.fast,
+        detectLandmarks: FaceDetector.FaceDetectorLandmarks.none,
+        runClassifications:
+          FaceDetector.FaceDetectorClassifications.none,
+      });
+
+      if (result.faces.length > 0) {
+        confirmAttendance();
+      } else {
+        Toast.show({
+          type: "error",
+          text1: "Face Not Found",
+        });
+        setCameraVisible(false);
+      }
+    } catch (error) {
+      console.log("Face detection error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Detection Failed",
+      });
+      setCameraVisible(false);
+    }
+  };
+
+  /* ================= CONFIRM ATTENDANCE ================= */
+
+  const confirmAttendance = () => {
+    setCameraVisible(false);
+
+    if (!isPunchedIn) {
+      setIsPunchedIn(true);
+      Toast.show({
+        type: "success",
+        text1: "Punch In Successful",
+      });
+    } else {
+      setIsPunchedIn(false);
+      setDutyEnded(true);
+      Toast.show({
+        type: "success",
+        text1: "Punch Out Successful",
+      });
+    }
+  };
+
+  /* ================= PERMISSION UI ================= */
+
+  if (hasPermission === null) {
+    return (
+      <View style={{ padding: 16 }}>
+        <Text style={{ textAlign: "center" }}>Checking permission...</Text>
+      </View>
+    );
+  }
+
+  if (!hasPermission) {
+    return (
+      <View style={{ padding: 16 }}>
         <TouchableOpacity
-          disabled={loading || dutyEnded}
-          onPress={punchAttendance}
+          onPress={checkPermission}
           style={{
-            paddingVertical: 12,
-            paddingHorizontal: 22,
+            padding: 14,
+            backgroundColor: theme.colors.validationWarningText,
             borderRadius: 10,
-            backgroundColor:
-              loading || dutyEnded
-                ? "#999"
-                : theme.colors.validationWarningText,
           }}
         >
-          <Text style={{ color: "#fff", fontWeight: "700" }}>
-            {loading
-              ? "Please wait..."
-              : dutyEnded
-                ? "Punched Out"
-                : isPunchedIn
-                  ? "Punch Out"
-                  : "Punch In"}
+          <Text style={{ color: "#fff", textAlign: "center" }}>
+            Allow Camera Permission
           </Text>
         </TouchableOpacity>
       </View>
+    );
+  }
 
-      <View
+  if (!device) {
+    return (
+      <View style={{ padding: 16 }}>
+        <Text style={{ textAlign: "center" }}>Preparing camera...</Text>
+      </View>
+    );
+  }
+
+  /* ================= MAIN UI ================= */
+
+  return (
+    <View style={{ padding: 16 }}>
+      <TouchableOpacity
+        onPress={handlePunch}
         style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          marginTop: 12,
+          padding: 14,
+          backgroundColor: theme.colors.validationWarningText,
+          borderRadius: 10,
         }}
       >
-        <Text style={{ color: theme.colors.colorTextSecondary }}>
-          Working Time: {formatMinutesToTime(workedMinutes)}
+        <Text style={{ color: "#fff", textAlign: "center" }}>
+          {dutyEnded
+            ? "Punched Out"
+            : isPunchedIn
+            ? "Punch Out (Face Scan)"
+            : "Punch In (Face Scan)"}
         </Text>
+      </TouchableOpacity>
 
-        <Text style={{ color: theme.colors.colorTextSecondary }}>
-          Target: {formatMinutesToTime(TARGET_MINUTES)}
+      <Modal visible={cameraVisible} animationType="slide">
+        <Camera
+          ref={cameraRef}
+          style={{ flex: 1 }}
+          device={device}
+          isActive={true}
+          photo={true}
+        />
+
+        <Text
+          style={{
+            position: "absolute",
+            top: 60,
+            alignSelf: "center",
+            color: "#fff",
+            fontSize: 16,
+            fontWeight: "600",
+          }}
+        >
+          Scanning Face...
         </Text>
-      </View>
+      </Modal>
     </View>
   );
 }
