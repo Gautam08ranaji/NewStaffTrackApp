@@ -637,13 +637,15 @@ export default function CaseDetailScreen() {
           },
         }),
     },
-    // {
-    //   label: "Add Voice",
-    //   icon: "mic-line",
-    //   color: "#D35400",
-    //   bgColor: "#FDEDE8",
-    //   onPress: () => console.log("Add voice pressed"),
-    // },
+    {
+      label: "Add Voice",
+      icon: "mic-line",
+      color: "#D35400",
+      bgColor: "#FDEDE8",
+      onPress: () => {
+        router.push("/(fro)/(complaints)/AddVoiceScreen")
+      },
+    },
     // {
     //   label: "Schedule",
     //   icon: "calendar-line",
