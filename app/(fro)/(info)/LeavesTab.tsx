@@ -52,7 +52,7 @@ const LEAVE_HISTORY = [
 
 type StatusType = "All" | "Awaiting" | "Approved" | "Declined";
 
-export default function DailyTab() {
+export default function LeavesTab() {
   const { theme } = useTheme();
   const { t } = useTranslation();
 

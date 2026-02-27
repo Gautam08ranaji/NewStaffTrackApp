@@ -13,12 +13,12 @@ import type { IconName } from "react-native-remix-icon";
 import RemixIcon from "react-native-remix-icon";
 
 import AttendanceTab from "./attendanceTab";
-import DailyTab from "./dailyTab";
-import MonthlyTab from "./monthly";
 
 import { useTranslation } from "react-i18next";
+import LeavesTab from "./LeavesTab";
+import ReimbursemantTab from "./ReimbursemantTab";
 
-type TabKey = "attendance" | "daily" | "weekly" | "monthly";
+type TabKey = "attendance" | "leaves" | "weekly" | "reimbursement";
 
 export default function AvailabilityScreen() {
   const { theme } = useTheme();
@@ -32,10 +32,10 @@ export default function AvailabilityScreen() {
       key: "attendance",
       icon: "alarm-line",
     },
-    { label: "Leaves", key: "daily", icon: "calendar-line" },
+    { label: "Leaves", key: "leaves", icon: "calendar-line" },
     {
       label: "Reimbursement",
-      key: "monthly",
+      key: "reimbursement",
       icon: "calendar-2-line",
     },
   ];
@@ -112,8 +112,8 @@ export default function AvailabilityScreen() {
 
       {/* ---------- RENDER TAB SCREENS ---------- */}
       {activeTabKey === "attendance" && <AttendanceTab />}
-      {activeTabKey === "daily" && <DailyTab />}
-      {activeTabKey === "monthly" && <MonthlyTab />}
+      {activeTabKey === "leaves" && <LeavesTab />}
+      {activeTabKey === "reimbursement" && <ReimbursemantTab />}
     </BodyLayout>
   );
 }

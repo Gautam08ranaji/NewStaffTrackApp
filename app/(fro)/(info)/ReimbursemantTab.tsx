@@ -34,7 +34,7 @@ const getIconName = (type: string): IconName => {
   return "file-line";
 };
 
-export default function ReimbursementTab() {
+export default function ReimbursemantTab() {
   const { theme } = useTheme();
 
   // State management
