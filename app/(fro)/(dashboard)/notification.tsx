@@ -210,7 +210,7 @@ export default function NotificationScreen() {
               { color: theme.colors.colorTextSecondary },
             ]}
           >
-            {t("common.loading")}
+            Loading...
           </Text>
         )}
 

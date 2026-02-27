@@ -73,6 +73,9 @@ export const AudioRecorderProvider = ({ children }: { children: ReactNode }) => 
       );
 
       setRecording(created.recording);
+
+      console.log("rec",created?.recording);
+      
     } catch (err) {
       console.log("Recording start error:", err);
     }
@@ -89,6 +92,9 @@ export const AudioRecorderProvider = ({ children }: { children: ReactNode }) => 
       await recording.stopAndUnloadAsync();
       const uri = recording.getURI();
       if (uri) setAudioUri(uri);
+
+      console.log("uri",uri);
+      
 
       setRecording(null);
       setIsPlaying(false);
