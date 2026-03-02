@@ -454,6 +454,7 @@ export default function OfficerDetailsScreen() {
 
       if (response?.success) {
         fetchUserData();
+        // router.push("/(fro)/(profile)")
       }
     } catch (error: any) {
       console.error("Update failed:", error?.response?.data ?? error.message);
@@ -608,26 +609,29 @@ export default function OfficerDetailsScreen() {
     );
   }
 
-  function renderDropdown(
-    label: string,
-    key: DropdownKey,
-    placeholder: string,
-  ) {
-    return (
-      <>
-        <Text style={styles.label}>{label}</Text>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => openDropdown(key)}
-        >
+ function renderDropdown(
+  label: string,
+  key: DropdownKey,
+  placeholder: string,
+) {
+  return (
+    <>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity
+        style={styles.input}
+        onPress={() => openDropdown(key)}
+      >
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <Text style={{ color: form[key] ? "#000" : "#999" }}>
             {typeof form[key] === "string" ? form[key] : placeholder}
           </Text>
-        </TouchableOpacity>
-        {errors[key] && <Text style={styles.error}>{errors[key]}</Text>}
-      </>
-    );
-  }
+          <RemixIcon name="arrow-down-s-line" size={20} color="#999" />
+        </View>
+      </TouchableOpacity>
+      {errors[key] && <Text style={styles.error}>{errors[key]}</Text>}
+    </>
+  );
+}
 }
 
 /* ================= STYLES ================= */

@@ -33,8 +33,7 @@ export default function CaseDetailScreen() {
   const item = params.item ? JSON.parse(params.item as string) : null;
   const authState = useAppSelector((state) => state.auth);
 
-  // console.log("params", params);
-  // console.log("Parsed item:", item);
+  
 
   const { theme } = useTheme();
   const [documents, setDocuments] = useState<any[]>([]);
@@ -54,6 +53,9 @@ export default function CaseDetailScreen() {
   const subCategory = item?.subCategoryName;
   // subSubCategory might not exist in your data
   const details = item?.taskDescription || item?.caseDescription;
+
+  console.log("det",details);
+  
 
   const address = item?.address;
   const state = item?.stateName;
@@ -961,33 +963,7 @@ export default function CaseDetailScreen() {
             </View>
           </View>
 
-          {subCategory && (
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="folder-2-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                />
-                <Text
-                  style={[
-                    styles.labelKey,
-                    { color: theme.colors.colorTextSecondary },
-                  ]}
-                >
-                  Sub Category:
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.labelValue,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {subCategory}
-              </Text>
-            </View>
-          )}
+   
 
           <View style={styles.keyValueRow}>
             <View style={styles.labelContainer}>
@@ -1002,7 +978,7 @@ export default function CaseDetailScreen() {
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Details:
+                Details:   
               </Text>
             </View>
             <Text
@@ -1011,7 +987,7 @@ export default function CaseDetailScreen() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {details || '-'}
+              {details || '-'} 
             </Text>
           </View>
 
@@ -1055,162 +1031,37 @@ export default function CaseDetailScreen() {
         </View>
       </View>
 
-      {/* LOCATION */}
-      <View
-        style={[
-          styles.card,
-          { backgroundColor: theme.colors.colorBgSurface },
-          styles.cardShadow,
-        ]}
-      >
-        <View style={styles.cardHeader}>
-          <View style={styles.titleContainer}>
-            <RemixIcon
-              name="map-pin-line"
-              size={20}
-              color={theme.colors.colorPrimary600}
-            />
-            <Text
-              style={[
-                styles.cardTitle,
-                { color: theme.colors.colorPrimary600 },
-              ]}
-            >
-              Location
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.detailSection}>
-          <View style={styles.keyValueRow}>
-            <View style={styles.labelContainer}>
+      {!isTaskClosed && (
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: theme.colors.colorBgSurface },
+            styles.cardShadow,
+          ]}
+        >
+          <View style={styles.cardHeader}>
+            <View style={styles.titleContainer}>
               <RemixIcon
-                name="home-3-line"
-                size={14}
-                color={theme.colors.colorTextSecondary}
+                name="flashlight-line"
+                size={20}
+                color={theme.colors.colorPrimary600}
               />
               <Text
                 style={[
-                  styles.labelKey,
-                  { color: theme.colors.colorTextSecondary },
+                  styles.cardTitle,
+                  { color: theme.colors.colorPrimary600 },
                 ]}
               >
-                Address:
+                Quick Actions
               </Text>
             </View>
-            <Text
-              style={[
-                styles.labelValue,
-                { color: theme.colors.colorTextPrimary },
-              ]}
-            >
-              {address || '-'}
-            </Text>
           </View>
 
-          {(state || district) && (
-            <View style={styles.keyValueRow}>
-              <View style={styles.labelContainer}>
-                <RemixIcon
-                  name="map-line"
-                  size={14}
-                  color={theme.colors.colorTextSecondary}
-                />
-                <Text
-                  style={[
-                    styles.labelKey,
-                    { color: theme.colors.colorTextSecondary },
-                  ]}
-                >
-                  Location:
-                </Text>
-              </View>
-              <Text
-                style={[
-                  styles.labelValue,
-                  { color: theme.colors.colorTextPrimary },
-                ]}
-              >
-                {district && state
-                  ? `${district}, ${state}`
-                  : state || district}
-              </Text>
-            </View>
-          )}
-
-          <View style={styles.mapContainer}>
-            <MapView
-              provider={PROVIDER_GOOGLE}
-              style={styles.map}
-              initialRegion={initialRegion}
-              scrollEnabled={true}
-              zoomEnabled={true}
-              rotateEnabled={false}
-              pitchEnabled={false}
-              loadingEnabled={true}
-              loadingIndicatorColor={theme.colors.colorPrimary600}
-            >
-              <Marker
-                coordinate={{ latitude, longitude }}
-                title={elderName || 'Location'}
-                description={address}
-              >
-                <View style={styles.markerContainer}>
-                  <View
-                    style={[
-                      styles.markerPin,
-                      { backgroundColor: theme.colors.validationErrorText },
-                    ]}
-                  >
-                    <RemixIcon name="map-pin-fill" size={16} color="#FFF" />
-                  </View>
-                  <View
-                    style={[
-                      styles.markerTail,
-                      { borderTopColor: theme.colors.validationErrorText },
-                    ]}
-                  />
-                </View>
-              </Marker>
-            </MapView>
-
-            <TouchableOpacity
-              style={styles.mapOverlayButton}
-              onPress={() => {
-                router.push({
-                  pathname: "/FullMapScreen",
-                  params: {
-                    latitude: latitude.toString(),
-                    longitude: longitude.toString(),
-                    title: elderName || 'Location',
-                    description: address,
-                  },
-                });
-              }}
-            >
-              <RemixIcon name="fullscreen-line" size={16} color="#027A61" />
-              <Text style={styles.mapOverlayText}>Full Map</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            activeOpacity={0.8}
-            style={[
-              styles.navBtn,
-              { backgroundColor: theme.colors.colorPrimary600 },
-            ]}
-            onPress={() =>
-              router.push({
-                pathname: "/(fro)/(complaints)/StartNavigationScreen",
-                params: { item: JSON.stringify(item) },
-              })
-            }
-          >
-            <RemixIcon name="navigation-line" size={20} color="#fff" />
-            <Text style={styles.navBtnText}>Start Navigation</Text>
-          </TouchableOpacity>
+          <View style={styles.actionsGrid}>{renderActionButtons()}</View>
         </View>
-      </View>
+      )}
+
+    
 
       {/* TIMELINE */}
       <View
@@ -1544,36 +1395,165 @@ export default function CaseDetailScreen() {
         </View>
       </View>
 
-      {/* ACTIONS - Only show if task is not closed */}
-      {!isTaskClosed && (
-        <View
-          style={[
-            styles.card,
-            { backgroundColor: theme.colors.colorBgSurface },
-            styles.cardShadow,
-          ]}
-        >
-          <View style={styles.cardHeader}>
-            <View style={styles.titleContainer}>
+        {/* LOCATION */}
+      <View
+        style={[
+          styles.card,
+          { backgroundColor: theme.colors.colorBgSurface },
+          styles.cardShadow,
+        ]}
+      >
+        <View style={styles.cardHeader}>
+          <View style={styles.titleContainer}>
+            <RemixIcon
+              name="map-pin-line"
+              size={20}
+              color={theme.colors.colorPrimary600}
+            />
+            <Text
+              style={[
+                styles.cardTitle,
+                { color: theme.colors.colorPrimary600 },
+              ]}
+            >
+              Location
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.detailSection}>
+          <View style={styles.keyValueRow}>
+            <View style={styles.labelContainer}>
               <RemixIcon
-                name="flashlight-line"
-                size={20}
-                color={theme.colors.colorPrimary600}
+                name="home-3-line"
+                size={14}
+                color={theme.colors.colorTextSecondary}
               />
               <Text
                 style={[
-                  styles.cardTitle,
-                  { color: theme.colors.colorPrimary600 },
+                  styles.labelKey,
+                  { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Quick Actions
+                Address:
               </Text>
             </View>
+            <Text
+              style={[
+                styles.labelValue,
+                { color: theme.colors.colorTextPrimary },
+              ]}
+            >
+              {address || '-'}
+            </Text>
           </View>
 
-          <View style={styles.actionsGrid}>{renderActionButtons()}</View>
+          {(state || district) && (
+            <View style={styles.keyValueRow}>
+              <View style={styles.labelContainer}>
+                <RemixIcon
+                  name="map-line"
+                  size={14}
+                  color={theme.colors.colorTextSecondary}
+                />
+                <Text
+                  style={[
+                    styles.labelKey,
+                    { color: theme.colors.colorTextSecondary },
+                  ]}
+                >
+                  Location:
+                </Text>
+              </View>
+              <Text
+                style={[
+                  styles.labelValue,
+                  { color: theme.colors.colorTextPrimary },
+                ]}
+              >
+                {district && state
+                  ? `${district}, ${state}`
+                  : state || district}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.mapContainer}>
+            <MapView
+              provider={PROVIDER_GOOGLE}
+              style={styles.map}
+              initialRegion={initialRegion}
+              scrollEnabled={true}
+              zoomEnabled={true}
+              rotateEnabled={false}
+              pitchEnabled={false}
+              loadingEnabled={true}
+              loadingIndicatorColor={theme.colors.colorPrimary600}
+            >
+              <Marker
+                coordinate={{ latitude, longitude }}
+                title={elderName || 'Location'}
+                description={address}
+              >
+                <View style={styles.markerContainer}>
+                  <View
+                    style={[
+                      styles.markerPin,
+                      { backgroundColor: theme.colors.validationErrorText },
+                    ]}
+                  >
+                    <RemixIcon name="map-pin-fill" size={16} color="#FFF" />
+                  </View>
+                  <View
+                    style={[
+                      styles.markerTail,
+                      { borderTopColor: theme.colors.validationErrorText },
+                    ]}
+                  />
+                </View>
+              </Marker>
+            </MapView>
+
+            <TouchableOpacity
+              style={styles.mapOverlayButton}
+              onPress={() => {
+                router.push({
+                  pathname: "/FullMapScreen",
+                  params: {
+                    latitude: latitude.toString(),
+                    longitude: longitude.toString(),
+                    title: elderName || 'Location',
+                    description: address,
+                  },
+                });
+              }}
+            >
+              <RemixIcon name="fullscreen-line" size={16} color="#027A61" />
+              <Text style={styles.mapOverlayText}>Full Map</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[
+              styles.navBtn,
+              { backgroundColor: theme.colors.colorPrimary600 },
+            ]}
+            onPress={() =>
+              router.push({
+                pathname: "/(fro)/(complaints)/StartNavigationScreen",
+                params: { item: JSON.stringify(item) },
+              })
+            }
+          >
+            <RemixIcon name="navigation-line" size={20} color="#fff" />
+            <Text style={styles.navBtnText}>Start Navigation</Text>
+          </TouchableOpacity>
         </View>
-      )}
+      </View>
+
+      {/* ACTIONS - Only show if task is not closed */}
+      
     </BodyLayout>
   );
 }
@@ -1688,7 +1668,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     fontWeight: "500",
-    marginLeft: 98,
     marginTop: -20,
     marginBottom: 8,
   },

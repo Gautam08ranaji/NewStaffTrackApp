@@ -286,21 +286,38 @@ export default function ProfileScreen() {
           { backgroundColor: theme.colors.colorPrimary600 },
         ]}
       >
-        <View
-          style={[
-            styles.avatarContainer,
-            { backgroundColor: theme.colors.colorBgSurface },
-          ]}
-        >
-          {form.photo ? (
-            <Image source={{ uri: form.photo }} style={styles.profileImage} />
-          ) : (
+        <View style={styles.avatarWrapper}>
+          <View
+            style={[
+              styles.avatarContainer,
+              { backgroundColor: theme.colors.colorBgSurface },
+            ]}
+          >
+            {form.photo ? (
+              <Image source={{ uri: form.photo }} style={styles.profileImage} />
+            ) : (
+              <RemixIcon
+                name="user-3-line"
+                size={38}
+                color={theme.colors.colorPrimary600}
+              />
+            )}
+          </View>
+          
+          {/* Edit Icon Button */}
+          <TouchableOpacity 
+            style={[
+              styles.editIconContainer,
+              { backgroundColor: theme.colors.colorPrimary600 }
+            ]}
+            onPress={() => router.push("/profileDetails")}
+          >
             <RemixIcon
-              name="user-3-line"
-              size={38}
-              color={theme.colors.colorPrimary600}
+              name="edit-line"
+              size={16}
+              color={theme.colors.colorBgPage}
             />
-          )}
+          </TouchableOpacity>
         </View>
 
         <Text style={[styles.name, { color: theme.colors.colorBgPage }]}>
@@ -416,13 +433,6 @@ export default function ProfileScreen() {
         </View>
 
         {renderItem(
-          "Profile",
-          "user-settings-line",
-          () => router.push("/profileDetails"),
-          theme.colors.validationInfoText,
-        )}
-
-        {renderItem(
           "My Performance",
           "bar-chart-line",
           () => router.push("/(fro)/(profile)/teamOverView"),
@@ -505,13 +515,31 @@ const styles = StyleSheet.create({
     elevation: 6,
   },
 
+  avatarWrapper: {
+    position: 'relative',
+    marginTop: 30,
+  },
+
   avatarContainer: {
     width: 90,
     height: 90,
     borderRadius: 50,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 30,
+  },
+
+  editIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'white',
+    elevation: 4,
   },
 
   name: { fontSize: 20, fontWeight: "600", marginTop: 5 },
