@@ -174,7 +174,7 @@ export default function ReimbursemantTab() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      console.log("Fetched interactions:", res?.data?.interactions);
+      // console.log("Fetched interactions:", res?.data?.interactions);
 
       // Transform API data to task options
       if (res?.data?.interactions && Array.isArray(res.data.interactions)) {
@@ -1213,7 +1213,7 @@ export default function ReimbursemantTab() {
                     style={[
                       styles.attachmentOption,
                       {
-                        backgroundColor: theme.colors.colorBgInput,
+                        backgroundColor: theme.colors.inputBg,
                         borderColor: theme.colors.border,
                       },
                     ]}
@@ -1246,7 +1246,7 @@ export default function ReimbursemantTab() {
                     style={[
                       styles.attachmentOption,
                       {
-                        backgroundColor: theme.colors.colorBgInput,
+                        backgroundColor: theme.colors.inputBg,
                         borderColor: theme.colors.border,
                       },
                     ]}
@@ -1279,7 +1279,7 @@ export default function ReimbursemantTab() {
                     style={[
                       styles.attachmentOption,
                       {
-                        backgroundColor: theme.colors.colorBgInput,
+                        backgroundColor: theme.colors.inputBg,
                         borderColor: theme.colors.border,
                       },
                     ]}

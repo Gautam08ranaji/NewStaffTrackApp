@@ -99,7 +99,7 @@ export default function ProfileScreen() {
   const [availability, setAvailability] =
     useState<AvailabilityStatus>("available");
 
-  // console.log(authState);
+  // console.log(authState.);
 
   const antiforgeryToken = useAppSelector(
     (state) => state.auth.antiforgeryToken,

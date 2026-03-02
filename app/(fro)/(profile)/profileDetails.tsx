@@ -25,7 +25,7 @@ import {
   getDropdownByEndpoint,
   getDropdownByEndpointAndId,
 } from "@/features/fro/dropdownApi";
-import { launchImageLibrary } from "react-native-image-picker";
+import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import RemixIcon from "react-native-remix-icon";
 
 /* ================= TYPES ================= */
@@ -171,6 +171,7 @@ export default function OfficerDetailsScreen() {
   );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [imagePickerVisible, setImagePickerVisible] = useState(false);
 
   const [dropdownKey, setDropdownKey] = useState<DropdownKey | null>(null);
   const [dropdownVisible, setDropdownVisible] = useState(false);
@@ -273,7 +274,32 @@ export default function OfficerDetailsScreen() {
 
   /* ================= IMAGE PICKER ================= */
 
-  const openImagePicker = () => {
+  const openCamera = () => {
+    launchCamera(
+      {
+        mediaType: "photo",
+        includeBase64: true,
+        quality: 0.7,
+        cameraType: 'back',
+      },
+      (res) => {
+        setImagePickerVisible(false);
+        if (res.assets?.length) {
+          const asset = res.assets[0];
+
+          setForm((prev) => ({
+            ...prev,
+            photo: asset.uri ?? null,
+            photoBase64: asset.base64
+              ? `data:${asset.type};base64,${asset.base64}`
+              : null,
+          }));
+        }
+      },
+    );
+  };
+
+  const openGallery = () => {
     launchImageLibrary(
       {
         mediaType: "photo",
@@ -281,6 +307,7 @@ export default function OfficerDetailsScreen() {
         quality: 0.7,
       },
       (res) => {
+        setImagePickerVisible(false);
         if (res.assets?.length) {
           const asset = res.assets[0];
 
@@ -522,7 +549,7 @@ export default function OfficerDetailsScreen() {
                   styles.editIcon,
                   { backgroundColor: theme.colors.colorPrimary600 },
                 ]}
-                onPress={openImagePicker}
+                onPress={() => setImagePickerVisible(true)}
               >
                 <RemixIcon name="camera-line" size={16} color="#fff" />
               </TouchableOpacity>
@@ -577,6 +604,73 @@ export default function OfficerDetailsScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* IMAGE PICKER MODAL */}
+      <Modal
+        transparent
+        visible={imagePickerVisible}
+        animationType="slide"
+        onRequestClose={() => setImagePickerVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setImagePickerVisible(false)}
+        >
+          <View style={[styles.imagePickerContent, { backgroundColor: theme.colors.colorBgPage }]}>
+            <View style={[styles.imagePickerHandle, { backgroundColor: theme.colors.colorBorder }]} />
+            
+            <Text style={[styles.imagePickerTitle, { color: theme.colors.colorTextPrimary }]}>
+              Choose Profile Photo
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.imagePickerOption, { backgroundColor: theme.colors.colorPrimary600 + '10' }]}
+              onPress={openCamera}
+            >
+              <View style={[styles.imagePickerIconContainer, { backgroundColor: theme.colors.colorPrimary600 }]}>
+                <RemixIcon name="camera-line" size={24} color="#fff" />
+              </View>
+              <View style={styles.imagePickerOptionContent}>
+                <Text style={[styles.imagePickerOptionText, { color: theme.colors.colorTextPrimary }]}>
+                  Camera
+                </Text>
+                <Text style={[styles.imagePickerOptionSubtext, { color: theme.colors.colorTextSecondary }]}>
+                  Take a photo using camera
+                </Text>
+              </View>
+              <RemixIcon name="arrow-right-s-line" size={20} color={theme.colors.colorTextSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imagePickerOption, { backgroundColor: theme.colors.colorPrimary600 + '10' }]}
+              onPress={openGallery}
+            >
+              <View style={[styles.imagePickerIconContainer, { backgroundColor: theme.colors.colorPrimary600 }]}>
+                <RemixIcon name="image-line" size={24} color="#fff" />
+              </View>
+              <View style={styles.imagePickerOptionContent}>
+                <Text style={[styles.imagePickerOptionText, { color: theme.colors.colorTextPrimary }]}>
+                  Gallery
+                </Text>
+                <Text style={[styles.imagePickerOptionSubtext, { color: theme.colors.colorTextSecondary }]}>
+                  Choose from gallery
+                </Text>
+              </View>
+              <RemixIcon name="arrow-right-s-line" size={20} color={theme.colors.colorTextSecondary} />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imagePickerCancel, { borderColor: theme.colors.colorBorder }]}
+              onPress={() => setImagePickerVisible(false)}
+            >
+              <Text style={[styles.imagePickerCancelText, { color: theme.colors.colorPrimary600 }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </BodyLayout>
   );
 
@@ -609,29 +703,29 @@ export default function OfficerDetailsScreen() {
     );
   }
 
- function renderDropdown(
-  label: string,
-  key: DropdownKey,
-  placeholder: string,
-) {
-  return (
-    <>
-      <Text style={styles.label}>{label}</Text>
-      <TouchableOpacity
-        style={styles.input}
-        onPress={() => openDropdown(key)}
-      >
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ color: form[key] ? "#000" : "#999" }}>
-            {typeof form[key] === "string" ? form[key] : placeholder}
-          </Text>
-          <RemixIcon name="arrow-down-s-line" size={20} color="#999" />
-        </View>
-      </TouchableOpacity>
-      {errors[key] && <Text style={styles.error}>{errors[key]}</Text>}
-    </>
-  );
-}
+  function renderDropdown(
+    label: string,
+    key: DropdownKey,
+    placeholder: string,
+  ) {
+    return (
+      <>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity
+          style={styles.input}
+          onPress={() => openDropdown(key)}
+        >
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ color: form[key] ? "#000" : "#999" }}>
+              {typeof form[key] === "string" ? form[key] : placeholder}
+            </Text>
+            <RemixIcon name="arrow-down-s-line" size={20} color="#999" />
+          </View>
+        </TouchableOpacity>
+        {errors[key] && <Text style={styles.error}>{errors[key]}</Text>}
+      </>
+    );
+  }
 }
 
 /* ================= STYLES ================= */
@@ -725,5 +819,62 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
+  },
+  // Image Picker Styles
+  imagePickerContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+  },
+  imagePickerHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 20,
+  },
+  imagePickerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  imagePickerOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    marginBottom: 12,
+  },
+  imagePickerIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  imagePickerOptionContent: {
+    flex: 1,
+  },
+  imagePickerOptionText: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  imagePickerOptionSubtext: {
+    fontSize: 13,
+  },
+  imagePickerCancel: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  imagePickerCancelText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

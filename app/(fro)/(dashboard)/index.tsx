@@ -1,29 +1,21 @@
 import BodyLayout from "@/components/layout/BodyLayout";
 import CircularKPIChart from "@/components/reusables/CircularKPIChart";
-import FROPerformanceCard from "@/components/reusables/FROPerformanceCard";
 import PunchInCard from "@/components/reusables/PunchInCard";
 import ReusableCard from "@/components/reusables/ReusableCard";
+import { getFROCasePerformanceDayWise } from "@/features/fro/dashboard/dayWisePerformance";
+import { getFROMonthCasePerformanceDayWise } from "@/features/fro/dashboard/monthWisePerformance";
 import { getDashCount } from "@/features/fro/interaction/countApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
-// import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
+import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
 import { useFROLocationUpdater } from "@/hooks/useFROLocationUpdater";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
-import * as Location from "expo-location";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Alert,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
-import RemixIcon from "react-native-remix-icon";
+import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
+import { LineChart } from "react-native-chart-kit";
+import Toast from "react-native-toast-message";
 
 /* ================= TYPES ================= */
 
@@ -34,13 +26,44 @@ type DashCount = {
   tickets: number;
 };
 
+type DayWisePerformance = {
+  date: string;
+  open: number;
+  inProgress: number;
+  closed: number;
+  total: number;
+  formattedDate?: string;
+  day?: number;
+};
+
+type MonthWisePerformance = {
+  month: number;
+  monthName: string;
+  open: number;
+  inProgress: number;
+  closed: number;
+  total: number;
+};
+
+type MonthPerformanceResponse = {
+  year: number;
+  data: MonthWisePerformance[];
+};
+
+type DayCasePerformanceResponse = {
+  data: DayWisePerformance[];
+  month: number;
+  year: number;
+};
+
 /* ================= SCREEN ================= */
 
 export default function HomeScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
-  // const { Popup } = useInteractionPopupPoller();
+  const { Popup } = useInteractionPopupPoller();
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -51,112 +74,96 @@ export default function HomeScreen() {
     tickets: 0,
   });
 
-  // Location state
-  const [currentLocation, setCurrentLocation] = useState<{
-    latitude: number;
-    longitude: number;
-  } | null>(null);
-  const [locationAddress, setLocationAddress] = useState("");
-  const [loadingLocation, setLoadingLocation] = useState(true);
-  const [locationError, setLocationError] = useState<string | null>(null);
+  const [dayPerformanceData, setDayPerformanceData] = useState<DayCasePerformanceResponse | null>(null);
+  const [monthPerformanceData, setMonthPerformanceData] = useState<MonthPerformanceResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [attendanceData, setAttendanceData] = useState({
+    presentDays: 20,
+    absentDays: 6
+  });
 
-  // Refresh state
-  const [refreshing, setRefreshing] = useState(false);
+  const [dayChartData, setDayChartData] = useState({
+    labels: [] as string[],
+    datasets: [
+      {
+        data: [] as number[],
+        color: () => '#00C950',
+        strokeWidth: 2
+      },
+      {
+        data: [] as number[],
+        color: () => '#FFA500',
+        strokeWidth: 2
+      },
+      {
+        data: [] as number[],
+        color: () => '#6A7282',
+        strokeWidth: 2
+      }
+    ]
+  });
 
-  /* 🔴 Demo Attendance Values (replace with API later) */
-  const presentDays = 20;
-  const absentDays = 6;
+  const [monthChartData, setMonthChartData] = useState({
+    labels: [] as string[],
+    datasets: [
+      {
+        data: [] as number[],
+        color: () => '#00C950',
+        strokeWidth: 2
+      },
+      {
+        data: [] as number[],
+        color: () => '#FFA500',
+        strokeWidth: 2
+      },
+      {
+        data: [] as number[],
+        color: () => '#6A7282',
+        strokeWidth: 2
+      }
+    ]
+  });
 
-  const totalDays = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
-    0,
-  ).getDate();
+  /* ================= ATTENDANCE CALCULATIONS ================= */
+  // TODO: Replace with actual API data
+  const totalDays = useMemo(() => {
+    return new Date(
+      new Date().getFullYear(),
+      new Date().getMonth() + 1,
+      0,
+    ).getDate();
+  }, []);
 
-  const attendanceRateNum = totalDays > 0 ? (presentDays / totalDays) * 100 : 0;
+  const attendanceRateNum = useMemo(() => {
+    return totalDays > 0 ? (attendanceData.presentDays / totalDays) * 100 : 0;
+  }, [attendanceData.presentDays, totalDays]);
 
-  /* 🔴 KPI calculation */
-  const completionRate =
-    count.tickets > 0 ? (count.closed / count.tickets) * 100 : 0;
+  /* ================= KPI CALCULATIONS ================= */
+  // Dynamic completion rate calculation based on actual data
+  const completionRate = useMemo(() => {
+    if (count.tickets === 0) return 0;
+    // Round to nearest integer for better display
+    return Math.round((count.closed / count.tickets) * 100);
+  }, [count.closed, count.tickets]);
 
   useFROLocationUpdater(authState?.userId);
 
   useFocusEffect(
     useCallback(() => {
-      loadInitialData();
+      Promise.all([
+        fetchUserData(),
+        fetchCountData(),
+        handleGetDayCasePerformance(),
+        handleGetMonthCasePerformance()
+      ]);
     }, []),
   );
-
-  const loadInitialData = async () => {
-    await Promise.all([fetchUserData(), fetchCountData(), getCurrentLocation()]);
-  };
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await loadInitialData();
-    setRefreshing(false);
-  }, []);
-
-  /* ================= LOCATION ================= */
-
-  const getCurrentLocation = async () => {
-    try {
-      setLoadingLocation(true);
-      setLocationError(null);
-
-      // Request permission
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setLocationError("Location permission denied");
-        console.log("Permission to access location was denied");
-        setLoadingLocation(false);
-        return;
-      }
-
-      // Get current position
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      const { latitude, longitude } = location.coords;
-      setCurrentLocation({ latitude, longitude });
-
-      // Get address from coordinates
-      const [address] = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-
-      if (address) {
-        const addressString = [
-          address.street,
-          address.district,
-          address.city,
-          address.region,
-          address.country,
-        ]
-          .filter(Boolean)
-          .join(", ");
-        setLocationAddress(addressString || "Current Location");
-      }
-    } catch (error) {
-      console.error("Error getting location:", error);
-      setLocationError("Failed to get location");
-      Alert.alert(
-        "Location Error",
-        "Unable to get your current location. Please check your device settings.",
-        [{ text: "OK" }]
-      );
-    } finally {
-      setLoadingLocation(false);
-    }
-  };
 
   /* ================= API ================= */
 
   const fetchUserData = async () => {
     console.log("authState.userId", authState.antiforgeryToken);
-    console.log("authState.token", authState.token);
+    console.log("authState.token", authState.userId);
 
     try {
       const response = await getUserDataById({
@@ -165,16 +172,13 @@ export default function HomeScreen() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      console.log("User Data", response);
-
       setFirstName(response?.data?.firstName || "User");
       setLastName(response?.data?.lastName || "");
     } catch (error) {
       console.error("User fetch error:", error);
-      Alert.alert(
-        "Error",
+      alert(
         "Failed to fetch user data. " +
-          (error instanceof Error ? error?.message : "Unknown error")
+        (error instanceof Error ? error?.message : "Unknown error"),
       );
     }
   };
@@ -187,31 +191,230 @@ export default function HomeScreen() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      console.log("res",response);
-      
+      console.log("getDashCount", response);
 
       if (response?.success) {
-        console.log("response",response);
-        
         setCount(response.data);
-      } else {
-        console.error("Failed to fetch counts:", response?.message);
       }
     } catch (error) {
       console.error("Count fetch error:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to fetch dashboard counts",
+      });
     }
   };
 
+  const handleGetDayCasePerformance = async () => {
+    setLoading(true);
+    try {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+
+      const response = await getFROCasePerformanceDayWise({
+        year: currentYear,
+        month: currentMonth,
+        userId: String(authState.userId),
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken)
+      });
+
+      console.log("daily per",response?.data);
+      
+
+      if (response?.data) {
+        const processedData = processDayPerformanceData(response.data, currentYear, currentMonth);
+        setDayPerformanceData(processedData);
+        prepareDayChartData(processedData);
+      }
+
+    } catch (error: any) {
+      console.error("Error fetching day performance:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to fetch daily performance data",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGetMonthCasePerformance = async () => {
+    try {
+      const response = await getFROMonthCasePerformanceDayWise({
+        year: 2026,
+        userId: String(authState.userId),
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken)
+      });
+
+      if (response?.data) {
+        setMonthPerformanceData(response.data);
+        prepareMonthChartData(response.data);
+      }
+
+
+      console.log("month perf",response?.data);
+      
+
+    } catch (error: any) {
+      console.error("Error fetching month performance:", error);
+      Toast.show({
+        type: "error",
+        text1: error?.response?.data?.message || "Failed to fetch month performance",
+      });
+    }
+  };
+
+  // Process daily performance data
+  const processDayPerformanceData = (data: DayCasePerformanceResponse, year: number, month: number) => {
+    return {
+      ...data,
+      data: data.data.map((item: DayWisePerformance) => {
+        const date = new Date(item.date);
+        const day = date.getUTCDate();
+        return {
+          ...item,
+          day: day,
+          formattedDate: `${day} ${new Date(year, month - 1).toLocaleString('default', { month: 'short' })}`
+        };
+      }).sort((a, b) => (a.day || 0) - (b.day || 0))
+    };
+  };
+
+  // Prepare daily chart data
+  const prepareDayChartData = (data: DayCasePerformanceResponse) => {
+    if (!data?.data || data.data.length === 0) {
+      setDayChartData({
+        labels: ['No Data'],
+        datasets: [
+          { data: [0], color: () => '#00C950', strokeWidth: 2 },
+          { data: [0], color: () => '#FFA500', strokeWidth: 2 },
+          { data: [0], color: () => '#6A7282', strokeWidth: 2 }
+        ]
+      });
+      return;
+    }
+
+    const daysToShow = Math.min(data.data.length, 10);
+    const interval = Math.ceil(data.data.length / daysToShow);
+
+    const labels: string[] = [];
+    const openData: number[] = [];
+    const inProgressData: number[] = [];
+    const closedData: number[] = [];
+
+    data.data.forEach((item, index) => {
+      // Always show the first and last day's label
+      if (index === 0 || index === data.data.length - 1) {
+        labels.push(item.day?.toString() || '');
+      }
+      // Show label at intervals
+      else if (index % interval === 0) {
+        labels.push(item.day?.toString() || '');
+      } else {
+        labels.push('');
+      }
+
+      openData.push(item.open || 0);
+      inProgressData.push(item.inProgress || 0);
+      closedData.push(item.closed || 0);
+    });
+
+    setDayChartData({
+      labels,
+      datasets: [
+        { data: openData, color: () => '#00C950', strokeWidth: 2 },
+        { data: inProgressData, color: () => '#FFA500', strokeWidth: 2 },      
+        { data: closedData, color: () => '#6A7282', strokeWidth: 2 }
+      ]
+    });
+  };
+
+  // Prepare monthly chart data - FIXED FOR THREE SEPARATE LINES
+  const prepareMonthChartData = (data: MonthPerformanceResponse) => {
+    if (!data?.data || data.data.length === 0) {
+      setMonthChartData({
+        labels: ['No Data'],
+        datasets: [
+          { data: [0], color: () => '#00C950', strokeWidth: 2 },
+          { data: [0], color: () => '#FFA500', strokeWidth: 2 },
+          { data: [0], color: () => '#6A7282', strokeWidth: 2 }
+        ]
+      });
+      return;
+    }
+
+    const labels: string[] = [];
+    const openData: number[] = [];
+    const inProgressData: number[] = [];
+    const closedData: number[] = [];
+
+    data.data.forEach((item) => {
+      labels.push(item.monthName.substring(0, 3)); // Show first 3 letters of month
+      openData.push(item.open || 0);
+      inProgressData.push(item.inProgress || 0);
+      closedData.push(item.closed || 0);
+    });
+
+    // Log to verify data
+    console.log('Monthly Chart Data:', {
+      labels,
+      open: openData,
+      inProgress: inProgressData,
+      closed: closedData
+    });
+
+    setMonthChartData({
+      labels,
+      datasets: [
+        { 
+          data: openData, 
+          color: () => '#00C950', 
+          strokeWidth: 2 
+        },
+        { 
+          data: inProgressData, 
+          color: () => '#FFA500', 
+          strokeWidth: 2 
+        },
+        { 
+          data: closedData, 
+          color: () => '#6A7282', 
+          strokeWidth: 2 
+        }
+      ]
+    });
+  };
+
+  // Calculate yearly totals
+  const calculateYearlyTotals = () => {
+    if (!monthPerformanceData?.data) return null;
+
+    return monthPerformanceData.data.reduce(
+      (acc, month) => ({
+        total: acc.total + month.total,
+        open: acc.open + month.open,
+        inProgress: acc.inProgress + month.inProgress,
+        closed: acc.closed + month.closed,
+      }),
+      { total: 0, open: 0, inProgress: 0, closed: 0 }
+    );
+  };
+
+  const yearlyTotals = calculateYearlyTotals();
+
   /* ================= CARD CONFIG ================= */
 
-  const caseCardConfig = useMemo(() => ({
+  const caseCardConfig = {
     open: {
       title: "Open",
       icon: "folder-check-line",
       iconBg: "#00C950",
       cardBg: theme.colors.validationSuccessBg,
       countColor: theme.colors.colorPrimary600,
-      filter: "open",
+      filter: "Open",
     },
     InProgress: {
       title: "In-Progress",
@@ -235,9 +438,28 @@ export default function HomeScreen() {
       iconBg: "#6A7282",
       cardBg: theme.colors.navDivider,
       countColor: theme.colors.colorTextSecondary,
-      filter: "closed",
+      filter: "Closed",
     },
-  }), [theme]);
+  };
+
+  const screenWidth = Dimensions.get("window").width - 40;
+  // Calculate chart width based on data length for horizontal scrolling
+  const getChartWidth = (dataLength: number, baseWidth: number) => {
+    const minWidth = baseWidth;
+    const itemWidth = 60; // Approximate width per data point
+    const calculatedWidth = dataLength * itemWidth;
+    return Math.max(minWidth, calculatedWidth);
+  };
+
+  const dayChartWidth = useMemo(() =>
+    getChartWidth(dayChartData.labels.length, screenWidth),
+    [dayChartData.labels.length, screenWidth]
+  );
+
+  const monthChartWidth = useMemo(() =>
+    getChartWidth(monthChartData.labels.length, screenWidth),
+    [monthChartData.labels.length, screenWidth]
+  );
 
   /* ================= UI ================= */
 
@@ -249,20 +471,13 @@ export default function HomeScreen() {
         type="dashboard"
         userName={`${firstName} ${lastName}`}
         userId=""
-        todaysDutyCount={count.tickets}
-        totalTasks={count.tickets}
-        notificationCount={3}
+        // todaysDutyCount={count.tickets}
+        // totalCases={count.tickets}
+        // notificationCount={3}
       >
         <ScrollView
+          ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              colors={[theme.colors.colorPrimary600]}
-              tintColor={theme.colors.colorPrimary600}
-            />
-          }
         >
           {/* Attendance */}
           <Text
@@ -278,21 +493,27 @@ export default function HomeScreen() {
 
           {/* KPI Circular Charts */}
           <View style={styles.kpiRow}>
-            <CircularKPIChart percentage={attendanceRateNum} label="Attendance" />
-            <CircularKPIChart percentage={completionRate} label="Completion Rate" />
+            <CircularKPIChart
+              percentage={attendanceRateNum}
+              label="Attendance"
+            />
+            <CircularKPIChart
+              percentage={completionRate}
+              label="Completion Rate"
+            />
           </View>
 
-          {/* TaskOverview */}
+          {/* Case Overview */}
           <Text
             style={[
               theme.typography.fontH6,
               { color: theme.colors.colorPrimary600, marginTop: 20 },
             ]}
           >
-            Task Overview
+            Overview
           </Text>
 
-          {/* TaskCards */}
+          {/* Case Cards */}
           <View style={styles.row}>
             <ReusableCard
               icon={caseCardConfig.Total.icon}
@@ -342,7 +563,6 @@ export default function HomeScreen() {
                 })
               }
             />
-
             <ReusableCard
               icon={caseCardConfig.closed.icon}
               count={String(count.closed)}
@@ -360,179 +580,193 @@ export default function HomeScreen() {
             />
           </View>
 
-          {/* Performance Card */}
-          <FROPerformanceCard
-            total={count.tickets}
-            closed={count.closed}
-            open={count.open}
-            inProgress={count.inProgress}
-          />
+          {/* Daily Performance Chart */}
+          <View style={styles.chartContainer}>
+            <Text style={[theme.typography.fontH6, { color: theme.colors.colorPrimary600 }]}>
+              Daily Performance - {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
+            </Text>
 
-          {/* Location Map Section - Added at bottom */}
-          <View
-            style={[
-              styles.mapCard,
-              {
-                backgroundColor: theme.colors.colorBgSurface,
-                borderColor: theme.colors.inputBorder,
-              },
-            ]}
-          >
-            <View style={styles.mapHeader}>
-              <View style={styles.mapTitleContainer}>
-                <RemixIcon
-                  name="map-pin-line"
-                  size={20}
-                  color={theme.colors.colorPrimary600}
-                />
-                <Text
-                  style={[
-                    styles.mapTitle,
-                    { color: theme.colors.colorPrimary600 },
-                  ]}
-                >
-                  Current Location
-                </Text>
-              </View>
-              <TouchableOpacity
-                onPress={getCurrentLocation}
-                style={styles.refreshBtn}
-              >
-                <RemixIcon
-                  name="refresh-line"
-                  size={16}
-                  color={theme.colors.colorPrimary600}
-                />
-              </TouchableOpacity>
-            </View>
-
-            {currentLocation && !locationError && (
-              <>
-                <View style={styles.addressContainer}>
-                  <RemixIcon
-                    name="home-3-line"
-                    size={14}
-                    color={theme.colors.colorTextSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.addressText,
-                      { color: theme.colors.colorTextSecondary },
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {loadingLocation ? "Loading..." : locationAddress}
-                  </Text>
-                </View>
-
-                <View style={styles.mapContainer}>
-                  <MapView
-                    provider={PROVIDER_GOOGLE}
-                    style={styles.map}
-                    initialRegion={{
-                      latitude: currentLocation.latitude,
-                      longitude: currentLocation.longitude,
-                      latitudeDelta: 0.01,
-                      longitudeDelta: 0.01,
-                    }}
-                    scrollEnabled={true}
-                    zoomEnabled={true}
-                    rotateEnabled={false}
-                    pitchEnabled={false}
-                    loadingEnabled={true}
-                    loadingIndicatorColor={theme.colors.colorPrimary600}
-                  >
-                    <Marker
-                      coordinate={{
-                        latitude: currentLocation.latitude,
-                        longitude: currentLocation.longitude,
-                      }}
-                      title="You are here"
-                      description={locationAddress}
-                    >
-                      <View style={styles.markerContainer}>
-                        <View
-                          style={[
-                            styles.markerPin,
-                            { backgroundColor: theme.colors.colorPrimary600 },
-                          ]}
-                        >
-                          <RemixIcon name="map-pin-fill" size={16} color="#FFF" />
-                        </View>
-                        <View
-                          style={[
-                            styles.markerTail,
-                            { borderTopColor: theme.colors.colorPrimary600 },
-                          ]}
-                        />
-                      </View>
-                    </Marker>
-                  </MapView>
-
-                  <TouchableOpacity
-                    style={styles.mapOverlayButton}
-                    onPress={() => {
-                      if (currentLocation) {
-                        router.push({
-                          pathname: "/FullMapScreen",
-                          params: {
-                            latitude: currentLocation.latitude.toString(),
-                            longitude: currentLocation.longitude.toString(),
-                            title: "Current Location",
-                            description: locationAddress,
-                          },
-                        });
-                      }
-                    }}
-                  >
-                    <RemixIcon name="fullscreen-line" size={16} color="#027A61" />
-                    <Text style={styles.mapOverlayText}>Full Map</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-
-            {(!currentLocation || locationError) && !loadingLocation && (
-              <View style={styles.noLocationContainer}>
-                <RemixIcon
-                  name="map-pin-line"
-                  size={32}
-                  color={theme.colors.colorTextSecondary}
-                />
-                <Text
-                  style={[
-                    styles.noLocationText,
-                    { color: theme.colors.colorTextSecondary },
-                  ]}
-                >
-                  {locationError || "Unable to get current location"}
-                </Text>
-                <TouchableOpacity
-                  style={[
-                    styles.retryBtn,
-                    { backgroundColor: theme.colors.colorPrimary600 },
-                  ]}
-                  onPress={getCurrentLocation}
-                >
-                  <Text style={styles.retryBtnText}>Retry</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {loadingLocation && (
+            {loading ? (
               <View style={styles.loadingContainer}>
-                <Text
-                  style={[
-                    styles.loadingText,
-                    { color: theme.colors.colorTextSecondary },
-                  ]}
+                <Text>Loading chart...</Text>
+              </View>
+            ) : dayPerformanceData && dayPerformanceData.data && dayPerformanceData.data.length > 0 ? (
+              <>
+                {/* Legend for daily chart */}
+                <View style={styles.legendContainer}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#00C950' }]} />
+                    <Text style={styles.legendText}>Open</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#FFA500' }]} />
+                    <Text style={styles.legendText}>In Progress</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#6A7282' }]} />
+                    <Text style={styles.legendText}>Closed</Text>
+                  </View>
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  style={styles.horizontalScrollView}
                 >
-                  Getting your location...
-                </Text>
+                  <View style={{ width: dayChartWidth }}>
+                    <LineChart
+                      data={dayChartData}
+                      width={dayChartWidth}
+                      height={220}
+                      chartConfig={{
+                        backgroundColor: '#ffffff',
+                        backgroundGradientFrom: '#ffffff',
+                        backgroundGradientTo: '#ffffff',
+                        decimalPlaces: 0,
+                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                        style: {
+                          borderRadius: 16,
+                        },
+                        propsForDots: {
+                          r: '4',
+                          strokeWidth: '2',
+                          stroke: '#fff'
+                        },
+                        formatYLabel: (yValue) => Math.round(Number(yValue)).toString(),
+                      }}
+                      bezier
+                      style={styles.chart}
+                      withVerticalLines={true}
+                      withHorizontalLines={true}
+                      withDots={true}
+                      withShadow={false}
+                      withInnerLines={true}
+                      withOuterLines={true}
+                      withVerticalLabels={true}
+                      withHorizontalLabels={true}
+                      fromZero={true}
+                      yAxisInterval={1}
+                      segments={5}
+                      transparent={false}
+                    />
+                  </View>
+                </ScrollView>
+                
+                {dayChartWidth > screenWidth && (
+                  <Text style={styles.scrollHint}>← Swipe to see more →</Text>
+                )}
+              </>
+            ) : (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>No daily performance data available</Text>
               </View>
             )}
           </View>
-          <View style={{ height: 20 }} />
+
+          {/* Monthly Performance Chart - THREE SEPARATE LINES */}
+          <View style={styles.chartContainer}>
+            <Text style={[theme.typography.fontH6, { color: theme.colors.colorPrimary600 }]}>
+              Monthly Performance - {monthPerformanceData?.year || new Date().getFullYear()}
+            </Text>
+
+            {monthPerformanceData && monthPerformanceData.data && monthPerformanceData.data.length > 0 ? (
+              <>
+                {/* Legend for monthly chart */}
+                <View style={styles.legendContainer}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#00C950' }]} />
+                    <Text style={styles.legendText}>Open</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#FFA500' }]} />
+                    <Text style={styles.legendText}>In Progress</Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: '#6A7282' }]} />
+                    <Text style={styles.legendText}>Closed</Text>
+                  </View>
+                </View>
+
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  style={styles.horizontalScrollView}
+                >
+                  <View style={{ width: monthChartWidth }}>
+                    <LineChart
+                      data={monthChartData}
+                      width={monthChartWidth}
+                      height={220}
+                      chartConfig={{
+                        backgroundColor: '#ffffff',
+                        backgroundGradientFrom: '#ffffff',
+                        backgroundGradientTo: '#ffffff',
+                        decimalPlaces: 0,
+                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                        style: {
+                          borderRadius: 16,
+                        },
+                        propsForDots: {
+                          r: '4',
+                          strokeWidth: '2',
+                          stroke: '#fff'
+                        },
+                        formatYLabel: (yValue) => Math.round(Number(yValue)).toString(),
+                      }}
+                      bezier
+                      style={styles.chart}
+                      withVerticalLines={true}
+                      withHorizontalLines={true}
+                      withDots={true}
+                      withShadow={false}
+                      withInnerLines={true}
+                      withOuterLines={true}
+                      withVerticalLabels={true}
+                      withHorizontalLabels={true}
+                      fromZero={true}
+                      yAxisInterval={1}
+                      segments={5}
+                      transparent={false}
+                    />
+                  </View>
+                </ScrollView>
+                
+                {monthChartWidth > screenWidth && (
+                  <Text style={styles.scrollHint}>← Swipe to see more →</Text>
+                )}
+
+                {/* Yearly Summary Stats */}
+                {yearlyTotals && (
+                  <View style={styles.chartStats}>
+                    <View style={styles.statCard}>
+                      <Text style={theme.typography.fontBodySmall}>Total Open</Text>
+                      <Text style={[theme.typography.fontH6, { color: '#00C950' }]}>
+                        {yearlyTotals.open}
+                      </Text>
+                    </View>
+                    <View style={styles.statCard}>
+                      <Text style={theme.typography.fontBodySmall}>Total In Progress</Text>
+                      <Text style={[theme.typography.fontH6, { color: '#FFA500' }]}>
+                        {yearlyTotals.inProgress}
+                      </Text>
+                    </View>
+                    <View style={styles.statCard}>
+                      <Text style={theme.typography.fontBodySmall}>Total Closed</Text>
+                      <Text style={[theme.typography.fontH6, { color: '#6A7282' }]}>
+                        {yearlyTotals.closed}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </>
+            ) : (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>No monthly performance data available</Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
       </BodyLayout>
     </>
@@ -548,165 +782,85 @@ const styles = StyleSheet.create({
     gap: 20,
     marginTop: 20,
   },
-
   kpiRow: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginTop: 30,
   },
-
-  // Map styles
-  mapCard: {
-    marginTop: 24,
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 16,
+  chartContainer: {
+    marginTop: 30,
+    padding: 15,
+    backgroundColor: "#ffffff",
+    borderRadius: 10,
     borderWidth: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    borderColor: "#e0e0e0",
   },
-
-  mapHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-
-  mapTitleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-
-  mapTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    marginLeft: 8,
-  },
-
-  refreshBtn: {
-    padding: 8,
-    borderRadius: 20,
-  },
-
-  addressContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-
-  addressText: {
-    fontSize: 13,
-    marginLeft: 8,
-    flex: 1,
-  },
-
-  mapContainer: {
-    height: 180,
-    borderRadius: 12,
-    overflow: "hidden",
-    position: "relative",
-  },
-
-  map: {
-    width: "100%",
-    height: "100%",
-  },
-
-  markerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  markerPin: {
-    width: 32,
-    height: 32,
+  chart: {
+    marginVertical: 8,
     borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#FFF",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
   },
-
-  markerTail: {
-    width: 0,
-    height: 0,
-    backgroundColor: "transparent",
-    borderStyle: "solid",
-    borderLeftWidth: 6,
-    borderRightWidth: 6,
-    borderTopWidth: 10,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
-    marginTop: -2,
+  horizontalScrollView: {
+    flexGrow: 0,
   },
-
-  mapOverlayButton: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#027A61",
+  chartStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
+    paddingTop: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0'
   },
-
-  mapOverlayText: {
+  statCard: {
+    alignItems: 'center'
+  },
+  legendContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+    flexWrap: 'wrap',
+    gap: 20,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  legendText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#027A61",
-    marginLeft: 4,
+    color: '#333',
+    fontFamily: 'Poppins-Regular',
   },
-
-  noLocationContainer: {
-    height: 180,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    borderStyle: "dashed",
-    borderRadius: 12,
-    padding: 20,
+  scrollHint: {
+    textAlign: 'center',
+    color: '#999',
+    fontSize: 12,
+    marginTop: 8,
+    fontFamily: 'Poppins-Regular',
   },
-
-  noLocationText: {
-    fontSize: 14,
-    marginTop: 12,
-    marginBottom: 16,
-  },
-
-  retryBtn: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-
-  retryBtnText: {
-    color: "#FFF",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
   loadingContainer: {
-    height: 180,
-    justifyContent: "center",
-    alignItems: "center",
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-
-  loadingText: {
+  noDataContainer: {
+    height: 150,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f9f9f9',
+    borderRadius: 10,
+    marginTop: 10,
+  },
+  noDataText: {
+    color: '#999',
     fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
 });
