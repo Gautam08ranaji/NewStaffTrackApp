@@ -1,34 +1,32 @@
-// features/leave/getLeaveList.ts
 import { apiRequest } from "@/features/api/callApi";
 
 type GetLeaveListParams = {
-  pageNumber: number;
-  pageSize: number;
-  userId: string;
+  PageNumber: number;
+  PageSize: number;
+  Userid: string;
   token: string;
   csrfToken?: string;
 };
 
 export const getLeaveList = async ({
-  pageNumber,
-  pageSize,
-  userId,
+  PageNumber,
+  PageSize,
+  Userid,
   token,
   csrfToken,
 }: GetLeaveListParams) => {
   return apiRequest({
-    method: "POST",
-    url: `/Leave/GetLeaveList`,
-    data: {
-      pageNumber,
-      pageSize,
-      userid: userId,
+    url: "/Leave/GetLeaveList",
+    method: "GET",
+    params: {
+      PageNumber,
+      PageSize,
+      Userid,
     },
     headers: {
       Authorization: `Bearer ${token}`,
+      "X-CSRF-TOKEN": csrfToken || "",
       Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(csrfToken && { "X-CSRF-TOKEN": csrfToken }),
     },
   });
 };

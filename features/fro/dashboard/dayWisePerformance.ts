@@ -1,46 +1,27 @@
-// features/leave/createLeave.ts
 import { apiRequest } from "@/features/api/callApi";
 
-type CreateLeaveParams = {
-  leaveType: string;
-  fromDate: string;
-  toDate: string;
-  reason: string;
-  userId: string;
-  createdBy: string;
-  createdByName: string;
+type DayWiseParams = {
+  Year: number;
+  Month: string;
+  AssignToId: string;
   token: string;
   csrfToken?: string;
 };
 
-export const createLeave = async ({
-  leaveType,
-  fromDate,
-  toDate,
-  reason,
-  userId,
-  createdBy,
-  createdByName,
+export const getFROCasePerformanceDayWise = async ({
+  Year,
+  Month,
+  AssignToId,
   token,
   csrfToken,
-}: CreateLeaveParams) => {
+}: DayWiseParams) => {
   return apiRequest({
-    method: "POST",
-    url: `/Leave/CreateLeave`,
-    data: {
-      leaveType,
-      fromDate,
-      toDate,
-      reason,
-      userId,
-      createdBy,
-      createdByName,
-    },
+    url: `/MobileApp/GetFROCasePerformanceDayWise?Year=${Year}&Month=${Month}&AssignToId=${AssignToId}`,
+    method: "GET",
     headers: {
       Authorization: `Bearer ${token}`,
+      "X-CSRF-TOKEN": csrfToken || "",
       Accept: "application/json",
-      "Content-Type": "application/json",
-      ...(csrfToken && { "X-CSRF-TOKEN": csrfToken }),
     },
   });
 };

@@ -1,6 +1,6 @@
 import Card from "@/components/reusables/Card";
+import { createLeave } from "@/features/fro/Attendance/leaves/applyLeave";
 import { getLeaveList } from "@/features/fro/Attendance/leaves/getLeaveList";
-import { createLeave } from "@/features/fro/dashboard/dayWisePerformance";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -218,9 +218,9 @@ export default function LeavesTab() {
     
     try {
       const res = await getLeaveList({
-        pageNumber: page,
-        pageSize: 10,
-        userId: String(authState.userId),
+        PageNumber: 1,
+        PageSize: 10,
+        Userid: String(authState.userId),
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken)
       });

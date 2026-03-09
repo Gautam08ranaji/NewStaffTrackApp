@@ -206,39 +206,40 @@ export default function HomeScreen() {
   };
 
   const handleGetDayCasePerformance = async () => {
-    setLoading(true);
-    try {
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear();
-      const currentMonth = currentDate.getMonth() + 1;
+  setLoading(true);
 
-      const response = await getFROCasePerformanceDayWise({
-        year: currentYear,
-        month: currentMonth,
-        userId: String(authState.userId),
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken)
-      });
+  try {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
 
-      console.log("daily per",response?.data);
-      
+    const response = await getFROCasePerformanceDayWise({
+      Year: currentYear,
+      Month: currentMonth,
+      AssignToId: String(authState.userId),
+      token: String(authState.token),
+      csrfToken: String(authState.antiforgeryToken),
+    });
 
-      if (response?.data) {
-        const processedData = processDayPerformanceData(response.data, currentYear, currentMonth);
-        setDayPerformanceData(processedData);
-        prepareDayChartData(processedData);
-      }
+    // console.log("DAY PERFORMANCE", response);
 
-    } catch (error: any) {
-      console.error("Error fetching day performance:", error);
-      Toast.show({
-        type: "error",
-        text1: "Failed to fetch daily performance data",
-      });
-    } finally {
-      setLoading(false);
+    if (response?.data) {
+      const processedData = processDayPerformanceData(
+        response.data,
+        currentYear,
+        Number(currentMonth)
+      );
+
+      setDayPerformanceData(processedData);
+      prepareDayChartData(processedData);
     }
-  };
+
+  } catch (error) {
+    console.error("Error fetching day performance:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleGetMonthCasePerformance = async () => {
     try {
@@ -255,7 +256,7 @@ export default function HomeScreen() {
       }
 
 
-      console.log("month perf",response?.data);
+      // console.log("month perf",response?.data);
       
 
     } catch (error: any) {
@@ -359,12 +360,12 @@ export default function HomeScreen() {
     });
 
     // Log to verify data
-    console.log('Monthly Chart Data:', {
-      labels,
-      open: openData,
-      inProgress: inProgressData,
-      closed: closedData
-    });
+    // console.log('Monthly Chart Data:', {
+    //   labels,
+    //   open: openData,
+    //   inProgress: inProgressData,
+    //   closed: closedData
+    // });
 
     setMonthChartData({
       labels,

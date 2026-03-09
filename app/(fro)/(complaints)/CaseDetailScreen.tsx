@@ -54,7 +54,7 @@ export default function CaseDetailScreen() {
   // subSubCategory might not exist in your data
   const details = item?.taskDescription || item?.caseDescription;
 
-  console.log("det",details);
+  // console.log("det",item);
   
 
   const address = item?.address;
@@ -862,7 +862,7 @@ export default function CaseDetailScreen() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Phone:
+                  Phone:   
                 </Text>
               </View>
               <Text
@@ -902,6 +902,32 @@ export default function CaseDetailScreen() {
                 </Text>
               </View>
             )}
+
+             <View style={styles.keyValueRow}>
+                <View style={styles.labelContainer}>
+                  <RemixIcon
+                    name="map-line"
+                    size={14}
+                    color={theme.colors.colorTextSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.labelKey,
+                      { color: theme.colors.colorTextSecondary },
+                    ]}
+                  >
+                    Address: 
+                  </Text>
+                </View>
+                <Text
+                  style={[
+                    styles.labelValue,
+                    { color: theme.colors.colorTextPrimary },
+                  ]}
+                >
+                  {address} 
+                </Text>
+              </View>
           </View>
         </View>
       </View>

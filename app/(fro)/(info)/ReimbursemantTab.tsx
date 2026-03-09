@@ -1,4 +1,6 @@
 import Card from "@/components/reusables/Card";
+import { createReimbursement } from "@/features/fro/Attendance/leaves/createReimbursement";
+import { getReimbursementList } from "@/features/fro/Attendance/leaves/getReimbursementList";
 import { getInteractionsListByAssignToId } from "@/features/fro/interactionApi";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
@@ -14,6 +16,7 @@ import {
   Keyboard,
   Modal,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -42,6 +45,21 @@ interface TaskOption {
   statusName?: string;
   priority?: string;
   createdDate?: string;
+}
+
+// Reimbursement List Interface
+interface ReimbursementItem {
+  id: string;
+  taskNumber: string;
+  amount: number;
+  remarks: string;
+  status: string;
+  createdDate: string;
+}
+
+interface ReimbursementResponse {
+  reimbursementList: ReimbursementItem[];
+  totalRecords: number;
 }
 
 // Helper function to get safe icon name
@@ -81,6 +99,10 @@ const getStatusColor = (statusName?: string): string => {
       return "#9E9E9E"; // Grey
     case "pending":
       return "#FF4444"; // Red
+    case "approved":
+      return "#4CAF50"; // Green
+    case "rejected":
+      return "#FF4444"; // Red
     default:
       return "#757575"; // Grey
   }
@@ -97,8 +119,33 @@ const getStatusBackgroundColor = (statusName?: string): string => {
       return "#9E9E9E20"; // Grey with opacity
     case "pending":
       return "#FF444420"; // Red with opacity
+    case "approved":
+      return "#4CAF5020"; // Green with opacity
+    case "rejected":
+      return "#FF444420"; // Red with opacity
     default:
       return "#75757520"; // Grey with opacity
+  }
+};
+
+// Format currency
+const formatCurrency = (amount: number): string => {
+  return `₹${amount.toLocaleString('en-IN')}`;
+};
+
+// Format date
+const formatDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "N/A";
   }
 };
 
@@ -106,7 +153,7 @@ export default function ReimbursemantTab() {
   const { theme } = useTheme();
   const authState = useAppSelector((state) => state.auth);
 
-  // State management
+  // State management for form
   const [selectedTask, setSelectedTask] = useState<string>("");
   const [selectedTaskDetails, setSelectedTaskDetails] = useState<TaskOption | null>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
@@ -120,12 +167,23 @@ export default function ReimbursemantTab() {
   const [attachmentModalVisible, setAttachmentModalVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>("");
 
+  // State management for reimbursement list
+  const [reimbursements, setReimbursements] = useState<ReimbursementItem[]>([]);
+  const [isLoadingReimbursements, setIsLoadingReimbursements] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const [selectedReimbursement, setSelectedReimbursement] = useState<ReimbursementItem | null>(null);
+  const [detailsModalVisible, setDetailsModalVisible] = useState<boolean>(false);
+
   // Animation for attachment modal
   const slideAnim = useRef(new Animated.Value(height)).current;
 
   useFocusEffect(
     useCallback(() => {
       fetchInteractions();
+      loadReimbursements(1, true);
     }, [])
   );
 
@@ -174,9 +232,6 @@ export default function ReimbursemantTab() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      // console.log("Fetched interactions:", res?.data?.interactions);
-
-      // Transform API data to task options
       if (res?.data?.interactions && Array.isArray(res.data.interactions)) {
         // Filter for Open or In-Progress tasks only (optional)
         const filteredInteractions = res.data.interactions.filter(
@@ -209,6 +264,116 @@ export default function ReimbursemantTab() {
     }
   };
 
+  const loadReimbursements = async (page: number = 1, reset: boolean = false) => {
+    if (isLoadingReimbursements) return;
+
+    setIsLoadingReimbursements(true);
+    try {
+      const res = await getReimbursementList({
+        userId: String(authState.userId),
+        pageNumber: page,
+        pageSize: 10,
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken),
+      });
+
+      console.log("Reimbursement List 👉", res.data);
+
+      if (res?.data) {
+        const responseData = res.data as ReimbursementResponse;
+        const newReimbursements = responseData.reimbursementList || [];
+        
+        setTotalRecords(responseData.totalRecords || 0);
+        setHasMore(newReimbursements.length === 10); // If we got 10 items, there might be more
+        
+        if (reset || page === 1) {
+          setReimbursements(newReimbursements);
+        } else {
+          setReimbursements(prev => [...prev, ...newReimbursements]);
+        }
+        setCurrentPage(page);
+      }
+    } catch (error) {
+      console.log("Reimbursement API Error", error);
+      Alert.alert("Error", "Failed to load reimbursement list");
+    } finally {
+      setIsLoadingReimbursements(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadReimbursements(1, true);
+  };
+
+  const handleLoadMore = () => {
+    if (hasMore && !isLoadingReimbursements) {
+      loadReimbursements(currentPage + 1, false);
+    }
+  };
+
+  const submitReimbursement = async () => {
+    try {
+      // Validate form before submission
+      if (!validateForm()) return;
+
+      // Get the first attachment from the attachments array
+      const primaryAttachment = attachments.length > 0 ? attachments[0] : null;
+      
+      if (!primaryAttachment) {
+        Alert.alert("Error", "Please add at least one attachment");
+        return;
+      }
+
+      // Create a file object similar to what your API expects
+      const fileToUpload = {
+        uri: primaryAttachment.uri,
+        name: primaryAttachment.name,
+        type: primaryAttachment.type,
+      };
+
+      console.log("Submitting reimbursement with:", {
+        taskNumber: selectedTask,
+        amount: Number(price),
+        remarks: remarks,
+        attachment: fileToUpload.name
+      });
+
+      const response = await createReimbursement({
+        taskNumber: selectedTask,
+        amount: Number(price),
+        remarks: remarks || "Reimbursement request",
+        userId: String(authState?.userId),
+        attachment: fileToUpload,
+        token: String(authState?.token),
+        csrfToken: String(authState?.antiforgeryToken)
+      });
+
+      console.log("Reimbursement Success:", response);
+      
+      Alert.alert(
+        "Success",
+        "Reimbursement submitted successfully",
+        [{ text: "OK" }]
+      );
+
+      // Reset form
+      setSelectedTask("");
+      setSelectedTaskDetails(null);
+      setAttachments([]);
+      setRemarks("");
+      setPrice("");
+      
+      // Refresh the reimbursement list
+      loadReimbursements(1, true);
+      
+    } catch (error) {
+      console.log("Reimbursement Error:", error);
+      Alert.alert("Error", "Failed to submit reimbursement. Please try again.");
+    }
+  };
+
   const handleTaskSelect = (task: TaskOption) => {
     setSelectedTask(task.value);
     setSelectedTaskDetails(task);
@@ -235,7 +400,6 @@ export default function ReimbursemantTab() {
         };
         setAttachments([...attachments, newAttachment]);
         
-        // Show success message
         Alert.alert(
           "File Added",
           `${file.name} has been attached successfully.`,
@@ -278,7 +442,6 @@ export default function ReimbursemantTab() {
         };
         setAttachments([...attachments, newAttachment]);
         
-        // Show success message
         Alert.alert(
           "Image Added",
           `Image has been attached successfully.`,
@@ -319,7 +482,6 @@ export default function ReimbursemantTab() {
         };
         setAttachments([...attachments, newAttachment]);
         
-        // Show success message
         Alert.alert(
           "Photo Added",
           `Photo has been captured and attached successfully.`,
@@ -357,7 +519,6 @@ export default function ReimbursemantTab() {
 
   // Handle price input - only allow numbers (strict integer)
   const handlePriceChange = (text: string) => {
-    // Remove any non-numeric characters
     const cleaned = text.replace(/[^0-9]/g, '');
     setPrice(cleaned);
   };
@@ -383,43 +544,7 @@ export default function ReimbursemantTab() {
 
     setIsSubmitting(true);
     try {
-      // TODO: Replace with actual API call
-      const formData = new FormData();
-      formData.append("taskNumber", selectedTask);
-      formData.append("remarks", remarks);
-      formData.append("price", price);
-
-      // Append attachments
-      attachments.forEach((attachment, index) => {
-        formData.append(`attachment_${index}`, {
-          uri: attachment.uri,
-          name: attachment.name,
-          type: attachment.type,
-        } as any);
-      });
-
-      console.log("Submitting reimbursement:", {
-        taskNumber: selectedTask,
-        attachments: attachments.map((a) => a.name),
-        remarks,
-        price,
-      });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      Alert.alert(
-        "Success",
-        "Reimbursement submitted successfully",
-        [{ text: "OK" }]
-      );
-
-      // Reset form
-      setSelectedTask("");
-      setSelectedTaskDetails(null);
-      setAttachments([]);
-      setRemarks("");
-      setPrice("");
+      await submitReimbursement();
     } catch (error) {
       console.log("Error submitting reimbursement:", error);
       Alert.alert("Error", "Failed to submit reimbursement. Please try again.");
@@ -435,7 +560,7 @@ export default function ReimbursemantTab() {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   };
 
-  const formatDate = (dateString?: string): string => {
+  const formatDateShort = (dateString?: string): string => {
     if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
@@ -448,6 +573,210 @@ export default function ReimbursemantTab() {
       return "N/A";
     }
   };
+
+  // Render reimbursement list item
+  const renderReimbursementItem = ({ item }: { item: ReimbursementItem }) => (
+    <TouchableOpacity
+      style={[
+        styles.reimbursementItem,
+        {
+          backgroundColor: theme.colors.colorBgSurface,
+          borderColor: theme.colors.border,
+        },
+      ]}
+      onPress={() => {
+        setSelectedReimbursement(item);
+        setDetailsModalVisible(true);
+      }}
+      activeOpacity={0.7}
+    >
+      <View style={styles.reimbursementHeader}>
+        <View style={styles.reimbursementHeaderLeft}>
+          <RemixIcon
+            name="bill-line"
+            size={20}
+            color={theme.colors.colorPrimary600}
+          />
+          <Text
+            style={[
+              styles.reimbursementTaskNumber,
+              { color: theme.colors.colorPrimary600 },
+            ]}
+          >
+            {item.taskNumber}
+          </Text>
+        </View>
+        <View
+          style={[
+            styles.reimbursementStatusBadge,
+            { backgroundColor: getStatusBackgroundColor(item.status) },
+          ]}
+        >
+          <Text
+            style={[
+              styles.reimbursementStatusText,
+              { color: getStatusColor(item.status) },
+            ]}
+          >
+            {item.status}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.reimbursementBody}>
+        <View style={styles.reimbursementAmountContainer}>
+          <Text
+            style={[
+              styles.reimbursementAmountLabel,
+              { color: theme.colors.colorTextSecondary },
+            ]}
+          >
+            Amount:
+          </Text>
+          <Text
+            style={[
+              styles.reimbursementAmount,
+              { color: theme.colors.colorSuccess600 },
+            ]}
+          >
+            {formatCurrency(item.amount)}
+          </Text>
+        </View>
+
+        {item.remarks ? (
+          <View style={styles.reimbursementRemarksContainer}>
+            <Text
+              style={[
+                styles.reimbursementRemarksLabel,
+                { color: theme.colors.colorTextSecondary },
+              ]}
+              numberOfLines={1}
+            >
+              Remarks: 
+            </Text>
+            <Text
+              style={[
+                styles.reimbursementRemarks,
+                { color: theme.colors.colorTextPrimary },
+              ]}
+              numberOfLines={1}
+            >
+              {item.remarks}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.reimbursementFooter}>
+        <RemixIcon
+          name="time-line"
+          size={14}
+          color={theme.colors.colorTextTertiary}
+        />
+        <Text
+          style={[
+            styles.reimbursementDate,
+            { color: theme.colors.colorTextTertiary },
+          ]}
+        >
+          {formatDateShort(item.createdDate)}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+
+  // Render reimbursement list header
+  const renderListHeader = () => (
+    <View style={styles.listHeader}>
+      <View style={styles.listHeaderLeft}>
+        <Text
+          style={[
+            styles.listTitle,
+            { color: theme.colors.colorTextPrimary },
+          ]}
+        >
+          Reimbursement History
+        </Text>
+        <View
+          style={[
+            styles.listBadge,
+            { backgroundColor: theme.colors.colorPrimary600 },
+          ]}
+        >
+          <Text
+            style={[
+              styles.listBadgeText,
+              { color: theme.colors.colorTextInverse },
+            ]}
+          >
+            {totalRecords}
+          </Text>
+        </View>
+      </View>
+      <TouchableOpacity
+        onPress={handleRefresh}
+        disabled={isLoadingReimbursements}
+        style={styles.refreshButton}
+        activeOpacity={0.7}
+      >
+        <RemixIcon
+          name="refresh-line"
+          size={18}
+          color={theme.colors.colorPrimary600}
+        />
+      </TouchableOpacity>
+    </View>
+  );
+
+  // Render list footer with loader
+  const renderListFooter = () => {
+    if (!isLoadingReimbursements) return null;
+    
+    return (
+      <View style={styles.listFooterLoader}>
+        <RemixIcon
+          name="loader-4-line"
+          size={24}
+          color={theme.colors.colorPrimary600}
+        />
+        <Text
+          style={[
+            styles.listFooterText,
+            { color: theme.colors.colorTextSecondary },
+          ]}
+        >
+          Loading more...
+        </Text>
+      </View>
+    );
+  };
+
+  // Render empty list
+  const renderEmptyList = () => (
+    <View style={styles.emptyListContainer}>
+      <RemixIcon
+        name="inbox-line"
+        size={64}
+        color={theme.colors.colorTextTertiary}
+      />
+      <Text
+        style={[
+          styles.emptyListTitle,
+          { color: theme.colors.colorTextPrimary },
+        ]}
+      >
+        No Reimbursements Yet
+      </Text>
+      <Text
+        style={[
+          styles.emptyListText,
+          { color: theme.colors.colorTextSecondary },
+        ]}
+      >
+        Your submitted reimbursements will appear here
+      </Text>
+    </View>
+  );
 
   const renderTaskItem = ({ item }: { item: TaskOption }) => (
     <TouchableOpacity
@@ -528,7 +857,7 @@ export default function ReimbursemantTab() {
                 { color: theme.colors.colorTextSecondary },
               ]}
             >
-              {formatDate(item.createdDate)}
+              {formatDateShort(item.createdDate)}
             </Text>
           </View>
         </View>
@@ -611,6 +940,7 @@ export default function ReimbursemantTab() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Reimbursement Request Form Card */}
         <Card
           title="Reimbursement Request"
           backgroundColor={theme.colors.colorBgPage}
@@ -996,6 +1326,47 @@ export default function ReimbursemantTab() {
             </View>
           )}
         </Card>
+
+        {/* Reimbursement List Section */}
+        <View style={styles.listSection}>
+          {renderListHeader()}
+
+          {isLoadingReimbursements && reimbursements.length === 0 ? (
+            <View style={styles.listLoader}>
+              <RemixIcon
+                name="loader-4-line"
+                size={32}
+                color={theme.colors.colorPrimary600}
+              />
+              <Text
+                style={[
+                  styles.listLoaderText,
+                  { color: theme.colors.colorTextSecondary },
+                ]}
+              >
+                Loading reimbursements...
+              </Text>
+            </View>
+          ) : (
+            <FlatList
+              data={reimbursements}
+              renderItem={renderReimbursementItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              contentContainerStyle={styles.reimbursementList}
+              ListEmptyComponent={renderEmptyList}
+              ListFooterComponent={renderListFooter}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={handleRefresh}
+                  colors={[theme.colors.colorPrimary600]}
+                  tintColor={theme.colors.colorPrimary600}
+                />
+              }
+            />
+          )}
+        </View>
       </ScrollView>
 
       {/* Task Selection Modal */}
@@ -1047,7 +1418,7 @@ export default function ReimbursemantTab() {
                 style={[
                   styles.searchContainer,
                   {
-                    backgroundColor: theme.colors.colorBgInput,
+                    backgroundColor: theme.colors.colorBgPage,
                     borderColor: theme.colors.border,
                   },
                 ]}
@@ -1328,7 +1699,7 @@ export default function ReimbursemantTab() {
                             style={[
                               styles.recentFileItem,
                               {
-                                backgroundColor: theme.colors.colorBgInput,
+                                backgroundColor: theme.colors.inputBg,
                                 borderColor: theme.colors.border,
                               },
                             ]}
@@ -1379,6 +1750,158 @@ export default function ReimbursemantTab() {
                 </TouchableOpacity>
               </View>
             </Animated.View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Reimbursement Details Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={detailsModalVisible}
+        onRequestClose={() => setDetailsModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setDetailsModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <View
+              style={[
+                styles.detailsModalContent,
+                { backgroundColor: theme.colors.colorBgSurface },
+              ]}
+            >
+              <View style={styles.detailsModalHeader}>
+                <Text
+                  style={[
+                    styles.detailsModalTitle,
+                    { color: theme.colors.colorTextPrimary },
+                  ]}
+                >
+                  Reimbursement Details
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setDetailsModalVisible(false)}
+                  style={styles.closeButton}
+                >
+                  <RemixIcon
+                    name="close-line"
+                    size={24}
+                    color={theme.colors.colorTextSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+
+              {selectedReimbursement && (
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <View style={styles.detailsContainer}>
+                    <View style={styles.detailsSection}>
+                      <View style={styles.detailsRow}>
+                        <Text
+                          style={[
+                            styles.detailsLabel,
+                            { color: theme.colors.colorTextSecondary },
+                          ]}
+                        >
+                          Task Number
+                        </Text>
+                        <Text
+                          style={[
+                            styles.detailsValue,
+                            { color: theme.colors.colorTextPrimary },
+                          ]}
+                        >
+                          {selectedReimbursement.taskNumber}
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailsRow}>
+                        <Text
+                          style={[
+                            styles.detailsLabel,
+                            { color: theme.colors.colorTextSecondary },
+                          ]}
+                        >
+                          Amount
+                        </Text>
+                        <Text
+                          style={[
+                            styles.detailsValue,
+                            { color: theme.colors.colorSuccess600 },
+                          ]}
+                        >
+                          {formatCurrency(selectedReimbursement.amount)}
+                        </Text>
+                      </View>
+
+                      <View style={styles.detailsRow}>
+                        <Text
+                          style={[
+                            styles.detailsLabel,
+                            { color: theme.colors.colorTextSecondary },
+                          ]}
+                        >
+                          Status
+                        </Text>
+                        <View
+                          style={[
+                            styles.detailsStatusBadge,
+                            { backgroundColor: getStatusBackgroundColor(selectedReimbursement.status) },
+                          ]}
+                        >
+                          <Text
+                            style={[
+                              styles.detailsStatusText,
+                              { color: getStatusColor(selectedReimbursement.status) },
+                            ]}
+                          >
+                            {selectedReimbursement.status}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.detailsRow}>
+                        <Text
+                          style={[
+                            styles.detailsLabel,
+                            { color: theme.colors.colorTextSecondary },
+                          ]}
+                        >
+                          Created Date
+                        </Text>
+                        <Text
+                          style={[
+                            styles.detailsValue,
+                            { color: theme.colors.colorTextPrimary },
+                          ]}
+                        >
+                          {formatDate(selectedReimbursement.createdDate)}
+                        </Text>
+                      </View>
+
+                      {selectedReimbursement.remarks && (
+                        <View style={styles.detailsRemarks}>
+                          <Text
+                            style={[
+                              styles.detailsLabel,
+                              { color: theme.colors.colorTextSecondary },
+                            ]}
+                          >
+                            Remarks
+                          </Text>
+                          <Text
+                            style={[
+                              styles.detailsRemarksText,
+                              { color: theme.colors.colorTextPrimary },
+                            ]}
+                          >
+                            {selectedReimbursement.remarks}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </View>
+                </ScrollView>
+              )}
+            </View>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -1604,6 +2127,145 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
+  // List Section Styles
+  listSection: {
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  listHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  listHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  listTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  listBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 12,
+    minWidth: 24,
+    alignItems: "center",
+  },
+  listBadgeText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  refreshButton: {
+    padding: 8,
+    borderRadius: 20,
+  },
+  listLoader: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 32,
+    gap: 12,
+  },
+  listLoaderText: {
+    fontSize: 14,
+  },
+  reimbursementList: {
+    gap: 12,
+    paddingBottom: 20,
+  },
+  reimbursementItem: {
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 16,
+  },
+  reimbursementHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  reimbursementHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  reimbursementTaskNumber: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  reimbursementStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  reimbursementStatusText: {
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  reimbursementBody: {
+    marginBottom: 12,
+  },
+  reimbursementAmountContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+    gap: 8,
+  },
+  reimbursementAmountLabel: {
+    fontSize: 13,
+  },
+  reimbursementAmount: {
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  reimbursementRemarksContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  reimbursementRemarksLabel: {
+    fontSize: 13,
+  },
+  reimbursementRemarks: {
+    fontSize: 13,
+    flex: 1,
+  },
+  reimbursementFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  reimbursementDate: {
+    fontSize: 12,
+  },
+  listFooterLoader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+    gap: 8,
+  },
+  listFooterText: {
+    fontSize: 13,
+  },
+  emptyListContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 40,
+    gap: 12,
+  },
+  emptyListTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  emptyListText: {
+    fontSize: 13,
+    textAlign: "center",
+  },
+
   // Modal Styles
   modalOverlay: {
     flex: 1,
@@ -1617,6 +2279,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     maxHeight: "80%",
   },
+  detailsModalContent: {
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 20,
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 34 : 20,
+    maxHeight: "70%",
+  },
   modalHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -1624,8 +2294,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 4,
   },
+  detailsModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
   modalTitle: {
     fontSize: 18,
+    fontWeight: "700",
+  },
+  detailsModalTitle: {
+    fontSize: 20,
     fontWeight: "700",
   },
   closeButton: {
@@ -1827,5 +2507,42 @@ const styles = StyleSheet.create({
   attachmentModalCancelText: {
     fontSize: 14,
     fontWeight: "500",
+  },
+
+  // Details Modal Styles
+  detailsContainer: {
+    paddingBottom: 20,
+  },
+  detailsSection: {
+    gap: 16,
+  },
+  detailsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  detailsLabel: {
+    fontSize: 14,
+  },
+  detailsValue: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  detailsStatusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  detailsStatusText: {
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  detailsRemarks: {
+    marginTop: 8,
+    gap: 8,
+  },
+  detailsRemarksText: {
+    fontSize: 14,
+    lineHeight: 20,
   },
 });
