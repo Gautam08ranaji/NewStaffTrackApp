@@ -1,5 +1,6 @@
 import { getAttendanceHistory } from "@/features/fro/addAttendance";
 import { addAttendance } from "@/features/fro/addAttendanceStatus";
+import { useLocation } from "@/hooks/LocationContext";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect } from "expo-router";
@@ -54,6 +55,8 @@ export default function PunchInCard() {
   const [isPunchedIn, setIsPunchedIn] = useState(false);
   const [dutyEnded, setDutyEnded] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { hasPermission, fetchLocation, address } = useLocation();
+
 
   /* ================= LOAD ATTENDANCE ================= */
 
@@ -126,12 +129,12 @@ export default function PunchInCard() {
 
       if (status === 401) {
         Alert.alert(
-          t("attendanceCard.sessionExpired") || "Session Expired", 
-          t("attendanceCard.pleaseLoginAgain") || "Please login again", 
+          t("attendanceCard.sessionExpired") || "Session Expired",
+          t("attendanceCard.pleaseLoginAgain") || "Please login again",
           [
-            { 
-              text: t("common.ok") || "OK", 
-              onPress: () => router.replace("/login") 
+            {
+              text: t("common.ok") || "OK",
+              onPress: () => router.replace("/login")
             },
           ]
         );
@@ -190,11 +193,21 @@ export default function PunchInCard() {
         status: "Present" as const,
         userId: String(authState.userId),
       };
+      const location = await fetchLocation();
+      if (!location) return;
+
+      const { latitude, longitude } = location.coords;
+      console.log(location.coords,"kehvsc");
+      
+
 
       const res = await addAttendance({
         data: payload,
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
+        checkInLocation: String(`${latitude},${longitude}`),
+        checkOutLocation: String(`${latitude},${longitude}`),
+        userId: String(authState?.userId)
       });
 
       console.log("punch res", res);
@@ -293,8 +306,8 @@ export default function PunchInCard() {
               {dutyEnded
                 ? t("attendanceCard.punchedOut") || "Punched Out"
                 : isPunchedIn
-                ? t("attendanceCard.punchOut") || "Punch Out"
-                : t("attendanceCard.punchIn") || "Punch In"}
+                  ? t("attendanceCard.punchOut") || "Punch Out"
+                  : t("attendanceCard.punchIn") || "Punch In"}
             </Text>
           )}
         </TouchableOpacity>
@@ -330,9 +343,9 @@ export default function PunchInCard() {
           style={{
             width: `${Math.min((workedMinutes / TARGET_MINUTES) * 100, 100)}%`,
             height: "100%",
-            backgroundColor: 
-              workedMinutes >= TARGET_MINUTES 
-                ? theme.colors.colorSuccess600 
+            backgroundColor:
+              workedMinutes >= TARGET_MINUTES
+                ? theme.colors.colorSuccess600
                 : theme.colors.validationWarningText,
           }}
         />

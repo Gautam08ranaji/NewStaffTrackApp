@@ -309,12 +309,14 @@
       "all": "सभी",
       "present": "उपस्थित",
       "absent": "अनुपस्थित",
-      "leave": "अवकाश"
+      "leave": "अवकाश",
+      "late": "विलंब"
     },
     "status": {
       "present": "उपस्थित",
       "absent": "अनुपस्थित",
-      "leave": "अवकाश"
+      "leave": "अवकाश",
+      "late": "विलंब"
     }
   },
   "reimbursement": {

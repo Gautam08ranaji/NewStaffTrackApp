@@ -301,12 +301,14 @@
       "all": "All",
       "present": "Present",
       "absent": "Absent",
-      "leave": "Leave"
+      "leave": "Leave",
+      "late": "Late"
     },
     "status": {
       "present": "Present",
       "absent": "Absent",
-      "leave": "Leave"
+      "leave": "Leave",
+      "late": "Late"
     }
   },
    "reimbursement": {

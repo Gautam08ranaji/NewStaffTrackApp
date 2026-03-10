@@ -6,13 +6,14 @@ import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getAttendanceHistory } from "@/features/fro/addAttendance";
 import { addAttendance } from "@/features/fro/addAttendanceStatus";
+import { useLocation } from "@/hooks/LocationContext";
 import { useAppSelector } from "@/store/hooks";
 import { router, useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 
 /* ================= TYPES ================= */
 
-type AttendanceStatus = "Present" | "Absent" | "Leave";
+type AttendanceStatus = "Present" | "Absent" | "Leave" | "Late";
 
 type AttendanceItem = {
   id: number;
@@ -45,6 +46,12 @@ const getStatusTheme = (theme: any, status: AttendanceStatus) => {
         bg: theme.colors.validationInfoBg, 
         text: theme.colors.validationInfoText, 
         border: theme.colors.validationInfoText 
+      };
+    case "Late":
+      return { 
+        bg: theme.colors.colorWarning100, 
+        text: theme.colors.colorWarning600, 
+        border: theme.colors.colorWarning600 
       };
     default:
       return { 
@@ -95,6 +102,8 @@ const normalizeStatus = (status?: string): AttendanceStatus => {
       return "Present";
     case "leave":
       return "Leave";
+    case "late":
+      return "Late";
     default:
       return "Absent";
   }
@@ -128,6 +137,7 @@ export default function AttendanceTab() {
   const { theme } = useTheme();
   const { t, i18n } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
+  const { hasPermission, fetchLocation, address } = useLocation();
 
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceItem[]>(
     [],
@@ -291,6 +301,21 @@ export default function AttendanceTab() {
       const currentDate = now.toISOString().split("T")[0];
       const currentDateTime = now.toISOString();
 
+      const location = await fetchLocation();
+      
+      if (!location) {
+        Toast.show({
+          type: "error",
+          text1: t("attendance.locationNotAvailable") || "Location not available",
+        });
+        return;
+      }
+
+      const { latitude, longitude } = location.coords;
+      const locationString = `${latitude},${longitude}`;
+
+      console.log(location.coords, "attendance location");
+
       const res = await addAttendance({
         data: {
           attendancedate: currentDate,
@@ -301,21 +326,25 @@ export default function AttendanceTab() {
         },
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
+        checkInLocation: action === "start" ? locationString : "",
+        checkOutLocation: action === "end" ? locationString : "",
+        userId: String(authState.userId),
       });
 
-      console.log("punch in punch out ", res);
+      console.log("attendance response", res);
 
       Toast.show({
         type: "success",
-        text1: action === "start" 
-          ? (t("attendance.dutyStarted") || "Duty Started") 
-          : (t("attendance.dutyEnded") || "Duty Ended Successfully"),
+        text1:
+          action === "start"
+            ? t("attendance.dutyStarted") || "Duty Started"
+            : t("attendance.dutyEnded") || "Duty Ended Successfully",
       });
 
-      // Reload attendance after successful action
       await loadAttendance();
     } catch (error) {
       console.error("Attendance submit failed", error);
+
       Toast.show({
         type: "error",
         text1: t("attendance.failed") || "Attendance failed",
@@ -395,7 +424,7 @@ export default function AttendanceTab() {
           <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
             {t("attendance.totalTimeLabel")}
           </Text>
-          <Text style={[styles.value, { color: theme.colors.colorInfoText }]}>
+          <Text style={[styles.value, { color: theme.colors.colorTextSecondary }]}>
             {formatMinutesToTime(workedMinutes)}
           </Text>
         </View>
@@ -424,7 +453,7 @@ export default function AttendanceTab() {
       </View>
 
       <View style={styles.tabRow}>
-        {(["all", "Present", "Absent", "Leave"] as const).map((tab) => (
+        {(["all", "Present", "Absent", "Leave", "Late"] as const).map((tab) => (
           <Text
             key={tab}
             onPress={() => setActiveTab(tab)}
