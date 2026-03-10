@@ -4,7 +4,8 @@ import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
-import { Alert, Text, TouchableOpacity, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 const TARGET_MINUTES = 8 * 60;
@@ -44,6 +45,7 @@ function calculateMinutes(start: string, end?: string | null) {
 
 export default function PunchInCard() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
 
   const [punchInTime, setPunchInTime] = useState<Date | null>(null);
@@ -71,14 +73,13 @@ export default function PunchInCard() {
         ? res.data.attendanceList
         : [];
 
-    const today = new Date().toISOString().split("T")[0];
+      const today = new Date().toISOString().split("T")[0];
 
-const todayAttendance = list.find(
-  (item: any) => item.attendancedate === today
-);
+      const todayAttendance = list.find(
+        (item: any) => item.attendancedate === today
+      );
 
-      console.log("res",res?.data);
-      
+      console.log("res", res?.data);
 
       if (!todayAttendance) {
         setIsPunchedIn(false);
@@ -124,13 +125,24 @@ const todayAttendance = list.find(
       const status = err?.status || err?.response?.status;
 
       if (status === 401) {
-        Alert.alert("Session Expired", "Please login again", [
-          { text: "OK", onPress: () => router.replace("/login") },
-        ]);
+        Alert.alert(
+          t("attendanceCard.sessionExpired") || "Session Expired", 
+          t("attendanceCard.pleaseLoginAgain") || "Please login again", 
+          [
+            { 
+              text: t("common.ok") || "OK", 
+              onPress: () => router.replace("/login") 
+            },
+          ]
+        );
         return;
       }
 
-      Alert.alert("Error", "Unable to load attendance");
+      Toast.show({
+        type: "error",
+        text1: t("attendanceCard.error") || "Error",
+        text2: t("attendanceCard.unableToLoad") || "Unable to load attendance",
+      });
     } finally {
       setLoading(false);
     }
@@ -179,14 +191,13 @@ const todayAttendance = list.find(
         userId: String(authState.userId),
       };
 
-    const res =  await addAttendance({
+      const res = await addAttendance({
         data: payload,
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      console.log("punch res",res);
-      
+      console.log("punch res", res);
 
       if (action === "start") {
         setPunchInTime(now);
@@ -195,8 +206,8 @@ const todayAttendance = list.find(
 
         Toast.show({
           type: "success",
-          text1: "Punch In Successful",
-          text2: `Started at ${formatTimeAMPM(now)}`,
+          text1: t("attendanceCard.punchInSuccess") || "Punch In Successful",
+          text2: `${t("attendanceCard.startedAt") || "Started at"} ${formatTimeAMPM(now)}`,
         });
       } else {
         setPunchOutTime(now);
@@ -205,15 +216,15 @@ const todayAttendance = list.find(
 
         Toast.show({
           type: "success",
-          text1: "Punch Out Successful",
-          text2: `Worked ${formatMinutesToTime(workedMinutes)}`,
+          text1: t("attendanceCard.punchOutSuccess") || "Punch Out Successful",
+          text2: `${t("attendanceCard.worked") || "Worked"} ${formatMinutesToTime(workedMinutes)}`,
         });
       }
     } catch {
       Toast.show({
         type: "error",
-        text1: "Attendance Failed",
-        text2: "Please try again",
+        text1: t("attendanceCard.failed") || "Attendance Failed",
+        text2: t("attendanceCard.tryAgain") || "Please try again",
       });
     } finally {
       setLoading(false);
@@ -225,7 +236,7 @@ const todayAttendance = list.find(
   return (
     <View
       style={{
-        padding: 12,
+        padding: 16,
         backgroundColor: theme.colors.validationWarningBg,
         marginTop: 10,
         borderRadius: 12,
@@ -241,41 +252,18 @@ const todayAttendance = list.find(
         }}
       >
         <View>
-          <Text style={{ color: theme.colors.colorTextSecondary }}>
-            Punched In
+          <Text style={[theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+            {t("attendanceCard.punchedIn") || "Punched In"}
           </Text>
 
           <Text
-            style={{
-              color: theme.colors.validationWarningText,
-              fontSize: 18,
-              marginTop: 4,
-            }}
+            style={[
+              theme.typography.fontH5,
+              { color: theme.colors.validationWarningText, marginTop: 4 }
+            ]}
           >
             {punchInTime ? formatTimeAMPM(punchInTime) : "--:--"}
           </Text>
-
-          {/* {punchOutTime && (
-            <>
-              <Text
-                style={{
-                  color: theme.colors.colorTextSecondary,
-                  marginTop: 6,
-                }}
-              >
-                Punched Out
-              </Text>
-
-              <Text
-                style={{
-                  color: theme.colors.validationWarningText,
-                  fontSize: 16,
-                }}
-              >
-                {formatTimeAMPM(punchOutTime)}
-              </Text>
-            </>
-          )} */}
         </View>
 
         <TouchableOpacity
@@ -283,23 +271,32 @@ const todayAttendance = list.find(
           onPress={punchAttendance}
           style={{
             paddingVertical: 12,
-            paddingHorizontal: 22,
+            paddingHorizontal: 24,
             borderRadius: 10,
             backgroundColor:
               loading || dutyEnded
-                ? "#999"
+                ? theme.colors.btnDisabledBg
                 : theme.colors.validationWarningText,
+            minWidth: 120,
+            alignItems: "center",
           }}
         >
-          <Text style={{ color: "#fff", fontWeight: "700" }}>
-            {loading
-              ? "Please wait..."
-              : dutyEnded
-              ? "Punched Out"
-              : isPunchedIn
-              ? "Punch Out"
-              : "Punch In"}
-          </Text>
+          {loading ? (
+            <ActivityIndicator color={theme.colors.btnPrimaryText} size="small" />
+          ) : (
+            <Text
+              style={[
+                theme.typography.fontButton,
+                { color: theme.colors.btnPrimaryText }
+              ]}
+            >
+              {dutyEnded
+                ? t("attendanceCard.punchedOut") || "Punched Out"
+                : isPunchedIn
+                ? t("attendanceCard.punchOut") || "Punch Out"
+                : t("attendanceCard.punchIn") || "Punch In"}
+            </Text>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -307,16 +304,38 @@ const todayAttendance = list.find(
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
-          marginTop: 12,
+          marginTop: 16,
         }}
       >
-        <Text style={{ color: theme.colors.colorTextSecondary }}>
-          Working Time: {formatMinutesToTime(workedMinutes)}
+        <Text style={[theme.typography.fontBody, { color: theme.colors.colorTextSecondary }]}>
+          {t("attendanceCard.workingTime") || "Working Time"}: {formatMinutesToTime(workedMinutes)}
         </Text>
 
-        <Text style={{ color: theme.colors.colorTextSecondary }}>
-          Target: {formatMinutesToTime(TARGET_MINUTES)}
+        <Text style={[theme.typography.fontBody, { color: theme.colors.colorTextSecondary }]}>
+          {t("attendanceCard.target") || "Target"}: {formatMinutesToTime(TARGET_MINUTES)}
         </Text>
+      </View>
+
+      {/* Progress Bar */}
+      <View
+        style={{
+          marginTop: 12,
+          height: 6,
+          backgroundColor: theme.colors.colorBgAlt,
+          borderRadius: 3,
+          overflow: "hidden",
+        }}
+      >
+        <View
+          style={{
+            width: `${Math.min((workedMinutes / TARGET_MINUTES) * 100, 100)}%`,
+            height: "100%",
+            backgroundColor: 
+              workedMinutes >= TARGET_MINUTES 
+                ? theme.colors.colorSuccess600 
+                : theme.colors.validationWarningText,
+          }}
+        />
       </View>
     </View>
   );

@@ -50,27 +50,26 @@ export default function ChangePasswordScreen() {
     };
 
     if (!oldPassword) {
-      newErrors.oldPassword = "Old password is required";
+      newErrors.oldPassword = t("changePassword.errors.oldRequired");
       valid = false;
     }
 
     if (!newPassword) {
-      newErrors.newPassword = "New password is required";
+      newErrors.newPassword = t("changePassword.errors.newRequired");
       valid = false;
     } else if (oldPassword === newPassword) {
-      newErrors.newPassword = "New password cannot be same as old password";
+      newErrors.newPassword = t("changePassword.errors.sameAsOld");
       valid = false;
     } else if (!passwordRegex.test(newPassword)) {
-      newErrors.newPassword =
-        "Password must be at least 8 characters, include 1 uppercase, 1 number and 1 special character";
+      newErrors.newPassword = t("changePassword.errors.passwordRequirements");
       valid = false;
     }
 
     if (!confirmPassword) {
-      newErrors.confirmPassword = "Confirm password is required";
+      newErrors.confirmPassword = t("changePassword.errors.confirmRequired");
       valid = false;
     } else if (newPassword !== confirmPassword) {
-      newErrors.confirmPassword = "Passwords do not match";
+      newErrors.confirmPassword = t("changePassword.errors.passwordMismatch");
       valid = false;
     }
 
@@ -95,11 +94,11 @@ export default function ChangePasswordScreen() {
       // ✅ Dynamic success message from API
       if (res?.success) {
         Alert.alert(
-          "Success",
-          res?.data?.message || "Password changed successfully",
+          t("common.success") || "Success",
+          res?.data?.message || t("changePassword.successMessage"),
           [
             {
-              text: "OK",
+              text: t("common.ok") || "OK",
               onPress: () => {
                 navigation.goBack(); // ⬅️ Navigate back after success
               },
@@ -116,7 +115,10 @@ export default function ChangePasswordScreen() {
       }
     } catch (error) {
       console.error("Change password failed", error);
-      Alert.alert("Error", "Failed to change password. Please try again.");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("changePassword.errorMessage") || "Failed to change password. Please try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -125,11 +127,19 @@ export default function ChangePasswordScreen() {
   return (
     <BodyLayout type="screen" screenName={t("changePassword.screenTitle")}>
       <View
-        style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+        style={[
+          styles.card, 
+          { 
+            backgroundColor: theme.colors.colorBgSurface,
+            shadowColor: theme.colors.colorShadow,
+          }
+        ]}
       >
         {/* OLD PASSWORD */}
         {errors.oldPassword ? (
-          <Text style={styles.errorText}>{errors.oldPassword}</Text>
+          <Text style={[styles.errorText, { color: theme.colors.colorError600 }]}>
+            {errors.oldPassword}
+          </Text>
         ) : null}
         <Text
           style={[styles.label, { color: theme.colors.colorTextSecondary }]}
@@ -142,15 +152,17 @@ export default function ChangePasswordScreen() {
               styles.input,
               {
                 borderColor: errors.oldPassword
-                  ? "#ff4d4f"
+                  ? theme.colors.inputErrorBorder
                   : theme.colors.inputBorder,
                 backgroundColor: theme.colors.inputBg,
-                color: theme.colors.colorTextSecondary,
+                color: theme.colors.inputText,
               },
             ]}
             secureTextEntry={!showOld}
             value={oldPassword}
             onChangeText={setOldPassword}
+            placeholder={t("changePassword.enterOldPassword")}
+            placeholderTextColor={theme.colors.inputPlaceholder}
           />
           <TouchableOpacity
             style={styles.eyeBtn}
@@ -159,14 +171,16 @@ export default function ChangePasswordScreen() {
             <RemixIcon
               name={showOld ? "eye-line" : "eye-off-line"}
               size={22}
-              color="#555"
+              color={theme.colors.colorTextSecondary}
             />
           </TouchableOpacity>
         </View>
 
         {/* NEW PASSWORD */}
         {errors.newPassword ? (
-          <Text style={styles.errorText}>{errors.newPassword}</Text>
+          <Text style={[styles.errorText, { color: theme.colors.colorError600 }]}>
+            {errors.newPassword}
+          </Text>
         ) : null}
         <Text
           style={[styles.label, { color: theme.colors.colorTextSecondary }]}
@@ -179,15 +193,17 @@ export default function ChangePasswordScreen() {
               styles.input,
               {
                 borderColor: errors.newPassword
-                  ? "#ff4d4f"
+                  ? theme.colors.inputErrorBorder
                   : theme.colors.inputBorder,
                 backgroundColor: theme.colors.inputBg,
-                color: theme.colors.colorTextSecondary,
+                color: theme.colors.inputText,
               },
             ]}
             secureTextEntry={!showNew}
             value={newPassword}
             onChangeText={setNewPassword}
+            placeholder={t("changePassword.enterNewPassword")}
+            placeholderTextColor={theme.colors.inputPlaceholder}
           />
           <TouchableOpacity
             style={styles.eyeBtn}
@@ -196,14 +212,16 @@ export default function ChangePasswordScreen() {
             <RemixIcon
               name={showNew ? "eye-line" : "eye-off-line"}
               size={22}
-              color="#555"
+              color={theme.colors.colorTextSecondary}
             />
           </TouchableOpacity>
         </View>
 
         {/* CONFIRM PASSWORD */}
         {errors.confirmPassword ? (
-          <Text style={styles.errorText}>{errors.confirmPassword}</Text>
+          <Text style={[styles.errorText, { color: theme.colors.colorError600 }]}>
+            {errors.confirmPassword}
+          </Text>
         ) : null}
         <Text
           style={[styles.label, { color: theme.colors.colorTextSecondary }]}
@@ -216,15 +234,17 @@ export default function ChangePasswordScreen() {
               styles.input,
               {
                 borderColor: errors.confirmPassword
-                  ? "#ff4d4f"
+                  ? theme.colors.inputErrorBorder
                   : theme.colors.inputBorder,
                 backgroundColor: theme.colors.inputBg,
-                color: theme.colors.colorTextSecondary,
+                color: theme.colors.inputText,
               },
             ]}
             secureTextEntry={!showConfirm}
             value={confirmPassword}
             onChangeText={setConfirmPassword}
+            placeholder={t("changePassword.enterConfirmPassword")}
+            placeholderTextColor={theme.colors.inputPlaceholder}
           />
           <TouchableOpacity
             style={styles.eyeBtn}
@@ -233,7 +253,7 @@ export default function ChangePasswordScreen() {
             <RemixIcon
               name={showConfirm ? "eye-line" : "eye-off-line"}
               size={22}
-              color="#555"
+              color={theme.colors.colorTextSecondary}
             />
           </TouchableOpacity>
         </View>
@@ -244,17 +264,20 @@ export default function ChangePasswordScreen() {
             styles.saveBtn,
             {
               backgroundColor: loading
-                ? theme.colors.colorPrimary300
-                : theme.colors.colorPrimary600,
+                ? theme.colors.btnDisabledBg
+                : theme.colors.btnPrimaryBg,
+              shadowColor: theme.colors.colorShadow,
             },
           ]}
           disabled={loading}
           onPress={handleChangePassword}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={theme.colors.btnPrimaryText} />
           ) : (
-            <Text style={styles.saveText}>{t("changePassword.save")}</Text>
+            <Text style={[styles.saveText, { color: theme.colors.btnPrimaryText }]}>
+              {t("common.save")}
+            </Text>
           )}
         </TouchableOpacity>
       </View>
@@ -269,15 +292,20 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 12,
     elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   label: {
     fontSize: 14,
     marginBottom: 5,
     marginTop: 15,
+    fontFamily: 'Poppins-Medium',
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
+    position: 'relative',
   },
   input: {
     flex: 1,
@@ -286,25 +314,31 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
   eyeBtn: {
     position: "absolute",
     right: 12,
+    padding: 4,
   },
   saveBtn: {
     paddingVertical: 14,
     borderRadius: 8,
     marginTop: 25,
     alignItems: "center",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   saveText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   errorText: {
-    color: "#ff4d4f",
     fontSize: 12,
     marginTop: 8,
+    fontFamily: 'Poppins-Regular',
   },
 });

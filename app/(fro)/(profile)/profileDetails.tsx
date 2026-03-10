@@ -342,16 +342,16 @@ export default function OfficerDetailsScreen() {
   const validate = () => {
     const newErrors: Partial<Record<TextInputKey, string>> = {};
 
-    if (!form.firstName.trim()) newErrors.firstName = "First name is required";
-    if (!form.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!form.firstName.trim()) newErrors.firstName = t("officerDetails.errors.firstNameRequired");
+    if (!form.lastName.trim()) newErrors.lastName = t("officerDetails.errors.lastNameRequired");
     if (!/^\d{10}$/.test(form.phone))
-      newErrors.phone = "Phone must be 10 digits";
+      newErrors.phone = t("officerDetails.errors.phoneInvalid");
     if (!/^\d{6}$/.test(form.pincode))
-      newErrors.pincode = "Pincode must be 6 digits";
+      newErrors.pincode = t("officerDetails.errors.pincodeInvalid");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      newErrors.email = "Invalid email";
-    if (!form.state) newErrors.state = "State required";
-    if (!form.city) newErrors.city = "City required";
+      newErrors.email = t("officerDetails.errors.emailInvalid");
+    if (!form.state) newErrors.state = t("officerDetails.errors.stateRequired");
+    if (!form.city) newErrors.city = t("officerDetails.errors.cityRequired");
 
     setErrors(newErrors);
 
@@ -499,7 +499,7 @@ export default function OfficerDetailsScreen() {
       enableScroll={false}
     >
       {(loading || saving) && (
-        <View style={styles.overlay}>
+        <View style={[styles.overlay, { backgroundColor: theme.colors.colorOverlay }]}>
           <ActivityIndicator
             size="large"
             color={theme.colors.colorPrimary600}
@@ -518,7 +518,7 @@ export default function OfficerDetailsScreen() {
           contentContainerStyle={{ paddingBottom: 0 }}
         >
           <View
-            style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+            style={[styles.card, { backgroundColor: theme.colors.colorBgSurface }]}
           >
             {/* PROFILE */}
             <View style={styles.profileWrapper}>
@@ -526,7 +526,8 @@ export default function OfficerDetailsScreen() {
                 style={[
                   styles.profileCircle,
                   {
-                    backgroundColor: theme.colors.colorPrimary600 + "22",
+                    backgroundColor: theme.colors.colorPrimary50,
+                    borderColor: theme.colors.colorPrimary200,
                   },
                 ]}
               >
@@ -547,37 +548,75 @@ export default function OfficerDetailsScreen() {
               <TouchableOpacity
                 style={[
                   styles.editIcon,
-                  { backgroundColor: theme.colors.colorPrimary600 },
+                  { backgroundColor: theme.colors.btnPrimaryBg },
                 ]}
                 onPress={() => setImagePickerVisible(true)}
               >
-                <RemixIcon name="camera-line" size={16} color="#fff" />
+                <RemixIcon name="camera-line" size={16} color={theme.colors.btnPrimaryText} />
               </TouchableOpacity>
             </View>
 
-            {renderInput("First Name", "firstName", "Enter first name")}
-            {renderInput("Last Name", "lastName", "Enter last name")}
-            {renderInput("Phone", "phone", "Enter phone", true)}
-            {renderInput("Email", "email", "Enter email")}
-            {renderDropdown("Gender", "gender", "Select gender")}
-            {renderDropdown("State", "state", "Select state")}
-            {renderDropdown("City", "city", "Select city")}
-            {renderInput("Pincode", "pincode", "Enter pincode", true)}
-            {renderInput("Address", "address", "Enter address")}
+            {renderInput(
+              t("officerDetails.firstName"),
+              "firstName",
+              t("officerDetails.enterFirstName")
+            )}
+            {renderInput(
+              t("officerDetails.lastName"),
+              "lastName",
+              t("officerDetails.enterLastName")
+            )}
+            {renderInput(
+              t("officerDetails.phone"),
+              "phone",
+              t("officerDetails.enterPhone"),
+              true
+            )}
+            {renderInput(
+              t("officerDetails.email"),
+              "email",
+              t("officerDetails.enterEmail")
+            )}
+            {renderDropdown(
+              t("officerDetails.gender"),
+              "gender",
+              t("officerDetails.selectGender")
+            )}
+            {renderDropdown(
+              t("officerDetails.state"),
+              "state",
+              t("officerDetails.selectState")
+            )}
+            {renderDropdown(
+              t("officerDetails.city"),
+              "city",
+              t("officerDetails.selectCity")
+            )}
+            {renderInput(
+              t("officerDetails.pincode"),
+              "pincode",
+              t("officerDetails.enterPincode"),
+              true
+            )}
+            {renderInput(
+              t("officerDetails.address"),
+              "address",
+              t("officerDetails.enterAddress")
+            )}
 
             <TouchableOpacity
               style={[
                 styles.saveBtn,
                 {
-                  backgroundColor: theme.colors.colorPrimary600,
+                  backgroundColor: saving ? theme.colors.btnDisabledBg : theme.colors.btnPrimaryBg,
                   opacity: saving ? 0.6 : 1,
                 },
               ]}
               onPress={onSave}
               disabled={saving}
             >
-              <Text style={styles.saveText}>
-                {saving ? "Saving..." : t("officerDetails.save")}
+              <Text style={[styles.saveText, { color: theme.colors.btnPrimaryText }]}>
+                {saving ? t("common.saving") : t("common.save")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -587,18 +626,20 @@ export default function OfficerDetailsScreen() {
       {/* DROPDOWN MODAL */}
       <Modal transparent visible={dropdownVisible} animationType="slide">
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={[styles.modalOverlay, { backgroundColor: theme.colors.colorOverlay }]}
           activeOpacity={1}
           onPress={() => setDropdownVisible(false)}
         >
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.colorBgSurface }]}>
             {getDropdownData().map((item: { label: string; value: number }) => (
               <TouchableOpacity
                 key={item.value}
-                style={styles.modalItem}
+                style={[styles.modalItem, { borderBottomColor: theme.colors.border }]}
                 onPress={() => handleDropdownSelect(item)}
               >
-                <Text style={styles.modalText}>{item.label}</Text>
+                <Text style={[styles.modalText, { color: theme.colors.colorTextPrimary }]}>
+                  {item.label}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -613,59 +654,59 @@ export default function OfficerDetailsScreen() {
         onRequestClose={() => setImagePickerVisible(false)}
       >
         <TouchableOpacity
-          style={styles.modalOverlay}
+          style={[styles.modalOverlay, { backgroundColor: theme.colors.colorOverlay }]}
           activeOpacity={1}
           onPress={() => setImagePickerVisible(false)}
         >
-          <View style={[styles.imagePickerContent, { backgroundColor: theme.colors.colorBgPage }]}>
-            <View style={[styles.imagePickerHandle, { backgroundColor: theme.colors.colorBorder }]} />
+          <View style={[styles.imagePickerContent, { backgroundColor: theme.colors.colorBgSurface }]}>
+            <View style={[styles.imagePickerHandle, { backgroundColor: theme.colors.border }]} />
             
             <Text style={[styles.imagePickerTitle, { color: theme.colors.colorTextPrimary }]}>
-              Choose Profile Photo
+              {t("officerDetails.choosePhoto")}
             </Text>
 
             <TouchableOpacity
-              style={[styles.imagePickerOption, { backgroundColor: theme.colors.colorPrimary600 + '10' }]}
+              style={[styles.imagePickerOption, { backgroundColor: theme.colors.colorPrimary50 }]}
               onPress={openCamera}
             >
-              <View style={[styles.imagePickerIconContainer, { backgroundColor: theme.colors.colorPrimary600 }]}>
-                <RemixIcon name="camera-line" size={24} color="#fff" />
+              <View style={[styles.imagePickerIconContainer, { backgroundColor: theme.colors.btnPrimaryBg }]}>
+                <RemixIcon name="camera-line" size={24} color={theme.colors.btnPrimaryText} />
               </View>
               <View style={styles.imagePickerOptionContent}>
                 <Text style={[styles.imagePickerOptionText, { color: theme.colors.colorTextPrimary }]}>
-                  Camera
+                  {t("officerDetails.camera")}
                 </Text>
                 <Text style={[styles.imagePickerOptionSubtext, { color: theme.colors.colorTextSecondary }]}>
-                  Take a photo using camera
+                  {t("officerDetails.cameraDescription")}
                 </Text>
               </View>
               <RemixIcon name="arrow-right-s-line" size={20} color={theme.colors.colorTextSecondary} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.imagePickerOption, { backgroundColor: theme.colors.colorPrimary600 + '10' }]}
+              style={[styles.imagePickerOption, { backgroundColor: theme.colors.colorPrimary50 }]}
               onPress={openGallery}
             >
-              <View style={[styles.imagePickerIconContainer, { backgroundColor: theme.colors.colorPrimary600 }]}>
-                <RemixIcon name="image-line" size={24} color="#fff" />
+              <View style={[styles.imagePickerIconContainer, { backgroundColor: theme.colors.btnPrimaryBg }]}>
+                <RemixIcon name="image-line" size={24} color={theme.colors.btnPrimaryText} />
               </View>
               <View style={styles.imagePickerOptionContent}>
                 <Text style={[styles.imagePickerOptionText, { color: theme.colors.colorTextPrimary }]}>
-                  Gallery
+                  {t("officerDetails.gallery")}
                 </Text>
                 <Text style={[styles.imagePickerOptionSubtext, { color: theme.colors.colorTextSecondary }]}>
-                  Choose from gallery
+                  {t("officerDetails.galleryDescription")}
                 </Text>
               </View>
               <RemixIcon name="arrow-right-s-line" size={20} color={theme.colors.colorTextSecondary} />
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.imagePickerCancel, { borderColor: theme.colors.colorBorder }]}
+              style={[styles.imagePickerCancel, { borderColor: theme.colors.border }]}
               onPress={() => setImagePickerVisible(false)}
             >
               <Text style={[styles.imagePickerCancelText, { color: theme.colors.colorPrimary600 }]}>
-                Cancel
+                {t("common.cancel")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -689,16 +730,24 @@ export default function OfficerDetailsScreen() {
         }}
         collapsable={false}
       >
-        <Text style={styles.label}>{label}</Text>
+        <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>{label}</Text>
         <TextInput
-          style={styles.input}
-          value={form[key]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.inputBg,
+              borderColor: theme.colors.inputBorder,
+              color: theme.colors.inputText,
+            },
+          ]}
+          value={form[key] as string}
           placeholder={placeholder}
+          placeholderTextColor={theme.colors.inputPlaceholder}
           keyboardType={numeric ? "numeric" : "default"}
           onFocus={() => scrollToField(key)}
           onChangeText={(v) => setForm((prev) => ({ ...prev, [key]: v }))}
         />
-        {errors[key] && <Text style={styles.error}>{errors[key]}</Text>}
+        {errors[key] && <Text style={[styles.error, { color: theme.colors.colorError600 }]}>{errors[key]}</Text>}
       </View>
     );
   }
@@ -708,22 +757,34 @@ export default function OfficerDetailsScreen() {
     key: DropdownKey,
     placeholder: string,
   ) {
+    const displayValue = form[key] ? String(form[key]) : placeholder;
+    const hasValue = Boolean(form[key]);
+
     return (
-      <>
-        <Text style={styles.label}>{label}</Text>
+      <View>
+        <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>{label}</Text>
         <TouchableOpacity
-          style={styles.input}
+          style={[
+            styles.input,
+            {
+              backgroundColor: theme.colors.inputBg,
+              borderColor: theme.colors.inputBorder,
+            },
+          ]}
           onPress={() => openDropdown(key)}
         >
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ color: form[key] ? "#000" : "#999" }}>
-              {typeof form[key] === "string" ? form[key] : placeholder}
+            <Text style={{ 
+              color: hasValue ? theme.colors.inputText : theme.colors.inputPlaceholder,
+              fontFamily: hasValue ? 'Poppins-Medium' : 'Poppins-Regular',
+            }}>
+              {displayValue}
             </Text>
-            <RemixIcon name="arrow-down-s-line" size={20} color="#999" />
+            <RemixIcon name="arrow-down-s-line" size={20} color={theme.colors.colorTextTertiary} />
           </View>
         </TouchableOpacity>
-        {errors[key] && <Text style={styles.error}>{errors[key]}</Text>}
-      </>
+        {errors[key] && <Text style={[styles.error, { color: theme.colors.colorError600 }]}>{errors[key]}</Text>}
+      </View>
     );
   }
 }
@@ -733,10 +794,13 @@ export default function OfficerDetailsScreen() {
 const styles = StyleSheet.create({
   card: {
     marginTop: 0,
+    padding: 16,
+    borderRadius: 12,
   },
   profileWrapper: {
     alignSelf: "center",
     marginBottom: 20,
+    position: 'relative',
   },
   profileCircle: {
     width: 90,
@@ -745,6 +809,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     overflow: "hidden",
+    borderWidth: 2,
   },
   profileImage: {
     width: 90,
@@ -760,23 +825,26 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   label: {
     marginTop: 15,
     marginBottom: 5,
     fontSize: 14,
+    fontFamily: 'Poppins-Medium',
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
     borderRadius: 8,
     padding: 12,
-    backgroundColor: "#f5f5f5",
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
   error: {
-    color: "red",
     fontSize: 12,
     marginTop: 4,
+    fontFamily: 'Poppins-Regular',
   },
   saveBtn: {
     marginTop: 30,
@@ -785,17 +853,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   saveText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(0,0,0,0.3)",
   },
   modalContent: {
-    backgroundColor: "#fff",
     padding: 20,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
@@ -804,10 +870,10 @@ const styles = StyleSheet.create({
   modalItem: {
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
   },
   modalText: {
     fontSize: 16,
+    fontFamily: 'Poppins-Regular',
   },
   overlay: {
     position: "absolute",
@@ -815,7 +881,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.25)",
     justifyContent: "center",
     alignItems: "center",
     zIndex: 999,
@@ -839,6 +904,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
     marginBottom: 24,
+    fontFamily: 'Poppins-SemiBold',
   },
   imagePickerOption: {
     flexDirection: 'row',
@@ -862,9 +928,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
+    fontFamily: 'Poppins-SemiBold',
   },
   imagePickerOptionSubtext: {
     fontSize: 13,
+    fontFamily: 'Poppins-Regular',
   },
   imagePickerCancel: {
     padding: 16,
@@ -876,5 +944,6 @@ const styles = StyleSheet.create({
   imagePickerCancelText: {
     fontSize: 16,
     fontWeight: '600',
+    fontFamily: 'Poppins-SemiBold',
   },
 });

@@ -63,20 +63,26 @@ export default function SettingsScreen() {
       <View
         style={[
           styles.container,
-          { backgroundColor: theme.colors.colorBgSurface },
+          { backgroundColor: theme.colors.background },
         ]}
       >
         {/* NOTIFICATION */}
         <View
-          style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+          style={[
+            styles.card, 
+            { 
+              backgroundColor: theme.colors.colorBgSurface,
+              shadowColor: theme.colors.colorShadow,
+            }
+          ]}
         >
           <View style={styles.rowBetween}>
             <View style={styles.leftRow}>
-              <View style={[styles.iconBox, { backgroundColor: "#E8F3FF" }]}>
+              <View style={[styles.iconBox, { backgroundColor: theme.colors.colorPrimary50 }]}>
                 <RemixIcon
                   name="notification-3-line"
                   size={20}
-                  color="#147AD6"
+                  color={theme.colors.colorPrimary600}
                 />
               </View>
 
@@ -95,27 +101,34 @@ export default function SettingsScreen() {
               onValueChange={setNotifications}
               trackColor={{
                 true: theme.colors.colorPrimary600,
-                false: "#ccc",
+                false: theme.colors.colorBorder,
               }}
-              thumbColor="#fff"
+              thumbColor={theme.colors.colorBgSurface}
+              ios_backgroundColor={theme.colors.colorBorder}
             />
           </View>
         </View>
 
         {/* LOCATION PERMISSION */}
         <View
-          style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+          style={[
+            styles.card, 
+            { 
+              backgroundColor: theme.colors.colorBgSurface,
+              shadowColor: theme.colors.colorShadow,
+            }
+          ]}
         >
           <View style={styles.rowBetween}>
             <View style={styles.leftRow}>
-              <View style={[styles.iconBox, { backgroundColor: "#E9F7EC" }]}>
-                <RemixIcon name="map-pin-line" size={20} color="#1C9A52" />
+              <View style={[styles.iconBox, { backgroundColor: theme.colors.colorSuccess100 }]}>
+                <RemixIcon name="map-pin-line" size={20} color={theme.colors.colorSuccess600} />
               </View>
 
               <Text
                 style={[
                   styles.label,
-                  { color: theme.colors.colorTextSecondary },
+                  { color: theme.colors.colorTextPrimary },
                 ]}
               >
                 {t("settings.locationPermission")}
@@ -127,27 +140,38 @@ export default function SettingsScreen() {
               onValueChange={handleLocationToggle}
               trackColor={{
                 true: theme.colors.colorPrimary600,
-                false: "#ccc",
+                false: theme.colors.colorBorder,
               }}
-              thumbColor="#fff"
+              thumbColor={theme.colors.colorBgSurface}
+              ios_backgroundColor={theme.colors.colorBorder}
             />
           </View>
         </View>
 
         {/* THEME */}
         <View
-          style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+          style={[
+            styles.card, 
+            { 
+              backgroundColor: theme.colors.colorBgSurface,
+              shadowColor: theme.colors.colorShadow,
+            }
+          ]}
         >
           <View style={styles.rowBetween}>
             <View style={styles.leftRow}>
-              <View style={[styles.iconBox, { backgroundColor: "#E9F7EC" }]}>
-                <RemixIcon name="moon-line" size={20} color="#1C9A52" />
+              <View style={[styles.iconBox, { backgroundColor: theme.colors.colorWarning100 }]}>
+                <RemixIcon 
+                  name={isDarkMode ? "moon-fill" : "sun-fill"} 
+                  size={20} 
+                  color={isDarkMode ? theme.colors.colorPrimary600 : theme.colors.colorWarning600} 
+                />
               </View>
 
               <Text
                 style={[
                   styles.label,
-                  { color: theme.colors.colorTextSecondary },
+                  { color: theme.colors.colorTextPrimary },
                 ]}
               >
                 {t("settings.changeTheme")}
@@ -159,27 +183,34 @@ export default function SettingsScreen() {
               onValueChange={toggleTheme}
               trackColor={{
                 true: theme.colors.colorPrimary600,
-                false: "#ccc",
+                false: theme.colors.colorBorder,
               }}
-              thumbColor="#fff"
+              thumbColor={theme.colors.colorBgSurface}
+              ios_backgroundColor={theme.colors.colorBorder}
             />
           </View>
         </View>
 
         {/* TEXT SIZE */}
         <View
-          style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+          style={[
+            styles.card, 
+            { 
+              backgroundColor: theme.colors.colorBgSurface,
+              shadowColor: theme.colors.colorShadow,
+            }
+          ]}
         >
           <View style={styles.rowBetween}>
             <View style={styles.leftRow}>
-              <View style={[styles.iconBox, { backgroundColor: "#EBF3FB" }]}>
-                <RemixIcon name="text" size={20} color="#0F6DB4" />
+              <View style={[styles.iconBox, { backgroundColor: theme.colors.colorInfoBg || theme.colors.colorPrimary50 }]}>
+                <RemixIcon name="text" size={20} color={theme.colors.colorPrimary600} />
               </View>
 
               <Text
                 style={[
                   styles.label,
-                  { color: theme.colors.colorTextSecondary },
+                  { color: theme.colors.colorTextPrimary },
                 ]}
               >
                 {t("settings.textSize")}
@@ -197,19 +228,24 @@ export default function SettingsScreen() {
                   {
                     backgroundColor:
                       textSize === item.key
-                        ? theme.colors.colorPrimary600
-                        : theme.colors.colorPrimary50,
+                        ? theme.colors.btnPrimaryBg
+                        : theme.colors.btnSecondaryBg,
+                    borderColor: textSize === item.key 
+                      ? theme.colors.btnPrimaryBg 
+                      : theme.colors.btnSecondaryBorder,
                   },
                 ]}
               >
                 <Text
-                  style={{
-                    color:
-                      textSize === item.key
-                        ? theme.colors.colorBgPage
-                        : theme.colors.colorTextSecondary,
-                    fontWeight: "600",
-                  }}
+                  style={[
+                    styles.sizeText,
+                    {
+                      color:
+                        textSize === item.key
+                          ? theme.colors.btnPrimaryText
+                          : theme.colors.colorTextSecondary,
+                    },
+                  ]}
                 >
                   {item.label}
                 </Text>
@@ -219,38 +255,71 @@ export default function SettingsScreen() {
         </View>
 
         {/* HELP */}
-        <View
-          style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+        <TouchableOpacity
+          style={[
+            styles.card, 
+            { 
+              backgroundColor: theme.colors.colorBgSurface,
+              shadowColor: theme.colors.colorShadow,
+            }
+          ]}
+          onPress={() => {
+            // Handle help/support navigation
+            console.log("Help & Support pressed");
+          }}
+          activeOpacity={0.7}
         >
           <View style={styles.leftRow}>
-            <View style={[styles.iconBox, { backgroundColor: "#FFF2E8" }]}>
-              <RemixIcon name="question-line" size={20} color="#E6742B" />
+            <View style={[styles.iconBox, { backgroundColor: theme.colors.colorError100 }]}>
+              <RemixIcon name="question-line" size={20} color={theme.colors.colorError600} />
             </View>
 
             <Text
               style={[
                 styles.label,
-                { color: theme.colors.colorTextSecondary },
+                { color: theme.colors.colorTextPrimary, flex: 1 },
               ]}
             >
               {t("settings.helpSupport")}
             </Text>
+
+            <RemixIcon 
+              name="arrow-right-s-line" 
+              size={20} 
+              color={theme.colors.colorTextTertiary} 
+            />
           </View>
-        </View>
+        </TouchableOpacity>
       </View>
     </BodyLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 16 },
-  card: { padding: 16, borderRadius: 12, elevation: 2, gap: 12 },
+  container: { 
+    padding: 16, 
+    gap: 16,
+  },
+  card: { 
+    padding: 16, 
+    borderRadius: 12, 
+    elevation: 2, 
+    gap: 12,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
   rowBetween: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  leftRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  leftRow: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    gap: 12,
+    flex: 1,
+  },
   iconBox: {
     width: 36,
     height: 36,
@@ -258,7 +327,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  label: { fontSize: 16, fontWeight: "600" },
+  label: { 
+    fontSize: 16, 
+    fontWeight: "600",
+    fontFamily: 'Poppins-Medium',
+  },
   textSizeRow: {
     flexDirection: "row",
     gap: 10,
@@ -269,5 +342,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 20,
     borderRadius: 8,
+    borderWidth: 1,
+  },
+  sizeText: {
+    fontWeight: "600",
+    fontFamily: 'Poppins-Medium',
+    fontSize: 14,
   },
 });

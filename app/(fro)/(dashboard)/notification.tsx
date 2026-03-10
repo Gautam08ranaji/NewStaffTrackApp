@@ -110,28 +110,28 @@ export default function NotificationScreen() {
     }
   };
 
-  // Get icon background color based on status
+  // Get icon background color based on status using theme colors
   const getIconBgColor = (interaction: Interaction): string => {
     if (interaction.subStatusId === 22) {
-      return "#E65100"; // Orange for pending
+      return theme.colors.colorWarning600; // Orange for pending
     } else if (interaction.subStatusName?.toLowerCase().includes("accepted")) {
-      return "#2E7D32"; // Green for accepted
+      return theme.colors.colorSuccess600; // Green for accepted
     } else if (interaction.subStatusName?.toLowerCase().includes("rejected")) {
-      return "#C62828"; // Red for rejected
+      return theme.colors.colorError600; // Red for rejected
     } else if (interaction.subStatusName?.toLowerCase().includes("progress")) {
-      return "#1976D2"; // Blue for in progress
+      return theme.colors.colorPrimary600; // Blue for in progress
     }
 
     // Priority based colors
     switch (interaction.priority?.toLowerCase()) {
       case "high":
-        return "#C62828";
+        return theme.colors.colorError600;
       case "medium":
-        return "#E65100";
+        return theme.colors.colorWarning600;
       case "low":
-        return "#2E7D32";
+        return theme.colors.colorSuccess600;
       default:
-        return "#1976D2";
+        return theme.colors.colorPrimary600;
     }
   };
 
@@ -206,17 +206,19 @@ export default function NotificationScreen() {
         {loading && (
           <Text
             style={[
+              theme.typography.fontBody,
               styles.loadingText,
               { color: theme.colors.colorTextSecondary },
             ]}
           >
-            Loading...
+            {t("common.loading") || "Loading..."}
           </Text>
         )}
 
         {!loading && notifications.length === 0 && (
           <Text
             style={[
+              theme.typography.fontBody,
               styles.emptyText,
               { color: theme.colors.colorTextSecondary },
             ]}
@@ -234,6 +236,7 @@ export default function NotificationScreen() {
               styles.card,
               {
                 backgroundColor: theme.colors.colorBgSurface,
+                borderColor: theme.colors.border,
                 borderLeftWidth: item.isNew ? 4 : 0,
                 borderLeftColor: item.isNew
                   ? theme.colors.colorPrimary600
@@ -246,13 +249,14 @@ export default function NotificationScreen() {
                 <RemixIcon
                   name={item.icon}
                   size={24}
-                  color={theme.colors.colorBgPage}
+                  color={theme.colors.colorTextInverse}
                 />
               </View>
 
               <View style={styles.titleContainer}>
                 <Text
                   style={[
+                    theme.typography.fontH6,
                     styles.title,
                     { color: theme.colors.colorTextPrimary },
                   ]}
@@ -266,6 +270,7 @@ export default function NotificationScreen() {
                   <RemixIcon name="user-line" size={14} color={theme.colors.colorTextSecondary} />
                   <Text
                     style={[
+                      theme.typography.fontBody,
                       styles.contactName,
                       { color: theme.colors.colorTextSecondary },
                     ]}
@@ -284,6 +289,7 @@ export default function NotificationScreen() {
                 <RemixIcon name="phone-line" size={14} color={theme.colors.colorTextSecondary} />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.infoText,
                     { color: theme.colors.colorTextSecondary },
                   ]}
@@ -299,6 +305,7 @@ export default function NotificationScreen() {
                 <RemixIcon name="map-pin-line" size={14} color={theme.colors.colorTextSecondary} />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.infoText,
                     { color: theme.colors.colorTextSecondary },
                   ]}
@@ -309,26 +316,53 @@ export default function NotificationScreen() {
               </View>
             )}
 
-            <Text style={[styles.subtitle, styles.indented]} numberOfLines={2}>
+            <Text 
+              style={[
+                theme.typography.fontBody, 
+                styles.subtitle, 
+                styles.indented,
+                { color: theme.colors.colorTextTertiary }
+              ]} 
+              numberOfLines={2}
+            >
               {item.subtitle}
             </Text>
 
-            <Text style={[styles.time, styles.indented]}>{item.time}</Text>
+            <Text 
+              style={[
+                theme.typography.fontBodySmall, 
+                styles.time, 
+                styles.indented,
+                { color: theme.colors.colorTextTertiary }
+              ]}
+            >
+              {item.time}
+            </Text>
 
             {/* Show Accept/Reject buttons for pending status (subStatusId === 22 based on your getIconBgColor) */}
             {item.subStatusId === 22 && (
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={[styles.acceptButton, { backgroundColor: "#2E7D32" }]}
+                  style={[
+                    styles.acceptButton, 
+                    { backgroundColor: theme.colors.colorSuccess600 }
+                  ]}
                   onPress={() => handleAccept(item)}
                 >
-                  <Text style={styles.buttonText}>{t("common.accept")}</Text>
+                  <Text style={[theme.typography.fontButton, styles.buttonText]}>
+                    {t("common.accept")}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.rejectButton, { backgroundColor: "#C62828" }]}
+                  style={[
+                    styles.rejectButton, 
+                    { backgroundColor: theme.colors.colorError600 }
+                  ]}
                   onPress={() => handleReject(item)}
                 >
-                  <Text style={styles.buttonText}>{t("common.reject")}</Text>
+                  <Text style={[theme.typography.fontButton, styles.buttonText]}>
+                    {t("common.reject")}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -338,10 +372,10 @@ export default function NotificationScreen() {
               <View
                 style={[
                   styles.statusBadge,
-                  { backgroundColor: item.iconBg + "20" },
+                  { backgroundColor: item.iconBg + "20" }, // Keep opacity for background
                 ]}
               >
-                <Text style={[styles.statusText, { color: item.iconBg }]}>
+                <Text style={[theme.typography.fontBodySmall, styles.statusText, { color: item.iconBg }]}>
                   {item.subStatusName}
                 </Text>
               </View>
@@ -360,12 +394,10 @@ const styles = StyleSheet.create({
   loadingText: {
     textAlign: "center",
     marginTop: 20,
-    fontSize: 16,
   },
   emptyText: {
     textAlign: "center",
     marginTop: 20,
-    fontSize: 16,
   },
   card: {
     padding: 16,
@@ -377,7 +409,6 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     borderWidth: 0.6,
-    borderColor: "#E6E6E6",
   },
   topRow: {
     flexDirection: "row",
@@ -396,8 +427,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   title: {
-    fontSize: 16,
-    fontWeight: "600",
     marginBottom: 4,
   },
   contactRow: {
@@ -407,7 +436,6 @@ const styles = StyleSheet.create({
   },
   contactName: {
     fontSize: 14,
-    fontWeight: "500",
   },
   dot: {
     width: 10,
@@ -426,18 +454,13 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   infoText: {
-    fontSize: 13,
     flex: 1,
   },
   subtitle: {
-    fontSize: 14,
-    color: "#666",
     marginBottom: 4,
     marginTop: 4,
   },
   time: {
-    fontSize: 12,
-    color: "#999",
     marginTop: 4,
   },
   buttonContainer: {
@@ -459,8 +482,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: "#FFFFFF",
-    fontWeight: "600",
-    fontSize: 14,
+    textAlign: "center",
   },
   statusBadge: {
     alignSelf: "flex-start",
@@ -471,7 +493,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   statusText: {
-    fontSize: 12,
     fontWeight: "500",
   },
 });

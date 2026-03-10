@@ -13,40 +13,44 @@ import type { IconName } from "react-native-remix-icon";
 import RemixIcon from "react-native-remix-icon";
 
 import AttendanceTab from "./attendanceTab";
-
-import { useTranslation } from "react-i18next";
 import LeavesTab from "./LeavesTab";
 import ReimbursemantTab from "./ReimbursemantTab";
 
-type TabKey = "attendance" | "leaves" | "weekly" | "reimbursement";
+import { useTranslation } from "react-i18next";
+
+type TabKey = "attendance" | "leaves" | "reimbursement";
 
 export default function AvailabilityScreen() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const scrollRef = useRef<ScrollView>(null);
 
-  // ---------------------- i18n Tabs ----------------------
+  /* ---------------------- TABS ---------------------- */
   const tabs: { label: string; key: TabKey; icon: IconName }[] = [
     {
       label: t("availability.tabAttendance"),
       key: "attendance",
       icon: "alarm-line",
     },
-    { label: "Leaves", key: "leaves", icon: "calendar-line" },
     {
-      label: "Reimbursement",
+      label: t("availability.tabLeaves"),
+      key: "leaves",
+      icon: "calendar-line",
+    },
+    {
+      label: t("availability.tabReimbursement"),
       key: "reimbursement",
-      icon: "calendar-2-line",
+      icon: "wallet-3-line",
     },
   ];
 
-  const [activeTab, setActiveTab] = useState(0); // index-based like CasesScreen
+  const [activeTab, setActiveTab] = useState(0);
 
   const handleTabPress = (index: number) => {
     setActiveTab(index);
 
     scrollRef.current?.scrollTo({
-      x: index * 120, // adjust if needed
+      x: index * 120,
       animated: true,
     });
   };
@@ -54,7 +58,10 @@ export default function AvailabilityScreen() {
   const activeTabKey = tabs[activeTab]?.key;
 
   return (
-    <BodyLayout type="screen" screenName={t("availability.screenTitle")}>
+    <BodyLayout
+      type="screen"
+      screenName={t("availability.screenTitle") || "Availability"}
+    >
       {/* ---------- TOP TABS ---------- */}
       <View style={{ marginBottom: 20 }}>
         <ScrollView
@@ -75,7 +82,7 @@ export default function AvailabilityScreen() {
                     backgroundColor: isActive
                       ? theme.colors.colorPrimary600
                       : theme.colors.colorBgSurface,
-                    elevation: 2,
+                    borderColor: theme.colors.border,
                   },
                 ]}
                 onPress={() => handleTabPress(index)}
@@ -89,18 +96,16 @@ export default function AvailabilityScreen() {
                       : theme.colors.colorTextSecondary
                   }
                 />
+
                 <Text
-                  style={
-                    isActive
-                      ? [
-                          styles.activeTabText,
-                          { color: theme.colors.colorBgPage },
-                        ]
-                      : [
-                          styles.tabText,
-                          { color: theme.colors.colorTextSecondary },
-                        ]
-                  }
+                  style={[
+                    isActive ? styles.activeTabText : styles.tabText,
+                    {
+                      color: isActive
+                        ? theme.colors.colorBgPage
+                        : theme.colors.colorTextSecondary,
+                    },
+                  ]}
                 >
                   {item.label}
                 </Text>
@@ -110,7 +115,7 @@ export default function AvailabilityScreen() {
         </ScrollView>
       </View>
 
-      {/* ---------- RENDER TAB SCREENS ---------- */}
+      {/* ---------- TAB CONTENT ---------- */}
       {activeTabKey === "attendance" && <AttendanceTab />}
       {activeTabKey === "leaves" && <LeavesTab />}
       {activeTabKey === "reimbursement" && <ReimbursemantTab />}
@@ -123,18 +128,22 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
   },
+
   tab: {
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
+    borderWidth: 1,
   },
+
   activeTabText: {
     fontSize: 14,
     fontWeight: "600",
   },
+
   tabText: {
     fontSize: 14,
     fontWeight: "500",

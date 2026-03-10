@@ -4,8 +4,8 @@ import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-
 import React, { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   FlatList,
@@ -27,6 +27,7 @@ interface CommonDocument {
 
 export default function CommonDocumentListScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const caseId = params.caseId ? Number(params.caseId) : null;
   const [documents, setDocuments] = useState<CommonDocument[]>([]);
@@ -48,7 +49,7 @@ export default function CommonDocumentListScreen() {
           pageSize: 10,
           relatedToId: Number(caseId),
           csrfToken: String(authState?.antiforgeryToken),
-          authToken: String(authState?.token), // ✅ ADD THIS
+          authToken: String(authState?.token),
         });
 
       console.log("cmn", caseId);
@@ -88,12 +89,35 @@ export default function CommonDocumentListScreen() {
     });
   };
 
+  const formatFileSize = (bytes: number) => {
+    return (bytes / 1024).toFixed(1) + " KB";
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString(t("common.locale") || "en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   const renderItem = ({ item }: { item: CommonDocument }) => {
     const isPdf = item.documentType === "PDF";
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[
+          styles.card,
+          { 
+            backgroundColor: theme.colors.colorBgSurface,
+            borderColor: theme.colors.border,
+          }
+        ]}
         activeOpacity={0.85}
         onPress={() =>
           router.push({
@@ -106,7 +130,10 @@ export default function CommonDocumentListScreen() {
           })
         }
       >
-        <View style={styles.iconBox}>
+        <View style={[styles.iconBox, { 
+          backgroundColor: theme.colors.colorBgAlt,
+          borderColor: theme.colors.border,
+        }]}>
           <Ionicons
             name={isPdf ? "document-text" : "image"}
             size={26}
@@ -115,21 +142,27 @@ export default function CommonDocumentListScreen() {
         </View>
 
         <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text 
+            style={[styles.name, { color: theme.colors.colorTextPrimary }]} 
+            numberOfLines={1}
+          >
             {item.documentName}
           </Text>
 
-          <Text style={styles.desc} numberOfLines={2}>
-            {item.documentDescription}
+          <Text 
+            style={[styles.desc, { color: theme.colors.colorTextSecondary }]} 
+            numberOfLines={2}
+          >
+            {item.documentDescription || t("common.noDescription") || "No description"}
           </Text>
 
           <View style={styles.metaRow}>
-            <Text style={styles.metaText}>
-              {(item.documentSize / 1024).toFixed(1)} KB
+            <Text style={[styles.metaText, { color: theme.colors.colorTextTertiary }]}>
+              {formatFileSize(item.documentSize)}
             </Text>
-            <Text style={styles.metaDot}>•</Text>
-            <Text style={styles.metaText}>
-              {new Date(item.createdDate).toDateString()}
+            <Text style={[styles.metaDot, { color: theme.colors.colorTextTertiary }]}>•</Text>
+            <Text style={[styles.metaText, { color: theme.colors.colorTextTertiary }]}>
+              {formatDate(item.createdDate)}
             </Text>
           </View>
         </View>
@@ -137,28 +170,28 @@ export default function CommonDocumentListScreen() {
         <Ionicons
           name="chevron-forward"
           size={18}
-          color={theme.colors.colorTextSecondary}
+          color={theme.colors.colorTextTertiary}
         />
       </TouchableOpacity>
     );
   };
 
   return (
-    <BodyLayout type="screen" screenName="Documents">
+    <BodyLayout type="screen" screenName={t("documents.screenTitle") || "Documents"}>
       {/* ---------- ADD DOCUMENT BUTTON ---------- */}
       <TouchableOpacity
         style={[
           styles.addButton,
-          { backgroundColor: theme.colors.colorPrimary500 },
+          { backgroundColor: theme.colors.btnPrimaryBg },
         ]}
         onPress={onAddDocument}
         activeOpacity={0.9}
       >
-        <Ionicons name="add" size={20} color={theme.colors.colorBgSurface} />
+        <Ionicons name="add" size={20} color={theme.colors.btnPrimaryText} />
         <Text
-          style={[styles.addButtonText, { color: theme.colors.colorBgSurface }]}
+          style={[styles.addButtonText, { color: theme.colors.btnPrimaryText }]}
         >
-          Add Document
+          {t("documents.addDocument") || "Add Document"}
         </Text>
       </TouchableOpacity>
 
@@ -171,15 +204,25 @@ export default function CommonDocumentListScreen() {
         onEndReachedThreshold={0.4}
         contentContainerStyle={{ paddingBottom: 20 }}
         ListFooterComponent={
-          loading ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null
+          loading ? (
+            <ActivityIndicator 
+              style={{ marginVertical: 16 }} 
+              color={theme.colors.colorPrimary600}
+            />
+          ) : null
         }
         ListEmptyComponent={
-          !loading ? <Text style={styles.empty}>No documents found</Text> : null
+          !loading ? (
+            <Text style={[styles.empty, { color: theme.colors.colorTextTertiary }]}>
+              {t("documents.noDocuments") || "No documents found"}
+            </Text>
+          ) : null
         }
       />
     </BodyLayout>
   );
 }
+
 const styles = StyleSheet.create({
   addButton: {
     flexDirection: "row",
@@ -188,73 +231,55 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     marginBottom: 16,
+    marginHorizontal: 12,
   },
-
   addButtonText: {
     marginLeft: 8,
     fontSize: 14,
     fontWeight: "700",
   },
-
   card: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
     borderRadius: 14,
     padding: 14,
     marginBottom: 12,
     marginHorizontal: 12,
     borderWidth: 1,
-    borderColor: "#E6E6E6",
   },
-
   iconBox: {
     width: 46,
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#F4F6FA",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 12,
     borderWidth: 1,
-    borderColor: "#E1E4EA",
   },
-
   info: {
     flex: 1,
   },
-
   name: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#111",
   },
-
   desc: {
     fontSize: 12,
-    color: "#666",
     marginTop: 2,
   },
-
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 6,
   },
-
   metaText: {
     fontSize: 11,
-    color: "#888",
   },
-
   metaDot: {
     marginHorizontal: 6,
-    color: "#888",
   },
-
   empty: {
     textAlign: "center",
     marginTop: 40,
-    color: "#777",
   },
 });

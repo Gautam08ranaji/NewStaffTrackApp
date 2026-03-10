@@ -58,10 +58,10 @@ const getStatusDisplay = (status: string): string => {
   }
 };
 
-// Format date for display
-const formatDate = (dateString: string): string => {
+// Format date for display with locale support
+const formatDate = (dateString: string, locale: string = 'en-US'): string => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(locale, {
     weekday: 'long',
     year: 'numeric',
     month: 'short',
@@ -78,17 +78,17 @@ const getDaysDifference = (fromDate: string, toDate: string): number => {
   return diffDays + 1; // Including both start and end dates
 };
 
-// Get title based on days
-const getLeaveTitle = (fromDate: string, toDate: string): string => {
+// Get title based on days with i18n
+const getLeaveTitle = (fromDate: string, toDate: string, t: any): string => {
   const days = getDaysDifference(fromDate, toDate);
-  if (days === 0.5) return "Half Day Application";
-  if (days === 1) return "1 Day Application";
-  return `${days} Days Application`;
+  if (days === 0.5) return t("leaves.halfDay");
+  if (days === 1) return t("leaves.oneDay");
+  return t("leaves.multiDay", { days });
 };
 
 export default function LeavesTab() {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
 
   /* ---------- FILTER ---------- */
   const [filterStatus, setFilterStatus] = useState<StatusType>("All");
@@ -119,15 +119,14 @@ export default function LeavesTab() {
 
   // Get user name from auth state or use a default
   const getUserName = () => {
-    // You can get this from auth state if available
-    return authState?.userName || "User";
+    return authState?.userName || t("common.user") || "User";
   };
 
   const validateForm = () => {
     if (!leaveType) {
       Toast.show({
         type: "error",
-        text1: "Please select leave type",
+        text1: t("leaves.selectLeaveType"),
       });
       return false;
     }
@@ -135,7 +134,7 @@ export default function LeavesTab() {
     if (!cause.trim()) {
       Toast.show({
         type: "error",
-        text1: "Please enter reason for leave",
+        text1: t("leaves.enterReason"),
       });
       return false;
     }
@@ -143,7 +142,7 @@ export default function LeavesTab() {
     if (!fromDate) {
       Toast.show({
         type: "error",
-        text1: "Please select from date",
+        text1: t("leaves.selectFromDate"),
       });
       return false;
     }
@@ -151,7 +150,7 @@ export default function LeavesTab() {
     if (!toDate) {
       Toast.show({
         type: "error",
-        text1: "Please select to date",
+        text1: t("leaves.selectToDate"),
       });
       return false;
     }
@@ -179,25 +178,20 @@ export default function LeavesTab() {
       
       console.log("Leave created:", res);
       
-      // Show success message
       Toast.show({
         type: "success",
-        text1: "Leave Applied Successfully",
+        text1: t("leaves.applySuccess"),
       });
       
-      // Reset form after successful submission
       resetForm();
-      
-      // Refresh the leave list
       fetchLeaveList(1, true);
       
     } catch (error: any) {
       console.error("Error creating leave:", error);
       
-      // Show error message
       Toast.show({
         type: "error",
-        text1: error?.response?.data?.message || "Failed to apply leave",
+        text1: error?.response?.data?.message || t("leaves.applyFailed"),
       });
     } finally {
       setIsSubmitting(false);
@@ -235,14 +229,14 @@ export default function LeavesTab() {
         }
         
         setTotalRecords(res.data.totalRecords || 0);
-        setHasMore(res.data.leaveList.length === 10); // Assuming pageSize is 10
+        setHasMore(res.data.leaveList.length === 10);
       }
       
     } catch (error) {
       console.log("Error fetching leave list:", error);
       Toast.show({
         type: "error",
-        text1: "Failed to fetch leave history",
+        text1: t("leaves.fetchFailed"),
       });
     } finally {
       setLoading(false);
@@ -293,7 +287,7 @@ export default function LeavesTab() {
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={theme.colors.colorPrimary500} />
         <Text style={[styles.footerText, { color: theme.colors.colorTextSecondary }]}>
-          Loading more...
+          {t("common.loadingMore")}
         </Text>
       </View>
     );
@@ -301,7 +295,7 @@ export default function LeavesTab() {
 
   return (
     <Card
-      title="Apply Leave"
+      title={t("leaves.applyLeave")}
       backgroundColor={theme.colors.colorBgPage}
       titleColor={theme.colors.colorPrimary600}
     >
@@ -312,7 +306,10 @@ export default function LeavesTab() {
             key={item.id}
             style={[
               styles.balanceCard,
-              { backgroundColor: theme.colors.colorBgSurface },
+              { 
+                backgroundColor: theme.colors.colorBgSurface,
+                shadowColor: theme.colors.colorShadow,
+              },
             ]}
           >
             <Text
@@ -321,7 +318,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextTertiary },
               ]}
             >
-              {item.title}
+              {t(`leaves.balance.${item.title.toLowerCase().replace(' ', '')}`) || item.title}
             </Text>
             <Text
               style={[
@@ -341,7 +338,7 @@ export default function LeavesTab() {
         <TouchableOpacity
           style={[
             styles.formRow,
-            { borderBottomColor: theme.colors.colorBorder },
+            { borderBottomColor: theme.colors.border },
           ]}
           onPress={() => setShowTypeSheet(true)}
         >
@@ -354,10 +351,10 @@ export default function LeavesTab() {
             <Text
               style={[
                 styles.formLabel,
-                { color: theme.colors.colorTextTertiary },
+                { color: theme.colors.colorTextSecondary },
               ]}
             >
-              Type
+              {t("leaves.type")}
             </Text>
             <Text
               style={[
@@ -365,7 +362,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {leaveType}
+              {t(`leaves.types.${leaveType.toLowerCase()}`) || leaveType}
             </Text>
           </View>
           <Ionicons
@@ -379,7 +376,7 @@ export default function LeavesTab() {
         <View
           style={[
             styles.inputRow,
-            { borderBottomColor: theme.colors.colorBorder },
+            { borderBottomColor: theme.colors.border },
           ]}
         >
           <Ionicons
@@ -391,19 +388,21 @@ export default function LeavesTab() {
             <Text
               style={[
                 styles.formLabel,
-                { color: theme.colors.colorTextTertiary },
+                { color: theme.colors.colorTextSecondary },
               ]}
             >
-              Cause
+              {t("leaves.cause")}
             </Text>
             <TextInput
-              placeholder="Enter reason"
+              placeholder={t("leaves.enterReasonPlaceholder")}
               placeholderTextColor={theme.colors.inputPlaceholder}
               value={cause}
               onChangeText={setCause}
               style={[
                 styles.textInput,
-                { color: theme.colors.colorTextPrimary },
+                { 
+                  color: theme.colors.inputText,
+                },
               ]}
               multiline
               numberOfLines={2}
@@ -415,7 +414,7 @@ export default function LeavesTab() {
         <TouchableOpacity
           style={[
             styles.formRow,
-            { borderBottomColor: theme.colors.colorBorder },
+            { borderBottomColor: theme.colors.border },
           ]}
           onPress={() => setShowFromPicker(true)}
         >
@@ -428,10 +427,10 @@ export default function LeavesTab() {
             <Text
               style={[
                 styles.formLabel,
-                { color: theme.colors.colorTextTertiary },
+                { color: theme.colors.colorTextSecondary },
               ]}
             >
-              From
+              {t("leaves.from")}
             </Text>
             <Text
               style={[
@@ -439,7 +438,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {fromDate ? fromDate.toDateString() : "Select date"}
+              {fromDate ? fromDate.toDateString() : t("leaves.selectDate")}
             </Text>
           </View>
           <Ionicons
@@ -453,7 +452,7 @@ export default function LeavesTab() {
         <TouchableOpacity
           style={[
             styles.formRow,
-            { borderBottomColor: theme.colors.colorBorder },
+            { borderBottomColor: theme.colors.border },
           ]}
           onPress={() => fromDate && setShowToPicker(true)}
         >
@@ -466,10 +465,10 @@ export default function LeavesTab() {
             <Text
               style={[
                 styles.formLabel,
-                { color: theme.colors.colorTextTertiary },
+                { color: theme.colors.colorTextSecondary },
               ]}
             >
-              To
+              {t("leaves.to")}
             </Text>
             <Text
               style={[
@@ -477,7 +476,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {toDate ? toDate.toDateString() : "Select date"}
+              {toDate ? toDate.toDateString() : t("leaves.selectDate")}
             </Text>
           </View>
           <Ionicons
@@ -493,7 +492,8 @@ export default function LeavesTab() {
             { 
               backgroundColor: isSubmitting 
                 ? theme.colors.btnDisabledBg 
-                : theme.colors.btnPrimaryBg 
+                : theme.colors.btnPrimaryBg,
+              shadowColor: theme.colors.colorShadow,
             },
           ]}
           onPress={submitLeave}
@@ -505,11 +505,11 @@ export default function LeavesTab() {
               { 
                 color: isSubmitting 
                   ? theme.colors.btnDisabledText 
-                  : theme.colors.btnPrimaryText 
+                  : theme.colors.btnPrimaryText,
               },
             ]}
           >
-            {isSubmitting ? "Applying..." : "Apply Leave"}
+            {isSubmitting ? t("common.applying") : t("leaves.applyButton")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -519,7 +519,7 @@ export default function LeavesTab() {
         <Text
           style={[styles.sectionTitle, { color: theme.colors.colorPrimary600 }]}
         >
-          Leave History {totalRecords > 0 && `(${totalRecords})`}
+          {t("leaves.history")} {totalRecords > 0 && `(${totalRecords})`}
         </Text>
         <TouchableOpacity onPress={() => setShowFilter(true)}>
           <Ionicons
@@ -534,7 +534,7 @@ export default function LeavesTab() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.colorPrimary500} />
           <Text style={[styles.loadingText, { color: theme.colors.colorTextSecondary }]}>
-            Loading leave history...
+            {t("common.loading")}
           </Text>
         </View>
       ) : (
@@ -558,7 +558,7 @@ export default function LeavesTab() {
                 color={theme.colors.colorTextTertiary} 
               />
               <Text style={[styles.emptyText, { color: theme.colors.colorTextSecondary }]}>
-                No leave history found
+                {t("leaves.noHistory")}
               </Text>
             </View>
           }
@@ -569,7 +569,10 @@ export default function LeavesTab() {
             <View
               style={[
                 styles.historyCard,
-                { backgroundColor: theme.colors.colorBgSurface },
+                { 
+                  backgroundColor: theme.colors.colorBgSurface,
+                  shadowColor: theme.colors.colorShadow,
+                },
               ]}
             >
               <View style={{ flex: 1 }}>
@@ -579,7 +582,7 @@ export default function LeavesTab() {
                     { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  {getLeaveTitle(item.fromDate, item.toDate)}
+                  {getLeaveTitle(item.fromDate, item.toDate, t)}
                 </Text>
                 <Text
                   style={[
@@ -587,7 +590,7 @@ export default function LeavesTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  {formatDate(item.fromDate)} - {formatDate(item.toDate)}
+                  {formatDate(item.fromDate, i18n.language)} - {formatDate(item.toDate, i18n.language)}
                 </Text>
                 <Text
                   style={[
@@ -595,7 +598,7 @@ export default function LeavesTab() {
                     { color: theme.colors.colorPrimary500 },
                   ]}
                 >
-                  {item.leaveType} • {item.reason}
+                  {t(`leaves.types.${item.leaveType.toLowerCase()}`) || item.leaveType} • {item.reason}
                 </Text>
               </View>
 
@@ -609,10 +612,14 @@ export default function LeavesTab() {
       <BottomSheet
         visible={showFilter}
         onClose={() => setShowFilter(false)}
-        options={FILTER_OPTIONS}
-        selectedOption={filterStatus}
+        options={FILTER_OPTIONS.map(opt => t(`leaves.filters.${opt.toLowerCase()}`) || opt)}
+        selectedOption={t(`leaves.filters.${filterStatus.toLowerCase()}`) || filterStatus}
         onSelect={(v: any) => {
-          setFilterStatus(v as StatusType);
+          // Map back to original filter values
+          const originalOpt = FILTER_OPTIONS.find(
+            opt => (t(`leaves.filters.${opt.toLowerCase()}`) || opt) === v
+          ) || v;
+          setFilterStatus(originalOpt as StatusType);
           setShowFilter(false);
         }}
       />
@@ -621,10 +628,14 @@ export default function LeavesTab() {
       <BottomSheet
         visible={showTypeSheet}
         onClose={() => setShowTypeSheet(false)}
-        options={LEAVE_TYPES}
-        selectedOption={leaveType}
+        options={LEAVE_TYPES.map(type => t(`leaves.types.${type.toLowerCase()}`) || type)}
+        selectedOption={t(`leaves.types.${leaveType.toLowerCase()}`) || leaveType}
         onSelect={(v: any) => {
-          setLeaveType(v);
+          // Map back to original leave type
+          const originalType = LEAVE_TYPES.find(
+            type => (t(`leaves.types.${type.toLowerCase()}`) || type) === v
+          ) || v;
+          setLeaveType(originalType);
           setShowTypeSheet(false);
         }}
       />
@@ -714,6 +725,7 @@ const BottomSheet = ({ visible, onClose, options, selectedOption, onSelect }: an
 
 const StatusBadge = ({ status }: { status: string }) => {
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const bg =
     status === "Approved"
@@ -732,7 +744,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   return (
     <View style={[styles.statusBadge, { backgroundColor: bg }]}>
       <Text style={{ color, fontSize: 12, fontFamily: 'Poppins-Medium' }}>
-        {status}
+        {t(`leaves.status.${status.toLowerCase()}`) || status}
       </Text>
     </View>
   );
@@ -751,7 +763,6 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     elevation: 2,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -807,6 +818,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 10,
     alignItems: "center",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   applyBtnText: {
     fontWeight: "600",
@@ -832,7 +847,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     justifyContent: "space-between",
     elevation: 2,
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
@@ -870,6 +884,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 8,
   },
   sheetItem: {
     paddingVertical: 14,

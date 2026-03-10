@@ -1,14 +1,15 @@
-// app/(fro)/VoiceNoteScreen.tsx  (path as per your project)
+// app/(fro)/VoiceNoteScreen.tsx
 import BodyLayout from "@/components/layout/BodyLayout";
 import { useAudioRecorder } from "@/hooks/AudioRecorderProvider";
 import { useTheme } from "@/theme/ThemeContext";
-import { t } from "i18next";
 import React from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useTranslation } from "react-i18next";
+import { Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import RemixIcon from "react-native-remix-icon";
 
 export default function VoiceNoteScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const colors = theme.colors;
 
   const {
@@ -34,7 +35,20 @@ export default function VoiceNoteScreen() {
       <View
         style={[
           styles.card,
-          { backgroundColor: colors.colorBgPage, elevation: 1 },
+          { 
+            backgroundColor: colors.colorBgSurface,
+            ...Platform.select({
+              ios: {
+                shadowColor: colors.colorShadow,
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 8,
+              },
+              android: {
+                elevation: 3,
+              },
+            }),
+          },
         ]}
       >
         <View
@@ -42,21 +56,23 @@ export default function VoiceNoteScreen() {
             styles.micCircle,
             {
               backgroundColor: recording
-                ? colors.colorAccent500 + 22
-                : colors.btnPrimaryBg + 22,
+                ? colors.colorAccent100
+                : colors.colorPrimary50,
             },
           ]}
         >
           <RemixIcon
             name="mic-line"
             size={48}
-            color={recording ? colors.colorAccent500 : colors.btnPrimaryBg}
+            color={recording ? colors.colorAccent500 : colors.colorPrimary600}
           />
         </View>
 
-        <Text style={styles.timer}>{formatTime()}</Text>
+        <Text style={[styles.timer, { color: colors.colorTextPrimary }]}>
+          {formatTime()}
+        </Text>
 
-        <Text style={styles.subtitle}>
+        <Text style={[styles.subtitle, { color: colors.colorTextSecondary }]}>
           {recording ? t("voiceNote.recording") : t("voiceNote.ready")}
         </Text>
       </View>
@@ -66,7 +82,7 @@ export default function VoiceNoteScreen() {
           styles.recordBtn,
           {
             backgroundColor: recording
-              ? colors.colorAccent500
+              ? colors.btnSosBg
               : colors.btnPrimaryBg,
           },
         ]}
@@ -75,19 +91,27 @@ export default function VoiceNoteScreen() {
         <RemixIcon
           name={recording ? "stop-line" : "mic-line"}
           size={22}
-          color="#fff"
+          color={colors.btnPrimaryText}
         />
-        <Text style={styles.recordBtnText}>
+        <Text style={[styles.recordBtnText, { color: colors.btnPrimaryText }]}>
           {recording ? t("voiceNote.stop") : t("voiceNote.start")}
         </Text>
       </TouchableOpacity>
 
       {audioUri && (
         <View style={styles.playBox}>
-          <Text style={styles.subtitle}>रिकॉर्ड किया गया वॉइस नोट</Text>
+          <Text style={[styles.recordedLabel, { color: colors.colorTextSecondary }]}>
+            {t("voiceNote.recordedVoiceNote")}
+          </Text>
 
           <TouchableOpacity
-            style={[styles.playBtn, { borderColor: colors.colorAccent500 }]}
+            style={[
+              styles.playBtn, 
+              { 
+                borderColor: colors.colorAccent500,
+                backgroundColor: colors.colorAccent50,
+              }
+            ]}
             onPress={isPlaying ? pauseAudio : playAudio}
           >
             <RemixIcon
@@ -129,7 +153,8 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     marginTop: 8,
-    opacity: 0.6,
+    opacity: 0.8,
+    fontWeight: "500",
   },
   recordBtn: {
     height: 52,
@@ -138,9 +163,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
   },
   recordBtnText: {
-    color: "#fff",
     fontSize: 17,
     fontWeight: "600",
     marginLeft: 10,
@@ -149,17 +184,23 @@ const styles = StyleSheet.create({
     marginTop: 40,
     alignItems: "center",
   },
+  recordedLabel: {
+    fontSize: 15,
+    fontWeight: "500",
+    marginBottom: 8,
+  },
   playBtn: {
-    marginTop: 14,
+    marginTop: 8,
     borderWidth: 1.5,
-    paddingVertical: 10,
-    paddingHorizontal: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 30,
     borderRadius: 12,
     flexDirection: "row",
     alignItems: "center",
   },
   playText: {
     fontSize: 16,
+    fontWeight: "600",
     marginLeft: 8,
   },
 });

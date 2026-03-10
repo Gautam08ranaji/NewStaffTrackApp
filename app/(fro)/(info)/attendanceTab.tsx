@@ -1,5 +1,4 @@
 import ReusableButton from "@/components/reusables/ReusableButton";
-import i18n from "@/i18n";
 import { useTheme } from "@/theme/ThemeContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,13 +26,33 @@ type AttendanceItem = {
 
 /* ================= STATUS COLORS ================= */
 
-const statusTheme: Record<
-  AttendanceStatus,
-  { bg: string; text: string; border: string }
-> = {
-  Present: { bg: "#E9F9EF", text: "#1E7F43", border: "#1E7F43" },
-  Absent: { bg: "#FDECEC", text: "#C62828", border: "#C62828" },
-  Leave: { bg: "#EAF2FF", text: "#1565C0", border: "#1565C0" },
+const getStatusTheme = (theme: any, status: AttendanceStatus) => {
+  switch (status) {
+    case "Present":
+      return { 
+        bg: theme.colors.validationSuccessBg, 
+        text: theme.colors.validationSuccessText, 
+        border: theme.colors.validationSuccessText 
+      };
+    case "Absent":
+      return { 
+        bg: theme.colors.validationErrorBg, 
+        text: theme.colors.validationErrorText, 
+        border: theme.colors.validationErrorText 
+      };
+    case "Leave":
+      return { 
+        bg: theme.colors.validationInfoBg, 
+        text: theme.colors.validationInfoText, 
+        border: theme.colors.validationInfoText 
+      };
+    default:
+      return { 
+        bg: theme.colors.colorBgAlt, 
+        text: theme.colors.colorTextSecondary, 
+        border: theme.colors.border 
+      };
+  }
 };
 
 /* ================= HELPERS ================= */
@@ -43,20 +62,20 @@ const getTodayDateString = () => {
   return today.toISOString().split("T")[0]; // Format: YYYY-MM-DD
 };
 
-const formatDate = (dateStr: string) => {
+const formatDate = (dateStr: string, locale: string = 'en') => {
   const date = new Date(dateStr);
   return isNaN(date.getTime())
     ? "--"
-    : date.toLocaleDateString(i18n.language, {
+    : date.toLocaleDateString(locale, {
       day: "2-digit",
       month: "short",
       year: "numeric",
     });
 };
 
-const formatTimeAMPM = (date: Date | null) =>
+const formatTimeAMPM = (date: Date | null, locale: string = 'en') =>
   date
-    ? date.toLocaleTimeString(i18n.language, {
+    ? date.toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit",
     })
@@ -83,7 +102,7 @@ const normalizeStatus = (status?: string): AttendanceStatus => {
 
 /* ================= API MAPPER ================= */
 
-const mapAttendanceFromApi = (item: any): AttendanceItem => {
+const mapAttendanceFromApi = (item: any, locale: string = 'en'): AttendanceItem => {
   const checkInDate = item.checkintime ? new Date(item.checkintime) : null;
   const checkOutDate = item.checkouttime ? new Date(item.checkouttime) : null;
 
@@ -95,8 +114,8 @@ const mapAttendanceFromApi = (item: any): AttendanceItem => {
   return {
     id: item.id,
     date: item.attendancedate ?? item.createddate,
-    checkIn: formatTimeAMPM(checkInDate),
-    checkOut: formatTimeAMPM(checkOutDate),
+    checkIn: formatTimeAMPM(checkInDate, locale),
+    checkOut: formatTimeAMPM(checkOutDate, locale),
     totalMinutes,
     status: normalizeStatus(item.status),
     rawData: item, // Store original data for reference
@@ -107,7 +126,7 @@ const mapAttendanceFromApi = (item: any): AttendanceItem => {
 
 export default function AttendanceTab() {
   const { theme } = useTheme();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
 
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceItem[]>(
@@ -201,14 +220,13 @@ export default function AttendanceTab() {
       const todayAttendance = findCurrentDateAttendance(list);
       setCurrentDateAttendance(todayAttendance);
 
-
       console.log("todayAttendance", res?.data);
 
       // Initialize punch status
       initializePunchStatus(todayAttendance);
 
       // Map history
-      setAttendanceHistory(list.map(mapAttendanceFromApi));
+      setAttendanceHistory(list.map(item => mapAttendanceFromApi(item, i18n.language)));
     } catch (err: any) {
       console.error("Attendance API error:", err);
 
@@ -216,15 +234,12 @@ export default function AttendanceTab() {
 
       if (status === 401) {
         Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
+          t("common.sessionExpired") || "Session Expired",
+          t("common.pleaseLoginAgain") || "Your session has expired. Please login again.",
           [
             {
-              text: "OK",
+              text: t("common.ok") || "OK",
               onPress: () => {
-                // Optional: clear auth state here
-                // dispatch(logout());
-
                 router.replace("/(onboarding)/login");
               },
             },
@@ -234,8 +249,8 @@ export default function AttendanceTab() {
       }
 
       Alert.alert(
-        "Error",
-        err?.message || "Unable to fetch attendance. Please try again.",
+        t("common.error") || "Error",
+        err?.message || t("attendance.unableToLoad") || "Unable to fetch attendance. Please try again.",
       );
     } finally {
       setLoading(false);
@@ -282,8 +297,6 @@ export default function AttendanceTab() {
           checkintime: action === "start" ? currentDateTime : "",
           checkouttime: action === "end" ? currentDateTime : "",
           status: "Present",
-          // totalworkinghours:
-          //   action === "end" ? formatMinutesToTime(workedMinutes) : "00:00",
           userId: String(authState.userId),
         },
         token: String(authState.token),
@@ -294,7 +307,9 @@ export default function AttendanceTab() {
 
       Toast.show({
         type: "success",
-        text1: action === "start" ? "Duty Started" : "Duty Ended Successfully",
+        text1: action === "start" 
+          ? (t("attendance.dutyStarted") || "Duty Started") 
+          : (t("attendance.dutyEnded") || "Duty Ended Successfully"),
       });
 
       // Reload attendance after successful action
@@ -303,7 +318,7 @@ export default function AttendanceTab() {
       console.error("Attendance submit failed", error);
       Toast.show({
         type: "error",
-        text1: "Attendance failed",
+        text1: t("attendance.failed") || "Attendance failed",
       });
     }
   };
@@ -333,9 +348,15 @@ export default function AttendanceTab() {
   /* ================= UI ================= */
 
   return (
-    <ScrollView style={{ padding: 16 }}>
+    <ScrollView style={{ padding: 16, backgroundColor: theme.colors.background }}>
       <View
-        style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+        style={[
+          styles.card, 
+          { 
+            backgroundColor: theme.colors.colorBgSurface,
+            shadowColor: theme.colors.colorShadow,
+          }
+        ]}
       >
         <Text
           style={[styles.cardTitle, { color: theme.colors.colorPrimary600 }]}
@@ -346,29 +367,35 @@ export default function AttendanceTab() {
         <View
           style={[
             styles.row,
-            { backgroundColor: theme.colors.colorSuccess100 },
+            { backgroundColor: theme.colors.validationSuccessBg },
           ]}
         >
-          <Text style={styles.label}>{t("attendance.startTimeLabel")}</Text>
-          <Text style={[styles.value, { color: theme.colors.colorSuccess600 }]}>
-            {formatTimeAMPM(punchInTime)}
+          <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
+            {t("attendance.startTimeLabel")}
+          </Text>
+          <Text style={[styles.value, { color: theme.colors.validationSuccessText }]}>
+            {formatTimeAMPM(punchInTime, i18n.language)}
           </Text>
         </View>
 
         <View style={[styles.row, { backgroundColor: theme.colors.inputBg }]}>
-          <Text style={styles.label}>{t("attendance.endTimeLabel")}</Text>
-          <Text style={styles.value}>
+          <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
+            {t("attendance.endTimeLabel")}
+          </Text>
+          <Text style={[styles.value, { color: theme.colors.colorTextPrimary }]}>
             {dutyEnded
-              ? "Duty Ended"
+              ? (t("attendance.dutyEnded") || "Duty Ended")
               : !isPunchedIn && punchInTime
-                ? formatTimeAMPM(new Date())
+                ? formatTimeAMPM(new Date(), i18n.language)
                 : "--:--"}
           </Text>
         </View>
 
         <View style={[styles.row, { backgroundColor: theme.colors.inputBg }]}>
-          <Text style={styles.label}>{t("attendance.totalTimeLabel")}</Text>
-          <Text style={[styles.value, { color: "#1565C0" }]}>
+          <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
+            {t("attendance.totalTimeLabel")}
+          </Text>
+          <Text style={[styles.value, { color: theme.colors.colorInfoText }]}>
             {formatMinutesToTime(workedMinutes)}
           </Text>
         </View>
@@ -377,7 +404,7 @@ export default function AttendanceTab() {
           <ReusableButton
             title={
               dutyEnded
-                ? "Duty Ended"
+                ? (t("attendance.dutyEnded") || "Duty Ended")
                 : isPunchedIn
                   ? t("attendance.endDutyButton")
                   : t("attendance.startDutyButton")
@@ -385,12 +412,12 @@ export default function AttendanceTab() {
             disabled={dutyEnded}
             containerStyle={{
               backgroundColor: dutyEnded
-                ? "#BDBDBD"
+                ? theme.colors.btnDisabledBg
                 : isPunchedIn
-                  ? theme.colors.colorAccent500
-                  : theme.colors.colorPrimary500,
+                  ? theme.colors.btnSosBg
+                  : theme.colors.btnPrimaryBg,
             }}
-            textStyle={{ color: theme.colors.colorBgPage }}
+            textStyle={{ color: theme.colors.btnPrimaryText }}
             onPress={handleDutyAction}
           />
         </View>
@@ -403,20 +430,26 @@ export default function AttendanceTab() {
             onPress={() => setActiveTab(tab)}
             style={[
               styles.tabText,
-              { borderColor: theme.colors.colorTextSecondary },
-              activeTab === tab && {
-                borderColor: theme.colors.validationSuccessText,
-                color: theme.colors.validationSuccessText,
+              { 
+                borderColor: activeTab === tab 
+                  ? theme.colors.colorPrimary600 
+                  : theme.colors.border,
+                color: activeTab === tab 
+                  ? theme.colors.colorPrimary600 
+                  : theme.colors.colorTextSecondary,
+                backgroundColor: activeTab === tab 
+                  ? theme.colors.colorPrimary50 
+                  : 'transparent',
               },
             ]}
           >
-            {t(`attendance.tabs.${tab}`)}
+            {t(`attendance.tabs.${tab.toLowerCase()}`)}
           </Text>
         ))}
       </View>
 
       {filteredData.map((item) => {
-        const themeColor = statusTheme[item.status];
+        const themeColor = getStatusTheme(theme, item.status);
         const hours = Math.floor(item.totalMinutes / 60);
         const minutes = item.totalMinutes % 60;
 
@@ -428,19 +461,20 @@ export default function AttendanceTab() {
               {
                 backgroundColor: themeColor.bg,
                 borderColor: themeColor.border,
+                shadowColor: theme.colors.colorShadow,
               },
             ]}
           >
-            <Text style={{ color: themeColor.text, fontWeight: "700" }}>
-              {formatDate(item.date)} — {item.status}
+            <Text style={[styles.historyStatus, { color: themeColor.text, fontWeight: "700" }]}>
+              {formatDate(item.date, i18n.language)} — {t(`attendance.status.${item.status.toLowerCase()}`)}
             </Text>
 
-            <Text style={{ color: themeColor.text }}>
+            <Text style={[styles.historyTime, { color: themeColor.text }]}>
               {item.checkIn} → {item.checkOut}
             </Text>
 
-            <Text style={{ color: themeColor.text }}>
-              {hours}:{String(minutes).padStart(2, "0")} hrs
+            <Text style={[styles.historyHours, { color: themeColor.text }]}>
+              {hours}:{String(minutes).padStart(2, "0")} {t("attendance.hours")}
             </Text>
           </View>
         );
@@ -457,11 +491,15 @@ const styles = StyleSheet.create({
     padding: 16,
     elevation: 3,
     marginBottom: 20,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 6,
+    fontFamily: 'Poppins-SemiBold',
   },
   row: {
     marginTop: 14,
@@ -470,9 +508,15 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
   },
-  label: { fontSize: 14, color: "#555" },
-  value: { fontSize: 15, fontWeight: "600" },
-
+  label: { 
+    fontSize: 14, 
+    fontFamily: 'Poppins-Regular',
+  },
+  value: { 
+    fontSize: 15, 
+    fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
+  },
   tabRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -484,12 +528,31 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     fontWeight: "600",
     borderWidth: 1,
+    fontFamily: 'Poppins-Medium',
+    fontSize: 12,
   },
-
   historyCard: {
     borderRadius: 14,
     padding: 14,
     borderWidth: 1,
     marginBottom: 12,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  historyStatus: {
+    fontSize: 14,
+    marginBottom: 4,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  historyTime: {
+    fontSize: 13,
+    marginBottom: 2,
+    fontFamily: 'Poppins-Regular',
+  },
+  historyHours: {
+    fontSize: 13,
+    fontFamily: 'Poppins-Medium',
   },
 });

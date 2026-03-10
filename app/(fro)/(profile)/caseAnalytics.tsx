@@ -1,74 +1,123 @@
+import { useTheme } from "@/theme/ThemeContext";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import RemixIcon from "react-native-remix-icon";
 
 export default function CaseAnalytics() {
+  const { theme } = useTheme();
+  const { t } = useTranslation();
+  const styles = createStyles(theme);
+
   return (
     <>
       {/* ✅ CASE CATEGORY DISTRIBUTION */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>TaskCategory Distribution</Text>
+        <Text style={styles.sectionTitle}>
+          {t("analytics.categoryDistribution")}
+        </Text>
 
         <CategoryRow
-          label="Medical Emergency"
+          label={t("analytics.categories.medical")}
           value="45 Tasks"
           percent={70}
-          color="#1e88e5"
+          color={theme.colors.colorPrimary600}
+          theme={theme}
         />
         <CategoryRow
-          label="Legal Aid"
+          label={t("analytics.categories.legal")}
           value="28 Tasks"
           percent={45}
-          color="#fb8c00"
+          color={theme.colors.colorWarning600}
+          theme={theme}
         />
         <CategoryRow
-          label="Pension Support"
+          label={t("analytics.categories.pension")}
           value="32 Tasks"
           percent={55}
-          color="#2e7d32"
+          color={theme.colors.colorSuccess600}
+          theme={theme}
         />
         <CategoryRow
-          label="Food Security"
+          label={t("analytics.categories.food")}
           value="15 Tasks"
           percent={30}
-          color="#c62828"
+          color={theme.colors.colorError600}
+          theme={theme}
         />
         <CategoryRow
-          label="Housing"
+          label={t("analytics.categories.housing")}
           value="08 Tasks"
           percent={25}
-          color="#ef6c00"
+          color={theme.colors.colorAccent500}
+          theme={theme}
         />
       </View>
 
       {/* ✅ CURRENT STATUS BREAKDOWN */}
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Current Status Breakdown</Text>
+        <Text style={styles.sectionTitle}>
+          {t("analytics.statusBreakdown")}
+        </Text>
 
         <View style={styles.statusGrid}>
-          <StatusBox value="12" label="New" bg="#e0f2f1" color="#00796b" />
-          <StatusBox value="08" label="Assigned" bg="#fff3e0" color="#fb8c00" />
+          <StatusBox
+            value="12"
+            label={t("analytics.status.new")}
+            bg={theme.colors.colorSuccess100}
+            color={theme.colors.colorSuccess600}
+            theme={theme}
+          />
+          <StatusBox
+            value="08"
+            label={t("analytics.status.assigned")}
+            bg={theme.colors.colorWarning100}
+            color={theme.colors.colorWarning600}
+            theme={theme}
+          />
           <StatusBox
             value="15"
-            label="In Progress"
-            bg="#e8f5e9"
-            color="#2e7d32"
+            label={t("analytics.status.inProgress")}
+            bg={theme.colors.colorPrimary50}
+            color={theme.colors.colorPrimary600}
+            theme={theme}
           />
-          <StatusBox value="05" label="Resolved" bg="#e3f2fd" color="#1e88e5" />
+          <StatusBox
+            value="05"
+            label={t("analytics.status.resolved")}
+            bg={theme.colors.colorSuccess100}
+            color={theme.colors.colorSuccess600}
+            theme={theme}
+          />
           <StatusBox
             value="02"
-            label="Follow-up"
-            bg="#fdecea"
-            color="#c62828"
+            label={t("analytics.status.followup")}
+            bg={theme.colors.colorError100}
+            color={theme.colors.colorError600}
+            theme={theme}
           />
-          <StatusBox value="128" label="Closed" bg="#e0f2fb" color="#1565c0" />
+          <StatusBox
+            value="128"
+            label={t("analytics.status.closed")}
+            bg={theme.colors.colorInfoBg || theme.colors.colorPrimary50}
+            color={theme.colors.colorPrimary600}
+            theme={theme}
+          />
         </View>
       </View>
 
       {/* ✅ EXPORT BUTTON */}
-      <TouchableOpacity style={styles.exportBtn}>
-        <RemixIcon name="download-line" size={20} color="#fff" />
-        <Text style={styles.exportText}>Export Report (PDF)</Text>
+      <TouchableOpacity
+        style={[styles.exportBtn, { backgroundColor: theme.colors.colorSuccess600 }]}
+        onPress={() => {
+          // Handle export functionality
+          console.log("Export report");
+        }}
+      >
+        <RemixIcon name="download-line" size={20} color={theme.colors.btnPrimaryText} />
+        <Text style={[styles.exportText, { color: theme.colors.btnPrimaryText }]}>
+          {t("analytics.exportReport")}
+        </Text>
       </TouchableOpacity>
     </>
   );
@@ -76,119 +125,144 @@ export default function CaseAnalytics() {
 
 /* ---------------- SMALL COMPONENTS ---------------- */
 
-const CategoryRow = ({ label, value, percent, color }: any) => (
-  <View style={{ marginBottom: 14 }}>
-    <View style={styles.categoryHeader}>
-      <Text style={styles.categoryLabel}>{label}</Text>
-      <Text style={styles.categoryValue}>{value}</Text>
-    </View>
+const CategoryRow = ({ label, value, percent, color, theme }: any) => {
+  const styles = createStyles(theme);
+  
+  return (
+    <View style={{ marginBottom: 14 }}>
+      <View style={styles.categoryHeader}>
+        <Text style={[styles.categoryLabel, { color: theme.colors.colorTextPrimary }]}>
+          {label}
+        </Text>
+        <Text style={[styles.categoryValue, { color: theme.colors.colorTextSecondary }]}>
+          {value}
+        </Text>
+      </View>
 
-    <View style={styles.progressTrack}>
-      <View
-        style={[
-          styles.progressFill,
-          { width: `${percent}%`, backgroundColor: color },
-        ]}
-      />
+      <View style={[styles.progressTrack, { backgroundColor: theme.colors.border }]}>
+        <View
+          style={[
+            styles.progressFill,
+            { width: `${percent}%`, backgroundColor: color },
+          ]}
+        />
+      </View>
     </View>
-  </View>
-);
+  );
+};
 
-const StatusBox = ({ value, label, bg, color }: any) => (
-  <View style={[styles.statusBox, { backgroundColor: bg }]}>
-    <Text style={[styles.statusValue, { color }]}>{value}</Text>
-    <Text style={[styles.statusLabel, { color }]}>{label}</Text>
-  </View>
-);
+const StatusBox = ({ value, label, bg, color, theme }: any) => {
+  const styles = createStyles(theme);
+  
+  return (
+    <View style={[styles.statusBox, { backgroundColor: bg }]}>
+      <Text style={[styles.statusValue, { color }]}>{value}</Text>
+      <Text style={[styles.statusLabel, { color }]}>{label}</Text>
+    </View>
+  );
+};
 
 /* ---------------- STYLES ---------------- */
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "#FAFAFA",
-    elevation: 2,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 14,
-  },
+const createStyles = (theme: any) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: theme.colors.colorBgSurface,
+      elevation: 2,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 14,
+      shadowColor: theme.colors.colorShadow,
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.05,
+      shadowRadius: 2,
+    },
 
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
+    sectionTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      marginBottom: 12,
+      color: theme.colors.colorPrimary600,
+      fontFamily: 'Poppins-SemiBold',
+    },
 
-  /* Category Distribution */
+    /* Category Distribution */
 
-  categoryHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 6,
-  },
+    categoryHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 6,
+    },
 
-  categoryLabel: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
+    categoryLabel: {
+      fontSize: 12,
+      fontWeight: "600",
+      fontFamily: 'Poppins-SemiBold',
+    },
 
-  categoryValue: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#6b7280",
-  },
+    categoryValue: {
+      fontSize: 12,
+      fontWeight: "600",
+      fontFamily: 'Poppins-Medium',
+    },
 
-  progressTrack: {
-    height: 8,
-    backgroundColor: "#e5e7eb",
-    borderRadius: 8,
-  },
+    progressTrack: {
+      height: 8,
+      borderRadius: 8,
+    },
 
-  progressFill: {
-    height: 8,
-    borderRadius: 8,
-  },
+    progressFill: {
+      height: 8,
+      borderRadius: 8,
+    },
 
-  /* Status Grid */
+    /* Status Grid */
 
-  statusGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-  },
+    statusGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 10,
+    },
 
-  statusBox: {
-    width: "48%",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
+    statusBox: {
+      width: "48%",
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+    },
 
-  statusValue: {
-    fontSize: 20,
-    fontWeight: "800",
-  },
+    statusValue: {
+      fontSize: 20,
+      fontWeight: "800",
+      fontFamily: 'Poppins-Bold',
+    },
 
-  statusLabel: {
-    fontSize: 12,
-    marginTop: 4,
-    fontWeight: "600",
-  },
+    statusLabel: {
+      fontSize: 12,
+      marginTop: 4,
+      fontWeight: "600",
+      fontFamily: 'Poppins-SemiBold',
+    },
 
-  /* Export Button */
+    /* Export Button */
 
-  exportBtn: {
-    flexDirection: "row",
-    backgroundColor: "#00695c",
-    padding: 14,
-    borderRadius: 14,
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 40,
-  },
+    exportBtn: {
+      flexDirection: "row",
+      padding: 14,
+      borderRadius: 14,
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 40,
+      shadowColor: theme.colors.colorShadow,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
 
-  exportText: {
-    color: "#fff",
-    fontWeight: "700",
-  },
-});
+    exportText: {
+      fontWeight: "700",
+      fontFamily: 'Poppins-SemiBold',
+    },
+  });

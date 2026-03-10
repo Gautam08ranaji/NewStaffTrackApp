@@ -8,6 +8,7 @@ import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Animated,
@@ -71,73 +72,77 @@ const getIconName = (type: string): IconName => {
   return "file-line";
 };
 
-// Helper function to get file icon and color
-const getFileIcon = (type: string): { name: IconName; color: string } => {
+// Helper function to get file icon and color using theme
+const getFileIcon = (type: string, theme: any): { name: IconName; color: string } => {
   if (type.includes("pdf")) {
-    return { name: "file-pdf-line", color: "#FF4444" };
+    return { name: "file-pdf-line", color: theme.colors.colorError600 };
   }
   if (type.includes("image")) {
-    return { name: "file-image-line", color: "#4CAF50" };
+    return { name: "file-image-line", color: theme.colors.colorSuccess600 };
   }
   if (type.includes("word") || type.includes("document")) {
-    return { name: "file-word-line", color: "#2196F3" };
+    return { name: "file-word-line", color: theme.colors.colorPrimary600 };
   }
   if (type.includes("excel") || type.includes("sheet")) {
-    return { name: "file-excel-line", color: "#4CAF50" };
+    return { name: "file-excel-line", color: theme.colors.colorSuccess600 };
   }
-  return { name: "file-line", color: "#757575" };
+  return { name: "file-line", color: theme.colors.colorTextTertiary };
 };
 
-// Helper function to get status color
-const getStatusColor = (statusName?: string): string => {
+// Helper function to get status color using theme
+const getStatusColor = (statusName?: string, theme?: any): string => {
+  if (!theme) return "#757575";
+  
   switch (statusName?.toLowerCase()) {
     case "open":
-      return "#4CAF50"; // Green
+      return theme.colors.colorSuccess600;
     case "in-progress":
-      return "#FFA000"; // Orange/Amber
+      return theme.colors.colorWarning600;
     case "closed":
-      return "#9E9E9E"; // Grey
+      return theme.colors.colorTextTertiary;
     case "pending":
-      return "#FF4444"; // Red
+      return theme.colors.colorError600;
     case "approved":
-      return "#4CAF50"; // Green
+      return theme.colors.colorSuccess600;
     case "rejected":
-      return "#FF4444"; // Red
+      return theme.colors.colorError600;
     default:
-      return "#757575"; // Grey
+      return theme.colors.colorTextTertiary;
   }
 };
 
-// Helper function to get status background color (lighter version)
-const getStatusBackgroundColor = (statusName?: string): string => {
+// Helper function to get status background color using theme (lighter version)
+const getStatusBackgroundColor = (statusName?: string, theme?: any): string => {
+  if (!theme) return "#75757520";
+  
   switch (statusName?.toLowerCase()) {
     case "open":
-      return "#4CAF5020"; // Green with opacity
+      return theme.colors.colorSuccess100;
     case "in-progress":
-      return "#FFA00020"; // Orange with opacity
+      return theme.colors.colorWarning100;
     case "closed":
-      return "#9E9E9E20"; // Grey with opacity
+      return theme.colors.colorBgAlt;
     case "pending":
-      return "#FF444420"; // Red with opacity
+      return theme.colors.colorError100;
     case "approved":
-      return "#4CAF5020"; // Green with opacity
+      return theme.colors.colorSuccess100;
     case "rejected":
-      return "#FF444420"; // Red with opacity
+      return theme.colors.colorError100;
     default:
-      return "#75757520"; // Grey with opacity
+      return theme.colors.colorBgAlt;
   }
 };
 
 // Format currency
-const formatCurrency = (amount: number): string => {
-  return `₹${amount.toLocaleString('en-IN')}`;
+const formatCurrency = (amount: number, locale: string = 'en-IN'): string => {
+  return `₹${amount.toLocaleString(locale)}`;
 };
 
-// Format date
-const formatDate = (dateString: string): string => {
+// Format date with locale support
+const formatDate = (dateString: string, locale: string = 'en'): string => {
   try {
     const date = new Date(dateString);
-    return date.toLocaleDateString("en-IN", {
+    return date.toLocaleDateString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
@@ -149,8 +154,32 @@ const formatDate = (dateString: string): string => {
   }
 };
 
+// Format short date
+const formatDateShort = (dateString?: string, locale: string = 'en'): string => {
+  if (!dateString) return "N/A";
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleDateString(locale, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  } catch {
+    return "N/A";
+  }
+};
+
+// Format file size
+const formatFileSize = (bytes?: number): string => {
+  if (!bytes) return "";
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+};
+
 export default function ReimbursemantTab() {
   const { theme } = useTheme();
+  const { t, i18n } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
 
   // State management for form
@@ -258,7 +287,10 @@ export default function ReimbursemantTab() {
       }
     } catch (error) {
       console.error("❌ Failed to fetch Tasks:", error);
-      Alert.alert("Error", "Failed to load tasks. Please try again.");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("reimbursement.taskLoadFailed") || "Failed to load tasks. Please try again."
+      );
     } finally {
       setIsLoadingTasks(false);
     }
@@ -295,7 +327,10 @@ export default function ReimbursemantTab() {
       }
     } catch (error) {
       console.log("Reimbursement API Error", error);
-      Alert.alert("Error", "Failed to load reimbursement list");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("reimbursement.listLoadFailed") || "Failed to load reimbursement list"
+      );
     } finally {
       setIsLoadingReimbursements(false);
       setRefreshing(false);
@@ -322,7 +357,10 @@ export default function ReimbursemantTab() {
       const primaryAttachment = attachments.length > 0 ? attachments[0] : null;
       
       if (!primaryAttachment) {
-        Alert.alert("Error", "Please add at least one attachment");
+        Alert.alert(
+          t("common.error") || "Error",
+          t("reimbursement.attachmentRequired") || "Please add at least one attachment"
+        );
         return;
       }
 
@@ -343,7 +381,7 @@ export default function ReimbursemantTab() {
       const response = await createReimbursement({
         taskNumber: selectedTask,
         amount: Number(price),
-        remarks: remarks || "Reimbursement request",
+        remarks: remarks || t("reimbursement.defaultRemarks") || "Reimbursement request",
         userId: String(authState?.userId),
         attachment: fileToUpload,
         token: String(authState?.token),
@@ -353,9 +391,9 @@ export default function ReimbursemantTab() {
       console.log("Reimbursement Success:", response);
       
       Alert.alert(
-        "Success",
-        "Reimbursement submitted successfully",
-        [{ text: "OK" }]
+        t("common.success") || "Success",
+        t("reimbursement.submitSuccess") || "Reimbursement submitted successfully",
+        [{ text: t("common.ok") || "OK" }]
       );
 
       // Reset form
@@ -370,7 +408,10 @@ export default function ReimbursemantTab() {
       
     } catch (error) {
       console.log("Reimbursement Error:", error);
-      Alert.alert("Error", "Failed to submit reimbursement. Please try again.");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("reimbursement.submitFailed") || "Failed to submit reimbursement. Please try again."
+      );
     }
   };
 
@@ -401,14 +442,17 @@ export default function ReimbursemantTab() {
         setAttachments([...attachments, newAttachment]);
         
         Alert.alert(
-          "File Added",
-          `${file.name} has been attached successfully.`,
-          [{ text: "OK" }]
+          t("reimbursement.fileAdded") || "File Added",
+          t("reimbursement.fileAddedMessage", { fileName: file.name }) || `${file.name} has been attached successfully.`,
+          [{ text: t("common.ok") || "OK" }]
         );
       }
     } catch (error) {
       console.log("Error picking file:", error);
-      Alert.alert("Error", "Failed to pick file. Please try again.");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("reimbursement.filePickFailed") || "Failed to pick file. Please try again."
+      );
     }
   };
 
@@ -420,8 +464,8 @@ export default function ReimbursemantTab() {
 
       if (!permissionResult.granted) {
         Alert.alert(
-          "Permission Required",
-          "Please grant camera roll permissions to upload images."
+          t("common.permissionRequired") || "Permission Required",
+          t("reimbursement.galleryPermission") || "Please grant camera roll permissions to upload images."
         );
         return;
       }
@@ -443,14 +487,17 @@ export default function ReimbursemantTab() {
         setAttachments([...attachments, newAttachment]);
         
         Alert.alert(
-          "Image Added",
-          `Image has been attached successfully.`,
-          [{ text: "OK" }]
+          t("reimbursement.imageAdded") || "Image Added",
+          t("reimbursement.imageAddedMessage") || `Image has been attached successfully.`,
+          [{ text: t("common.ok") || "OK" }]
         );
       }
     } catch (error) {
       console.log("Error picking image:", error);
-      Alert.alert("Error", "Failed to pick image. Please try again.");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("reimbursement.imagePickFailed") || "Failed to pick image. Please try again."
+      );
     }
   };
 
@@ -461,8 +508,8 @@ export default function ReimbursemantTab() {
 
       if (!permissionResult.granted) {
         Alert.alert(
-          "Permission Required",
-          "Please grant camera permissions to take photos."
+          t("common.permissionRequired") || "Permission Required",
+          t("reimbursement.cameraPermission") || "Please grant camera permissions to take photos."
         );
         return;
       }
@@ -483,25 +530,28 @@ export default function ReimbursemantTab() {
         setAttachments([...attachments, newAttachment]);
         
         Alert.alert(
-          "Photo Added",
-          `Photo has been captured and attached successfully.`,
-          [{ text: "OK" }]
+          t("reimbursement.photoAdded") || "Photo Added",
+          t("reimbursement.photoAddedMessage") || `Photo has been captured and attached successfully.`,
+          [{ text: t("common.ok") || "OK" }]
         );
       }
     } catch (error) {
       console.log("Error capturing image:", error);
-      Alert.alert("Error", "Failed to capture image. Please try again.");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("reimbursement.cameraCaptureFailed") || "Failed to capture image. Please try again."
+      );
     }
   };
 
   const removeAttachment = (index: number) => {
     Alert.alert(
-      "Remove Attachment",
-      "Are you sure you want to remove this attachment?",
+      t("reimbursement.removeAttachment") || "Remove Attachment",
+      t("reimbursement.removeConfirmation") || "Are you sure you want to remove this attachment?",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel") || "Cancel", style: "cancel" },
         {
-          text: "Remove",
+          text: t("common.remove") || "Remove",
           style: "destructive",
           onPress: () => {
             const updatedAttachments = [...attachments];
@@ -525,15 +575,24 @@ export default function ReimbursemantTab() {
 
   const validateForm = (): boolean => {
     if (!selectedTask) {
-      Alert.alert("Validation Error", "Please select a task number");
+      Alert.alert(
+        t("common.validationError") || "Validation Error",
+        t("reimbursement.taskRequired") || "Please select a task number"
+      );
       return false;
     }
     if (attachments.length === 0) {
-      Alert.alert("Validation Error", "Please upload at least one attachment");
+      Alert.alert(
+        t("common.validationError") || "Validation Error",
+        t("reimbursement.attachmentRequired") || "Please upload at least one attachment"
+      );
       return false;
     }
     if (!price || isNaN(Number(price)) || Number(price) <= 0) {
-      Alert.alert("Validation Error", "Please enter a valid price amount");
+      Alert.alert(
+        t("common.validationError") || "Validation Error",
+        t("reimbursement.priceRequired") || "Please enter a valid price amount"
+      );
       return false;
     }
     return true;
@@ -547,30 +606,12 @@ export default function ReimbursemantTab() {
       await submitReimbursement();
     } catch (error) {
       console.log("Error submitting reimbursement:", error);
-      Alert.alert("Error", "Failed to submit reimbursement. Please try again.");
+      Alert.alert(
+        t("common.error") || "Error",
+        t("reimbursement.submitFailed") || "Failed to submit reimbursement. Please try again."
+      );
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const formatFileSize = (bytes?: number): string => {
-    if (!bytes) return "";
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  };
-
-  const formatDateShort = (dateString?: string): string => {
-    if (!dateString) return "N/A";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-      });
-    } catch {
-      return "N/A";
     }
   };
 
@@ -582,6 +623,7 @@ export default function ReimbursemantTab() {
         {
           backgroundColor: theme.colors.colorBgSurface,
           borderColor: theme.colors.border,
+          shadowColor: theme.colors.colorShadow,
         },
       ]}
       onPress={() => {
@@ -609,16 +651,16 @@ export default function ReimbursemantTab() {
         <View
           style={[
             styles.reimbursementStatusBadge,
-            { backgroundColor: getStatusBackgroundColor(item.status) },
+            { backgroundColor: getStatusBackgroundColor(item.status, theme) },
           ]}
         >
           <Text
             style={[
               styles.reimbursementStatusText,
-              { color: getStatusColor(item.status) },
+              { color: getStatusColor(item.status, theme) },
             ]}
           >
-            {item.status}
+            {t(`reimbursement.status.${item.status.toLowerCase()}`) || item.status}
           </Text>
         </View>
       </View>
@@ -631,7 +673,7 @@ export default function ReimbursemantTab() {
               { color: theme.colors.colorTextSecondary },
             ]}
           >
-            Amount:
+            {t("reimbursement.amount")}:
           </Text>
           <Text
             style={[
@@ -639,7 +681,7 @@ export default function ReimbursemantTab() {
               { color: theme.colors.colorSuccess600 },
             ]}
           >
-            {formatCurrency(item.amount)}
+            {formatCurrency(item.amount, i18n.language)}
           </Text>
         </View>
 
@@ -652,7 +694,7 @@ export default function ReimbursemantTab() {
               ]}
               numberOfLines={1}
             >
-              Remarks: 
+              {t("reimbursement.remarks")}: 
             </Text>
             <Text
               style={[
@@ -679,7 +721,7 @@ export default function ReimbursemantTab() {
             { color: theme.colors.colorTextTertiary },
           ]}
         >
-          {formatDateShort(item.createdDate)}
+          {formatDateShort(item.createdDate, i18n.language)}
         </Text>
       </View>
     </TouchableOpacity>
@@ -695,7 +737,7 @@ export default function ReimbursemantTab() {
             { color: theme.colors.colorTextPrimary },
           ]}
         >
-          Reimbursement History
+          {t("reimbursement.history")}
         </Text>
         <View
           style={[
@@ -745,7 +787,7 @@ export default function ReimbursemantTab() {
             { color: theme.colors.colorTextSecondary },
           ]}
         >
-          Loading more...
+          {t("common.loadingMore")}
         </Text>
       </View>
     );
@@ -765,7 +807,7 @@ export default function ReimbursemantTab() {
           { color: theme.colors.colorTextPrimary },
         ]}
       >
-        No Reimbursements Yet
+        {t("reimbursement.noReimbursements")}
       </Text>
       <Text
         style={[
@@ -773,7 +815,7 @@ export default function ReimbursemantTab() {
           { color: theme.colors.colorTextSecondary },
         ]}
       >
-        Your submitted reimbursements will appear here
+        {t("reimbursement.emptyMessage")}
       </Text>
     </View>
   );
@@ -805,16 +847,16 @@ export default function ReimbursemantTab() {
           <View
             style={[
               styles.statusBadge,
-              { backgroundColor: getStatusBackgroundColor(item.statusName) },
+              { backgroundColor: getStatusBackgroundColor(item.statusName, theme) },
             ]}
           >
             <Text
               style={[
                 styles.statusText,
-                { color: getStatusColor(item.statusName) },
+                { color: getStatusColor(item.statusName, theme) },
               ]}
             >
-              {item.statusName || "Unknown"}
+              {item.statusName || t("common.unknown") || "Unknown"}
             </Text>
           </View>
         </View>
@@ -857,7 +899,7 @@ export default function ReimbursemantTab() {
                 { color: theme.colors.colorTextSecondary },
               ]}
             >
-              {formatDateShort(item.createdDate)}
+              {formatDateShort(item.createdDate, i18n.language)}
             </Text>
           </View>
         </View>
@@ -866,7 +908,7 @@ export default function ReimbursemantTab() {
   );
 
   const renderAttachmentItem = ({ item, index }: { item: Attachment; index: number }) => {
-    const fileIcon = getFileIcon(item.type);
+    const fileIcon = getFileIcon(item.type, theme);
     
     return (
       <Animated.View
@@ -935,14 +977,14 @@ export default function ReimbursemantTab() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <ScrollView 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
         {/* Reimbursement Request Form Card */}
         <Card
-          title="Reimbursement Request"
+          title={t("reimbursement.title")}
           backgroundColor={theme.colors.colorBgPage}
           titleColor={theme.colors.colorPrimary600}
         >
@@ -951,15 +993,15 @@ export default function ReimbursemantTab() {
             <Text
               style={[styles.label, { color: theme.colors.colorTextPrimary }]}
             >
-              Task Number <Text style={styles.required}>*</Text>
+              {t("reimbursement.taskNumber")} <Text style={[styles.required, { color: theme.colors.colorError600 }]}>*</Text>
             </Text>
             
             <TouchableOpacity
               style={[
                 styles.taskSelector,
                 {
-                  backgroundColor: theme.colors.colorBgSurface,
-                  borderColor: theme.colors.border,
+                  backgroundColor: theme.colors.inputBg,
+                  borderColor: theme.colors.inputBorder,
                 },
               ]}
               onPress={() => setTaskModalVisible(true)}
@@ -981,13 +1023,13 @@ export default function ReimbursemantTab() {
                       <View
                         style={[
                           styles.selectedStatusBadge,
-                          { backgroundColor: getStatusBackgroundColor(selectedTaskDetails.statusName) },
+                          { backgroundColor: getStatusBackgroundColor(selectedTaskDetails.statusName, theme) },
                         ]}
                       >
                         <Text
                           style={[
                             styles.selectedStatusText,
-                            { color: getStatusColor(selectedTaskDetails.statusName) },
+                            { color: getStatusColor(selectedTaskDetails.statusName, theme) },
                           ]}
                         >
                           {selectedTaskDetails.statusName}
@@ -1008,10 +1050,10 @@ export default function ReimbursemantTab() {
                   <Text
                     style={[
                       styles.placeholderText,
-                      { color: theme.colors.colorTextTertiary },
+                      { color: theme.colors.inputPlaceholder },
                     ]}
                   >
-                    {isLoadingTasks ? "Loading tasks..." : "Select Task Number"}
+                    {isLoadingTasks ? t("common.loading") : t("reimbursement.selectTask")}
                   </Text>
                 )}
                 <RemixIcon
@@ -1028,14 +1070,14 @@ export default function ReimbursemantTab() {
             <Text
               style={[styles.label, { color: theme.colors.colorTextPrimary }]}
             >
-              Amount (₹) <Text style={styles.required}>*</Text>
+              {t("reimbursement.amount")} <Text style={[styles.required, { color: theme.colors.colorError600 }]}>*</Text>
             </Text>
             <View
               style={[
                 styles.inputContainer,
                 {
-                  backgroundColor: theme.colors.colorBgSurface,
-                  borderColor: theme.colors.border,
+                  backgroundColor: theme.colors.inputBg,
+                  borderColor: theme.colors.inputBorder,
                 },
               ]}
             >
@@ -1048,9 +1090,9 @@ export default function ReimbursemantTab() {
                 ₹
               </Text>
               <TextInput
-                style={[styles.input, { color: theme.colors.colorTextPrimary }]}
-                placeholder="Enter amount"
-                placeholderTextColor={theme.colors.colorTextTertiary}
+                style={[styles.input, { color: theme.colors.inputText }]}
+                placeholder={t("reimbursement.enterAmount")}
+                placeholderTextColor={theme.colors.inputPlaceholder}
                 value={price}
                 onChangeText={handlePriceChange}
                 keyboardType="numeric"
@@ -1067,17 +1109,17 @@ export default function ReimbursemantTab() {
               <Text
                 style={[styles.label, { color: theme.colors.colorTextPrimary }]}
               >
-                Attachments <Text style={styles.required}>*</Text>
+                {t("reimbursement.attachments")} <Text style={[styles.required, { color: theme.colors.colorError600 }]}>*</Text>
               </Text>
               <Text style={[styles.attachmentCount, { color: theme.colors.colorPrimary600 }]}>
-                {attachments.length} file(s)
+                {attachments.length} {t("reimbursement.files")}
               </Text>
             </View>
             
             <Text
               style={[styles.hint, { color: theme.colors.colorTextTertiary }]}
             >
-              Upload photos, PDF, or documents (Max 10MB each)
+              {t("reimbursement.attachmentHint")}
             </Text>
 
             {/* Attachment List */}
@@ -1115,7 +1157,7 @@ export default function ReimbursemantTab() {
                   { color: theme.colors.colorPrimary600 },
                 ]}
               >
-                Add Attachment
+                {t("reimbursement.addAttachment")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1125,19 +1167,19 @@ export default function ReimbursemantTab() {
             <Text
               style={[styles.label, { color: theme.colors.colorTextPrimary }]}
             >
-              Remarks
+              {t("reimbursement.remarks")}
             </Text>
             <TextInput
               style={[
                 styles.textArea,
                 {
-                  backgroundColor: theme.colors.colorBgSurface,
-                  borderColor: theme.colors.border,
-                  color: theme.colors.colorTextPrimary,
+                  backgroundColor: theme.colors.inputBg,
+                  borderColor: theme.colors.inputBorder,
+                  color: theme.colors.inputText,
                 },
               ]}
-              placeholder="Enter any additional remarks..."
-              placeholderTextColor={theme.colors.colorTextTertiary}
+              placeholder={t("reimbursement.remarksPlaceholder")}
+              placeholderTextColor={theme.colors.inputPlaceholder}
               value={remarks}
               onChangeText={setRemarks}
               multiline
@@ -1153,8 +1195,8 @@ export default function ReimbursemantTab() {
               styles.submitButton,
               {
                 backgroundColor: isSubmitting
-                  ? theme.colors.colorTextTertiary
-                  : theme.colors.colorPrimary600,
+                  ? theme.colors.btnDisabledBg
+                  : theme.colors.btnPrimaryBg,
               },
             ]}
             onPress={handleSubmit}
@@ -1166,25 +1208,25 @@ export default function ReimbursemantTab() {
                 <RemixIcon
                   name="loader-4-line"
                   size={20}
-                  color={theme.colors.colorTextInverse}
+                  color={theme.colors.btnPrimaryText}
                 />
                 <Text
                   style={[
                     styles.submitText,
-                    { color: theme.colors.colorTextInverse },
+                    { color: theme.colors.btnPrimaryText },
                   ]}
                 >
-                  Submitting...
+                  {t("common.submitting")}
                 </Text>
               </View>
             ) : (
               <Text
                 style={[
                   styles.submitText,
-                  { color: theme.colors.colorTextInverse },
+                  { color: theme.colors.btnPrimaryText },
                 ]}
               >
-                Submit Reimbursement
+                {t("reimbursement.submitButton")}
               </Text>
             )}
           </TouchableOpacity>
@@ -1206,7 +1248,7 @@ export default function ReimbursemantTab() {
                   { color: theme.colors.colorTextPrimary },
                 ]}
               >
-                Summary
+                {t("reimbursement.summary")}
               </Text>
               <View style={styles.summaryRow}>
                 <Text
@@ -1215,7 +1257,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Transaction No:
+                  {t("reimbursement.transactionNo")}:
                 </Text>
                 <Text
                   style={[
@@ -1233,7 +1275,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Contact:
+                  {t("reimbursement.contact")}:
                 </Text>
                 <Text
                   style={[
@@ -1251,7 +1293,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Category:
+                  {t("reimbursement.category")}:
                 </Text>
                 <Text
                   style={[
@@ -1269,18 +1311,18 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Status:
+                  {t("reimbursement.status")}:
                 </Text>
                 <View
                   style={[
                     styles.summaryStatusBadge,
-                    { backgroundColor: getStatusBackgroundColor(selectedTaskDetails.statusName) },
+                    { backgroundColor: getStatusBackgroundColor(selectedTaskDetails.statusName, theme) },
                   ]}
                 >
                   <Text
                     style={[
                       styles.summaryStatusText,
-                      { color: getStatusColor(selectedTaskDetails.statusName) },
+                      { color: getStatusColor(selectedTaskDetails.statusName, theme) },
                     ]}
                   >
                     {selectedTaskDetails.statusName || "N/A"}
@@ -1294,7 +1336,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Amount:
+                  {t("reimbursement.amount")}:
                 </Text>
                 <Text
                   style={[
@@ -1302,7 +1344,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorSuccess600 },
                   ]}
                 >
-                  ₹{Number(price).toLocaleString()}
+                  ₹{Number(price).toLocaleString(i18n.language)}
                 </Text>
               </View>
               <View style={styles.summaryRow}>
@@ -1312,7 +1354,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Attachments:
+                  {t("reimbursement.attachments")}:
                 </Text>
                 <Text
                   style={[
@@ -1320,7 +1362,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  {attachments.length} file(s)
+                  {attachments.length} {t("reimbursement.files")}
                 </Text>
               </View>
             </View>
@@ -1344,7 +1386,7 @@ export default function ReimbursemantTab() {
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Loading reimbursements...
+                {t("reimbursement.loadingList")}
               </Text>
             </View>
           ) : (
@@ -1380,7 +1422,7 @@ export default function ReimbursemantTab() {
         }}
       >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { backgroundColor: theme.colors.colorOverlay }]}>
             <View
               style={[
                 styles.modalContent,
@@ -1395,7 +1437,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  Select Task
+                  {t("reimbursement.selectTask")}
                 </Text>
                 <TouchableOpacity
                   onPress={() => {
@@ -1418,23 +1460,23 @@ export default function ReimbursemantTab() {
                 style={[
                   styles.searchContainer,
                   {
-                    backgroundColor: theme.colors.colorBgPage,
-                    borderColor: theme.colors.border,
+                    backgroundColor: theme.colors.inputBg,
+                    borderColor: theme.colors.inputBorder,
                   },
                 ]}
               >
                 <RemixIcon
                   name="search-line"
                   size={20}
-                  color={theme.colors.colorTextTertiary}
+                  color={theme.colors.inputPlaceholder}
                 />
                 <TextInput
                   style={[
                     styles.searchInput,
-                    { color: theme.colors.colorTextPrimary },
+                    { color: theme.colors.inputText },
                   ]}
-                  placeholder="Search by transaction, contact, category..."
-                  placeholderTextColor={theme.colors.colorTextTertiary}
+                  placeholder={t("reimbursement.searchPlaceholder")}
+                  placeholderTextColor={theme.colors.inputPlaceholder}
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   autoCapitalize="none"
@@ -1445,7 +1487,7 @@ export default function ReimbursemantTab() {
                     <RemixIcon
                       name="close-circle-fill"
                       size={20}
-                      color={theme.colors.colorTextTertiary}
+                      color={theme.colors.inputPlaceholder}
                     />
                   </TouchableOpacity>
                 )}
@@ -1465,7 +1507,7 @@ export default function ReimbursemantTab() {
                       { color: theme.colors.colorTextSecondary },
                     ]}
                   >
-                    Loading tasks...
+                    {t("common.loading")}
                   </Text>
                 </View>
               ) : filteredTasks.length === 0 ? (
@@ -1482,8 +1524,8 @@ export default function ReimbursemantTab() {
                     ]}
                   >
                     {searchQuery.length > 0
-                      ? "No tasks match your search"
-                      : "No tasks available"}
+                      ? t("reimbursement.noSearchResults")
+                      : t("reimbursement.noTasks")}
                   </Text>
                   {searchQuery.length > 0 && (
                     <TouchableOpacity
@@ -1500,7 +1542,7 @@ export default function ReimbursemantTab() {
                           { color: theme.colors.colorPrimary600 },
                         ]}
                       >
-                        Clear Search
+                        {t("common.clear")}
                       </Text>
                     </TouchableOpacity>
                   )}
@@ -1526,7 +1568,7 @@ export default function ReimbursemantTab() {
         onRequestClose={() => setAttachmentModalVisible(false)}
       >
         <TouchableWithoutFeedback onPress={() => setAttachmentModalVisible(false)}>
-          <View style={styles.attachmentModalOverlay}>
+          <View style={[styles.attachmentModalOverlay, { backgroundColor: theme.colors.colorOverlay }]}>
             <Animated.View
               style={[
                 styles.attachmentModalContent,
@@ -1550,7 +1592,7 @@ export default function ReimbursemantTab() {
                       { color: theme.colors.colorTextPrimary },
                     ]}
                   >
-                    Add Attachment
+                    {t("reimbursement.addAttachment")}
                   </Text>
                 </View>
                 <TouchableOpacity
@@ -1574,7 +1616,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Choose a source to upload from
+                  {t("reimbursement.chooseSource")}
                 </Text>
 
                 {/* Options Grid */}
@@ -1591,8 +1633,8 @@ export default function ReimbursemantTab() {
                     onPress={handleCameraCapture}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.attachmentOptionIcon, { backgroundColor: '#2196F320' }]}>
-                      <RemixIcon name="camera-line" size={32} color="#2196F3" />
+                    <View style={[styles.attachmentOptionIcon, { backgroundColor: theme.colors.colorPrimary100 }]}>
+                      <RemixIcon name="camera-line" size={32} color={theme.colors.colorPrimary600} />
                     </View>
                     <Text
                       style={[
@@ -1600,7 +1642,7 @@ export default function ReimbursemantTab() {
                         { color: theme.colors.colorTextPrimary },
                       ]}
                     >
-                      Camera
+                      {t("reimbursement.camera")}
                     </Text>
                     <Text
                       style={[
@@ -1608,7 +1650,7 @@ export default function ReimbursemantTab() {
                         { color: theme.colors.colorTextTertiary },
                       ]}
                     >
-                      Take a photo
+                      {t("reimbursement.takePhoto")}
                     </Text>
                   </TouchableOpacity>
 
@@ -1624,8 +1666,8 @@ export default function ReimbursemantTab() {
                     onPress={handleImagePick}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.attachmentOptionIcon, { backgroundColor: '#4CAF5020' }]}>
-                      <RemixIcon name="image-line" size={32} color="#4CAF50" />
+                    <View style={[styles.attachmentOptionIcon, { backgroundColor: theme.colors.colorSuccess100 }]}>
+                      <RemixIcon name="image-line" size={32} color={theme.colors.colorSuccess600} />
                     </View>
                     <Text
                       style={[
@@ -1633,7 +1675,7 @@ export default function ReimbursemantTab() {
                         { color: theme.colors.colorTextPrimary },
                       ]}
                     >
-                      Gallery
+                      {t("reimbursement.gallery")}
                     </Text>
                     <Text
                       style={[
@@ -1641,7 +1683,7 @@ export default function ReimbursemantTab() {
                         { color: theme.colors.colorTextTertiary },
                       ]}
                     >
-                      Choose from library
+                      {t("reimbursement.chooseFromLibrary")}
                     </Text>
                   </TouchableOpacity>
 
@@ -1657,8 +1699,8 @@ export default function ReimbursemantTab() {
                     onPress={handleFilePick}
                     activeOpacity={0.7}
                   >
-                    <View style={[styles.attachmentOptionIcon, { backgroundColor: '#FF444420' }]}>
-                      <RemixIcon name="file-pdf-line" size={32} color="#FF4444" />
+                    <View style={[styles.attachmentOptionIcon, { backgroundColor: theme.colors.colorError100 }]}>
+                      <RemixIcon name="file-pdf-line" size={32} color={theme.colors.colorError600} />
                     </View>
                     <Text
                       style={[
@@ -1666,7 +1708,7 @@ export default function ReimbursemantTab() {
                         { color: theme.colors.colorTextPrimary },
                       ]}
                     >
-                      Documents
+                      {t("reimbursement.documents")}
                     </Text>
                     <Text
                       style={[
@@ -1674,7 +1716,7 @@ export default function ReimbursemantTab() {
                         { color: theme.colors.colorTextTertiary },
                       ]}
                     >
-                      PDF, DOC, etc.
+                      {t("reimbursement.documentTypes")}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1688,11 +1730,11 @@ export default function ReimbursemantTab() {
                         { color: theme.colors.colorTextSecondary },
                       ]}
                     >
-                      Recent Files
+                      {t("reimbursement.recentFiles")}
                     </Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       {attachments.slice(-3).map((file, index) => {
-                        const fileIcon = getFileIcon(file.type);
+                        const fileIcon = getFileIcon(file.type, theme);
                         return (
                           <TouchableOpacity
                             key={index}
@@ -1745,7 +1787,7 @@ export default function ReimbursemantTab() {
                       { color: theme.colors.colorTextSecondary },
                     ]}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -1762,7 +1804,7 @@ export default function ReimbursemantTab() {
         onRequestClose={() => setDetailsModalVisible(false)}
       >
         <TouchableWithoutFeedback onPress={() => setDetailsModalVisible(false)}>
-          <View style={styles.modalOverlay}>
+          <View style={[styles.modalOverlay, { backgroundColor: theme.colors.colorOverlay }]}>
             <View
               style={[
                 styles.detailsModalContent,
@@ -1776,7 +1818,7 @@ export default function ReimbursemantTab() {
                     { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  Reimbursement Details
+                  {t("reimbursement.details")}
                 </Text>
                 <TouchableOpacity
                   onPress={() => setDetailsModalVisible(false)}
@@ -1801,7 +1843,7 @@ export default function ReimbursemantTab() {
                             { color: theme.colors.colorTextSecondary },
                           ]}
                         >
-                          Task Number
+                          {t("reimbursement.taskNumber")}:
                         </Text>
                         <Text
                           style={[
@@ -1820,7 +1862,7 @@ export default function ReimbursemantTab() {
                             { color: theme.colors.colorTextSecondary },
                           ]}
                         >
-                          Amount
+                          {t("reimbursement.amount")}:
                         </Text>
                         <Text
                           style={[
@@ -1828,7 +1870,7 @@ export default function ReimbursemantTab() {
                             { color: theme.colors.colorSuccess600 },
                           ]}
                         >
-                          {formatCurrency(selectedReimbursement.amount)}
+                          {formatCurrency(selectedReimbursement.amount, i18n.language)}
                         </Text>
                       </View>
 
@@ -1839,21 +1881,21 @@ export default function ReimbursemantTab() {
                             { color: theme.colors.colorTextSecondary },
                           ]}
                         >
-                          Status
+                          {t("reimbursement.status")}:
                         </Text>
                         <View
                           style={[
                             styles.detailsStatusBadge,
-                            { backgroundColor: getStatusBackgroundColor(selectedReimbursement.status) },
+                            { backgroundColor: getStatusBackgroundColor(selectedReimbursement.status, theme) },
                           ]}
                         >
                           <Text
                             style={[
                               styles.detailsStatusText,
-                              { color: getStatusColor(selectedReimbursement.status) },
+                              { color: getStatusColor(selectedReimbursement.status, theme) },
                             ]}
                           >
-                            {selectedReimbursement.status}
+                            {t(`reimbursement.status.${selectedReimbursement.status.toLowerCase()}`) || selectedReimbursement.status}
                           </Text>
                         </View>
                       </View>
@@ -1865,7 +1907,7 @@ export default function ReimbursemantTab() {
                             { color: theme.colors.colorTextSecondary },
                           ]}
                         >
-                          Created Date
+                          {t("reimbursement.createdDate")}:
                         </Text>
                         <Text
                           style={[
@@ -1873,7 +1915,7 @@ export default function ReimbursemantTab() {
                             { color: theme.colors.colorTextPrimary },
                           ]}
                         >
-                          {formatDate(selectedReimbursement.createdDate)}
+                          {formatDate(selectedReimbursement.createdDate, i18n.language)}
                         </Text>
                       </View>
 
@@ -1885,7 +1927,7 @@ export default function ReimbursemantTab() {
                               { color: theme.colors.colorTextSecondary },
                             ]}
                           >
-                            Remarks
+                            {t("reimbursement.remarks")}:
                           </Text>
                           <Text
                             style={[
@@ -1923,6 +1965,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 8,
+    fontFamily: 'Poppins-SemiBold',
   },
   required: {
     color: "#FF4444",
@@ -1930,6 +1973,7 @@ const styles = StyleSheet.create({
   hint: {
     fontSize: 12,
     marginBottom: 12,
+    fontFamily: 'Poppins-Regular',
   },
   taskSelector: {
     borderWidth: 1,
@@ -1953,6 +1997,7 @@ const styles = StyleSheet.create({
   selectedTaskNumber: {
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   selectedStatusBadge: {
     paddingHorizontal: 8,
@@ -1962,12 +2007,15 @@ const styles = StyleSheet.create({
   selectedStatusText: {
     fontSize: 10,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   selectedTaskName: {
     fontSize: 12,
+    fontFamily: 'Poppins-Regular',
   },
   placeholderText: {
     fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
   inputContainer: {
     flexDirection: "row",
@@ -1981,11 +2029,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginRight: 8,
+    fontFamily: 'Poppins-SemiBold',
   },
   input: {
     flex: 1,
     height: "100%",
     fontSize: 16,
+    fontFamily: 'Poppins-Regular',
   },
   textArea: {
     borderWidth: 1,
@@ -1994,6 +2044,7 @@ const styles = StyleSheet.create({
     minHeight: 100,
     fontSize: 14,
     textAlignVertical: "top",
+    fontFamily: 'Poppins-Regular',
   },
   addButton: {
     flexDirection: "row",
@@ -2009,6 +2060,7 @@ const styles = StyleSheet.create({
   addButtonText: {
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   attachmentHeader: {
     flexDirection: "row",
@@ -2019,6 +2071,7 @@ const styles = StyleSheet.create({
   attachmentCount: {
     fontSize: 12,
     fontWeight: "500",
+    fontFamily: 'Poppins-Medium',
   },
   attachmentList: {
     marginBottom: 12,
@@ -2047,6 +2100,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     marginBottom: 4,
+    fontFamily: 'Poppins-Medium',
   },
   attachmentMeta: {
     flexDirection: "row",
@@ -2055,10 +2109,12 @@ const styles = StyleSheet.create({
   },
   attachmentSize: {
     fontSize: 11,
+    fontFamily: 'Poppins-Regular',
   },
   attachmentType: {
     fontSize: 11,
     fontWeight: "500",
+    fontFamily: 'Poppins-Medium',
   },
   removeButton: {
     padding: 6,
@@ -2078,6 +2134,7 @@ const styles = StyleSheet.create({
   submitText: {
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   summaryContainer: {
     marginTop: 20,
@@ -2089,6 +2146,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 12,
+    fontFamily: 'Poppins-SemiBold',
   },
   summaryRow: {
     flexDirection: "row",
@@ -2098,10 +2156,12 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 13,
+    fontFamily: 'Poppins-Regular',
   },
   summaryValue: {
     fontSize: 13,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   summaryStatusBadge: {
     paddingHorizontal: 8,
@@ -2111,6 +2171,7 @@ const styles = StyleSheet.create({
   summaryStatusText: {
     fontSize: 11,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   loadingContainer: {
     flex: 1,
@@ -2121,10 +2182,12 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
   noDataText: {
     fontSize: 12,
     marginTop: 4,
+    fontFamily: 'Poppins-Regular',
   },
 
   // List Section Styles
@@ -2147,6 +2210,7 @@ const styles = StyleSheet.create({
   listTitle: {
     fontSize: 18,
     fontWeight: "700",
+    fontFamily: 'Poppins-SemiBold',
   },
   listBadge: {
     paddingHorizontal: 8,
@@ -2158,6 +2222,7 @@ const styles = StyleSheet.create({
   listBadgeText: {
     fontSize: 12,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   refreshButton: {
     padding: 8,
@@ -2171,6 +2236,7 @@ const styles = StyleSheet.create({
   },
   listLoaderText: {
     fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
   reimbursementList: {
     gap: 12,
@@ -2180,6 +2246,10 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     padding: 16,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   reimbursementHeader: {
     flexDirection: "row",
@@ -2195,6 +2265,7 @@ const styles = StyleSheet.create({
   reimbursementTaskNumber: {
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   reimbursementStatusBadge: {
     paddingHorizontal: 10,
@@ -2204,6 +2275,7 @@ const styles = StyleSheet.create({
   reimbursementStatusText: {
     fontSize: 11,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   reimbursementBody: {
     marginBottom: 12,
@@ -2216,10 +2288,12 @@ const styles = StyleSheet.create({
   },
   reimbursementAmountLabel: {
     fontSize: 13,
+    fontFamily: 'Poppins-Regular',
   },
   reimbursementAmount: {
     fontSize: 16,
     fontWeight: "700",
+    fontFamily: 'Poppins-SemiBold',
   },
   reimbursementRemarksContainer: {
     flexDirection: "row",
@@ -2228,10 +2302,12 @@ const styles = StyleSheet.create({
   },
   reimbursementRemarksLabel: {
     fontSize: 13,
+    fontFamily: 'Poppins-Regular',
   },
   reimbursementRemarks: {
     fontSize: 13,
     flex: 1,
+    fontFamily: 'Poppins-Regular',
   },
   reimbursementFooter: {
     flexDirection: "row",
@@ -2240,6 +2316,7 @@ const styles = StyleSheet.create({
   },
   reimbursementDate: {
     fontSize: 12,
+    fontFamily: 'Poppins-Regular',
   },
   listFooterLoader: {
     flexDirection: "row",
@@ -2250,6 +2327,7 @@ const styles = StyleSheet.create({
   },
   listFooterText: {
     fontSize: 13,
+    fontFamily: 'Poppins-Regular',
   },
   emptyListContainer: {
     alignItems: "center",
@@ -2260,16 +2338,17 @@ const styles = StyleSheet.create({
   emptyListTitle: {
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   emptyListText: {
     fontSize: 13,
     textAlign: "center",
+    fontFamily: 'Poppins-Regular',
   },
 
   // Modal Styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   modalContent: {
@@ -2303,10 +2382,12 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 18,
     fontWeight: "700",
+    fontFamily: 'Poppins-SemiBold',
   },
   detailsModalTitle: {
     fontSize: 20,
     fontWeight: "700",
+    fontFamily: 'Poppins-SemiBold',
   },
   closeButton: {
     padding: 4,
@@ -2326,6 +2407,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 8,
     marginRight: 8,
+    fontFamily: 'Poppins-Regular',
   },
   taskList: {
     paddingBottom: 20,
@@ -2347,6 +2429,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     flex: 1,
+    fontFamily: 'Poppins-SemiBold',
   },
   statusBadge: {
     paddingHorizontal: 8,
@@ -2356,11 +2439,13 @@ const styles = StyleSheet.create({
   statusText: {
     fontSize: 10,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   taskContactName: {
     fontSize: 14,
     fontWeight: "500",
     marginBottom: 6,
+    fontFamily: 'Poppins-Medium',
   },
   taskDetailsRow: {
     flexDirection: "row",
@@ -2375,6 +2460,7 @@ const styles = StyleSheet.create({
   },
   taskDetailText: {
     fontSize: 12,
+    fontFamily: 'Poppins-Regular',
   },
   emptyContainer: {
     alignItems: "center",
@@ -2385,6 +2471,7 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     textAlign: "center",
+    fontFamily: 'Poppins-Regular',
   },
   clearSearchButton: {
     marginTop: 12,
@@ -2396,12 +2483,12 @@ const styles = StyleSheet.create({
   clearSearchText: {
     fontSize: 12,
     fontWeight: "500",
+    fontFamily: 'Poppins-Medium',
   },
 
   // Attachment Modal Styles
   attachmentModalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
     justifyContent: "flex-end",
   },
   attachmentModalContent: {
@@ -2425,6 +2512,7 @@ const styles = StyleSheet.create({
   attachmentModalTitle: {
     fontSize: 20,
     fontWeight: "700",
+    fontFamily: 'Poppins-SemiBold',
   },
   attachmentModalCloseButton: {
     padding: 4,
@@ -2435,6 +2523,7 @@ const styles = StyleSheet.create({
   attachmentModalSubtitle: {
     fontSize: 14,
     marginBottom: 20,
+    fontFamily: 'Poppins-Regular',
   },
   attachmentOptionsGrid: {
     flexDirection: "row",
@@ -2461,10 +2550,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
     marginBottom: 4,
+    fontFamily: 'Poppins-SemiBold',
   },
   attachmentOptionDescription: {
     fontSize: 11,
     textAlign: "center",
+    fontFamily: 'Poppins-Regular',
   },
   recentFilesSection: {
     marginTop: 8,
@@ -2473,6 +2564,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "500",
     marginBottom: 12,
+    fontFamily: 'Poppins-Medium',
   },
   recentFileItem: {
     flexDirection: "row",
@@ -2494,6 +2586,7 @@ const styles = StyleSheet.create({
   recentFileName: {
     fontSize: 12,
     maxWidth: 100,
+    fontFamily: 'Poppins-Regular',
   },
   attachmentModalFooter: {
     alignItems: "center",
@@ -2507,6 +2600,7 @@ const styles = StyleSheet.create({
   attachmentModalCancelText: {
     fontSize: 14,
     fontWeight: "500",
+    fontFamily: 'Poppins-Medium',
   },
 
   // Details Modal Styles
@@ -2523,10 +2617,12 @@ const styles = StyleSheet.create({
   },
   detailsLabel: {
     fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
   detailsValue: {
     fontSize: 14,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   detailsStatusBadge: {
     paddingHorizontal: 12,
@@ -2536,6 +2632,7 @@ const styles = StyleSheet.create({
   detailsStatusText: {
     fontSize: 12,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   detailsRemarks: {
     marginTop: 8,
@@ -2544,5 +2641,6 @@ const styles = StyleSheet.create({
   detailsRemarksText: {
     fontSize: 14,
     lineHeight: 20,
+    fontFamily: 'Poppins-Regular',
   },
 });

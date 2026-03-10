@@ -11,6 +11,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import * as ImagePicker from "expo-image-picker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Image,
@@ -29,6 +30,7 @@ type SelectedFile = {
 
 export default function UpdateDocumentScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = createStyles(theme);
   const authState = useAppSelector((state) => state.auth);
   const params = useLocalSearchParams();
@@ -66,7 +68,11 @@ export default function UpdateDocumentScreen() {
       const activityByName = `${firstName} ${lastName}`.trim();
 
       /* ---------------- BUILD ACTIVITY DESCRIPTION ---------------- */
-      const activityDescription = `Document uploaded: "${documentName}" - ${documentDescription} (Type: ${documentType})`;
+      const activityDescription = t("updateDocument.activityDescription", {
+        documentName,
+        documentDescription,
+        documentType,
+      }) || `Document uploaded: "${documentName}" - ${documentDescription} (Type: ${documentType})`;
 
       /* ---------------- ACTIVITY PAYLOAD ---------------- */
       const payload = {
@@ -109,7 +115,7 @@ export default function UpdateDocumentScreen() {
   const openCamera = async () => {
     const permission = await ImagePicker.requestCameraPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("Camera permission required");
+      Alert.alert(t("updateDocument.cameraPermission") || "Camera permission required");
       return;
     }
 
@@ -121,7 +127,7 @@ export default function UpdateDocumentScreen() {
     if (!result.canceled) {
       setFile({
         uri: result.assets[0].uri,
-        name: "Camera_Image.jpg",
+        name: t("updateDocument.cameraImage") || "Camera_Image.jpg",
         type: "image",
       });
     }
@@ -137,7 +143,7 @@ export default function UpdateDocumentScreen() {
     if (!result.canceled) {
       setFile({
         uri: result.assets[0].uri,
-        name: "Gallery_Image.jpg",
+        name: t("updateDocument.galleryImage") || "Gallery_Image.jpg",
         type: "image",
       });
     }
@@ -162,12 +168,18 @@ export default function UpdateDocumentScreen() {
   /* SUBMIT */
   const onSubmit = async () => {
     if (!description.trim()) {
-      Alert.alert("Enter description");
+      Alert.alert(
+        t("common.validationError") || "Validation Error", 
+        t("updateDocument.enterDescription") || "Enter description"
+      );
       return;
     }
 
     if (!file || !caseId) {
-      Alert.alert("Missing file or case ID");
+      Alert.alert(
+        t("common.validationError") || "Validation Error", 
+        t("updateDocument.missingFile") || "Missing file or case ID"
+      );
       return;
     }
 
@@ -205,7 +217,10 @@ export default function UpdateDocumentScreen() {
         transactionNumber: transactionNumber,
       });
 
-      Alert.alert("Success", res?.message || "Uploaded successfully");
+      Alert.alert(
+        t("common.success") || "Success", 
+        res?.message || t("updateDocument.uploadSuccess") || "Uploaded successfully"
+      );
 
       router.push({
         pathname: "/(fro)/(complaints)/DocumentListScreen",
@@ -216,7 +231,10 @@ export default function UpdateDocumentScreen() {
       setFile(null);
     } catch (error) {
       console.log("UPLOAD ERROR:", error);
-      Alert.alert("Upload failed");
+      Alert.alert(
+        t("common.error") || "Error", 
+        t("updateDocument.uploadFailed") || "Upload failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -225,26 +243,42 @@ export default function UpdateDocumentScreen() {
   return (
     <BodyLayout
       type="screen"
-      screenName="Upload Document"
+      screenName={t("updateDocument.screenTitle") || "Upload Document"}
       scrollContentStyle={{ paddingHorizontal: 20 }}
     >
       {/* DESCRIPTION */}
-      <Text style={styles.label}>Description</Text>
+      <Text style={[styles.label, theme.typography.fontBodySmall]}>
+        {t("updateDocument.description") || "Description"}
+      </Text>
       <TextInput
         style={styles.textArea}
         value={description}
         onChangeText={setDescription}
-        placeholder="Enter document description"
+        placeholder={t("updateDocument.enterDescription") || "Enter document description"}
         placeholderTextColor={theme.colors.inputPlaceholder}
         multiline
       />
 
       {/* ATTACH DOCUMENT */}
-      <Text style={styles.label}>Attach Document</Text>
+      <Text style={[styles.label, theme.typography.fontBodySmall]}>
+        {t("updateDocument.attachDocument") || "Attach Document"}
+      </Text>
       <View style={styles.row}>
-        <ActionButton icon="camera" label="Camera" onPress={openCamera} />
-        <ActionButton icon="image" label="Gallery" onPress={openGallery} />
-        <ActionButton icon="document" label="PDF" onPress={openPdf} />
+        <ActionButton 
+          icon="camera" 
+          label={t("updateDocument.camera") || "Camera"} 
+          onPress={openCamera} 
+        />
+        <ActionButton 
+          icon="image" 
+          label={t("updateDocument.gallery") || "Gallery"} 
+          onPress={openGallery} 
+        />
+        <ActionButton 
+          icon="document" 
+          label={t("updateDocument.pdf") || "PDF"} 
+          onPress={openPdf} 
+        />
       </View>
 
       {/* PREVIEW */}
@@ -259,7 +293,9 @@ export default function UpdateDocumentScreen() {
                 size={40}
                 color={theme.colors.colorPrimary500}
               />
-              <Text style={styles.pdfName}>{file.name}</Text>
+              <Text style={[styles.pdfName, theme.typography.fontBodySmall]}>
+                {file.name}
+              </Text>
             </View>
           )}
 
@@ -270,7 +306,7 @@ export default function UpdateDocumentScreen() {
             <Ionicons
               name="close"
               size={18}
-              color={theme.colors.colorTextInverse}
+              color={theme.colors.btnPrimaryText}
             />
           </TouchableOpacity>
         </View>
@@ -282,8 +318,10 @@ export default function UpdateDocumentScreen() {
         onPress={onSubmit}
         disabled={loading}
       >
-        <Text style={styles.submitText}>
-          {loading ? "Uploading..." : "Upload Document"}
+        <Text style={[styles.submitText, theme.typography.fontButton]}>
+          {loading 
+            ? t("common.uploading") || "Uploading..." 
+            : t("updateDocument.uploadButton") || "Upload Document"}
         </Text>
       </TouchableOpacity>
     </BodyLayout>
@@ -306,7 +344,9 @@ const ActionButton = ({
   return (
     <TouchableOpacity style={styles.actionBtn} onPress={onPress}>
       <Ionicons name={icon} size={22} color={theme.colors.colorPrimary500} />
-      <Text style={styles.actionText}>{label}</Text>
+      <Text style={[styles.actionText, theme.typography.fontBodySmall]}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 };
@@ -330,6 +370,7 @@ const createStyles = (theme: Theme) =>
       color: theme.colors.inputText,
       borderWidth: 1,
       borderColor: theme.colors.inputBorder,
+      fontSize: 14,
     },
     row: {
       flexDirection: "row",
@@ -388,6 +429,7 @@ const createStyles = (theme: Theme) =>
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: "center",
+      marginBottom: 20,
     },
     submitText: {
       color: theme.colors.btnPrimaryText,

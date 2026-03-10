@@ -13,6 +13,7 @@ import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
@@ -103,6 +104,7 @@ const moderateScale = (size: number, factor = 0.5) =>
 const UpdateStatusScreen = () => {
   const authState = useAppSelector((state) => state.auth);
   const { theme } = useTheme();
+  const { t } = useTranslation();
 
   const params = useLocalSearchParams();
   const [statusDropdown, setStatusDropdown] = useState<DropdownItem[]>([]);
@@ -125,7 +127,10 @@ const UpdateStatusScreen = () => {
         setInteractionItem(parsedItem);
       } catch (error) {
         console.error("❌ Failed to parse item:", error);
-        Alert.alert("Error", "Failed to load case data");
+        Alert.alert(
+          t("common.error"),
+          t("updateStatus.loadFailed")
+        );
       } finally {
         setIsParsing(false);
       }
@@ -152,11 +157,17 @@ const UpdateStatusScreen = () => {
     } catch (error: any) {
       const status = error?.response?.status;
       if (status === 401) {
-        Alert.alert("Session Expired", "Please login again.");
+        Alert.alert(
+          t("common.sessionExpired"),
+          t("common.pleaseLoginAgain")
+        );
         router.replace("/login");
         return;
       }
-      Alert.alert("Error", "Failed to load status");
+      Alert.alert(
+        t("common.error"),
+        t("updateStatus.statusLoadFailed")
+      );
     }
   };
 
@@ -178,7 +189,10 @@ const UpdateStatusScreen = () => {
 
       setSubStatusDropdown(mapped);
     } catch (e) {
-      Alert.alert("Error", "Failed to load sub status");
+      Alert.alert(
+        t("common.error"),
+        t("updateStatus.subStatusLoadFailed")
+      );
     }
   };
 
@@ -222,21 +236,21 @@ const UpdateStatusScreen = () => {
       // Check if case status changed
       if (oldTaskstatus !== newTaskstatus) {
         changes.push(
-          `TaskStatus changed from "${oldTaskstatus || "None"}" to "${newTaskstatus || "None"}"`,
+          `${t("updateStatus.statusChanged")} "${oldTaskstatus || t("common.noData")}" ${t("updateStatus.to")} "${newTaskstatus || t("common.noData")}"`,
         );
       }
 
       // Check if sub status changed
       if (oldSubStatus !== newSubStatus) {
         changes.push(
-          `Sub Status changed from "${oldSubStatus || "None"}" to "${newSubStatus || "None"}"`,
+          `${t("updateStatus.subStatusChanged")} "${oldSubStatus || t("common.noData")}" ${t("updateStatus.to")} "${newSubStatus || t("common.noData")}"`,
         );
       }
 
       // Check if comment changed (closeRemarks field)
       if (oldComment !== newComment) {
         if (oldComment && !newComment) {
-          changes.push(`Comment removed`);
+          changes.push(t("updateStatus.commentRemoved"));
         } else if (!oldComment && newComment) {
           // Truncate long comments for readability
           const truncateComment = (comment: string) => {
@@ -244,14 +258,14 @@ const UpdateStatusScreen = () => {
             return comment.substring(0, 50) + "...";
           };
           changes.push(
-            `Comment added: "${truncateComment(newComment)}"`,
+            `${t("updateStatus.commentAdded")}: "${truncateComment(newComment)}"`,
           );
         } else if (oldComment && newComment) {
           // Both have values and they're different
           const truncateOld = oldComment.length <= 30 ? oldComment : oldComment.substring(0, 30) + "...";
           const truncateNew = newComment.length <= 30 ? newComment : newComment.substring(0, 30) + "...";
           changes.push(
-            `Comment updated from "${truncateOld}" to "${truncateNew}"`,
+            `${t("updateStatus.commentUpdated")} "${truncateOld}" ${t("updateStatus.to")} "${truncateNew}"`,
           );
         }
       }
@@ -259,7 +273,7 @@ const UpdateStatusScreen = () => {
       // Build activity description
       let activityDescription = "";
       if (changes.length === 0) {
-        activityDescription = "No changes were made";
+        activityDescription = t("updateStatus.noChanges");
       } else if (changes.length === 1) {
         activityDescription = changes[0];
       } else {
@@ -277,7 +291,7 @@ const UpdateStatusScreen = () => {
         activityByName,
         activityRelatedTo: "CAS",
         activityRelatedToId: interactionId,
-        activityRelatedToName: transactionNumber || `Task${interactionId}`,
+        activityRelatedToName: transactionNumber || `${t("updateStatus.task")}${interactionId}`,
       };
 
       console.log("📤 Status Update Activity Payload:", payload);
@@ -296,7 +310,10 @@ const UpdateStatusScreen = () => {
 
   const handleUpdate = async () => {
     if (!Taskstatus) {
-      Alert.alert("Validation Error", "Please select a case status");
+      Alert.alert(
+        t("common.validationError"),
+        t("updateStatus.selectStatus")
+      );
       return;
     }
 
@@ -305,7 +322,10 @@ const UpdateStatusScreen = () => {
 
     // If status is Closed, validate that comment is provided
     if (isClosed && !notes.trim()) {
-      Alert.alert("Validation Error", "Please enter comment for closed status");
+      Alert.alert(
+        t("common.validationError"),
+        t("updateStatus.commentRequired")
+      );
       return;
     }
 
@@ -360,12 +380,16 @@ const UpdateStatusScreen = () => {
           transactionNumber,
         });
 
-        Alert.alert("Success", "Task Updated Successfully", [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(fro)/(complaints)"),
-          },
-        ]);
+        Alert.alert(
+          t("common.success"),
+          t("updateStatus.updateSuccess"),
+          [
+            {
+              text: t("common.ok"),
+              onPress: () => router.replace("/(fro)/(complaints)"),
+            },
+          ]
+        );
         sendLocation(caseId);
         return;
       }
@@ -404,32 +428,39 @@ const UpdateStatusScreen = () => {
       const message =
         error?.response?.data?.message ||
         error?.response?.data?.error ||
-        "Something went wrong. Please try again.";
+        t("common.somethingWentWrong");
 
       if (status === 401) {
-        Alert.alert("Session Expired", "Please login again.", [
-          {
-            text: "OK",
-            onPress: () => router.replace("/login"),
-          },
-        ]);
+        Alert.alert(
+          t("common.sessionExpired"),
+          t("common.pleaseLoginAgain"),
+          [
+            {
+              text: t("common.ok"),
+              onPress: () => router.replace("/login"),
+            },
+          ]
+        );
         return;
       }
 
       if (status === 400) {
-        Alert.alert("Update Failed", message);
+        Alert.alert(
+          t("updateStatus.updateFailed"),
+          message
+        );
         return;
       }
 
       if (!error?.response) {
         Alert.alert(
-          "Network Error",
-          "Please check your internet connection and try again.",
+          t("common.networkError"),
+          t("common.checkInternet"),
         );
         return;
       }
 
-      Alert.alert("Error", message);
+      Alert.alert(t("common.error"), message);
     } finally {
       setIsLoading(false);
     }
@@ -498,7 +529,7 @@ const UpdateStatusScreen = () => {
 
       const { latitude, longitude } = location.coords;
       const payload = {
-        name: address ?? "Unknown location",
+        name: address ?? t("updateStatus.unknownLocation"),
         latitute: latitude.toString(),
         longititute: longitude.toString(),
         discriptions: address ?? "",
@@ -524,7 +555,10 @@ const UpdateStatusScreen = () => {
 
   const submitHandler = useCallback(() => {
     if (!Taskstatus) {
-      Alert.alert("Error", "Please select a case status");
+      Alert.alert(
+        t("common.error"),
+        t("updateStatus.selectStatus")
+      );
       return;
     }
 
@@ -547,7 +581,7 @@ const UpdateStatusScreen = () => {
             { color: theme.colors.colorTextSecondary },
           ]}
         >
-          Loading Task data...
+          {t("updateStatus.loadingTask")}
         </Text>
       </View>
     );
@@ -569,7 +603,7 @@ const UpdateStatusScreen = () => {
         <Text
           style={[styles.errorText, { color: theme.colors.colorTextSecondary }]}
         >
-          No case data found
+          {t("updateStatus.noData")}
         </Text>
         <TouchableOpacity
           style={[
@@ -581,7 +615,7 @@ const UpdateStatusScreen = () => {
           <Text
             style={[styles.backButtonText, { color: theme.colors.colorBgPage }]}
           >
-            Go Back
+            {t("common.goBack")}
           </Text>
         </TouchableOpacity>
       </View>
@@ -619,7 +653,7 @@ const UpdateStatusScreen = () => {
                   { color: theme.colors.colorBgPage },
                 ]}
               >
-                Update Task {caseId}
+                {t("updateStatus.title")} {caseId}
               </Text>
               {!!interactionItem.subject && (
                 <Text
@@ -644,7 +678,7 @@ const UpdateStatusScreen = () => {
             <Text
               style={[styles.label, { color: theme.colors.colorTextSecondary }]}
             >
-              Select TaskStatus *
+              {t("updateStatus.selectTaskStatus")} *
             </Text>
             <TouchableOpacity
               style={[
@@ -667,7 +701,7 @@ const UpdateStatusScreen = () => {
                   },
                 ]}
               >
-                {Taskstatus?.name || "Select TaskStatus"}
+                {Taskstatus?.name || t("updateStatus.selectTaskStatus")}
               </Text>
               <Ionicons
                 name="chevron-down"
@@ -684,7 +718,7 @@ const UpdateStatusScreen = () => {
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Select Sub Status (Optional)
+                {t("updateStatus.selectSubStatus")} ({t("common.optional")})
               </Text>
 
               {showSubStatusWarning && (
@@ -708,7 +742,7 @@ const UpdateStatusScreen = () => {
                       { color: theme.colors.colorAccent700 },
                     ]}
                   >
-                    Please select TaskStatus first
+                    {t("updateStatus.selectStatusFirst")}
                   </Text>
                 </View>
               )}
@@ -736,7 +770,7 @@ const UpdateStatusScreen = () => {
                     },
                   ]}
                 >
-                  {subStatus?.name || "Select Sub Status"}
+                  {subStatus?.name || t("updateStatus.selectSubStatus")}
                 </Text>
                 <Ionicons
                   name="chevron-down"
@@ -756,7 +790,7 @@ const UpdateStatusScreen = () => {
                 <Text
                   style={[styles.label, { color: theme.colors.colorTextSecondary }]}
                 >
-                  Comment *
+                  {t("updateStatus.comment")} *
                 </Text>
                 <TextInput
                   ref={notesInputRef}
@@ -771,7 +805,7 @@ const UpdateStatusScreen = () => {
                   value={notes}
                   onChangeText={setNotes}
                   multiline
-                  placeholder="Enter closing remarks..."
+                  placeholder={t("updateStatus.enterClosingRemarks")}
                   placeholderTextColor={theme.colors.inputPlaceholder}
                 />
               </>
@@ -794,7 +828,7 @@ const UpdateStatusScreen = () => {
                     { color: theme.colors.colorBgPage },
                   ]}
                 >
-                  Update
+                  {t("common.update")}
                 </Text>
               )}
             </TouchableOpacity>

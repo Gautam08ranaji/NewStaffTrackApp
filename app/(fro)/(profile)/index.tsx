@@ -99,8 +99,6 @@ export default function ProfileScreen() {
   const [availability, setAvailability] =
     useState<AvailabilityStatus>("available");
 
-  // console.log(authState.);
-
   const antiforgeryToken = useAppSelector(
     (state) => state.auth.antiforgeryToken,
   );
@@ -179,13 +177,18 @@ export default function ProfileScreen() {
       const message =
         error?.data?.data ||
         error?.response?.data?.data ||
-        "Your session has expired. Please login again.";
+        t("common.sessionExpiredMessage") || "Your session has expired. Please login again.";
 
       // ✅ Handle Session Expired / Logged in elsewhere
       if (status === 440) {
-        Alert.alert("Session Expired", message, [{ text: "OK" }], {
-          cancelable: false,
-        });
+        Alert.alert(
+          t("common.sessionExpired") || "Session Expired", 
+          message, 
+          [{ text: t("common.ok") || "OK" }], 
+          {
+            cancelable: false,
+          }
+        );
 
         // ⏳ Wait 3 seconds → clear auth → go to login
         setTimeout(() => {
@@ -197,32 +200,35 @@ export default function ProfileScreen() {
       }
 
       // ❌ Fallback error
-      Alert.alert("Logout Failed", "Something went wrong. Please try again.");
+      Alert.alert(
+        t("profile.logoutFailed") || "Logout Failed", 
+        t("common.somethingWentWrong") || "Something went wrong. Please try again."
+      );
     }
   };
 
   const availabilityOptions = [
     {
       key: "available" as AvailabilityStatus,
-      label: "Available",
+      label: t("profile.availability.available") || "Available",
       color: theme.colors.colorSuccess600,
       icon: "checkbox-circle-line",
     },
     {
       key: "busy" as AvailabilityStatus,
-      label: "Busy",
+      label: t("profile.availability.busy") || "Busy",
       color: theme.colors.colorWarning600,
       icon: "time-line",
     },
     {
       key: "in_meeting" as AvailabilityStatus,
-      label: "In Meeting",
+      label: t("profile.availability.inMeeting") || "In Meeting",
       color: theme.colors.validationInfoText,
       icon: "group-line",
     },
     {
       key: "unavailable" as AvailabilityStatus,
-      label: "Unavailable",
+      label: t("profile.availability.unavailable") || "Unavailable",
       color: theme.colors.colorError600,
       icon: "close-circle-line",
     },
@@ -240,14 +246,20 @@ export default function ProfileScreen() {
   ) => (
     <TouchableOpacity
       onPress={onPress}
-      style={[styles.item, { backgroundColor: theme.colors.colorBgPage }]}
+      style={[
+        styles.item, 
+        { 
+          backgroundColor: theme.colors.colorBgSurface,
+          shadowColor: theme.colors.colorShadow,
+        }
+      ]}
     >
       <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
         <View
           style={{
             padding: 10,
             borderRadius: 10,
-            backgroundColor: theme.colors.colorBgSurface,
+            backgroundColor: theme.colors.colorBgAlt,
           }}
         >
           <RemixIcon
@@ -258,7 +270,7 @@ export default function ProfileScreen() {
         </View>
 
         <Text
-          style={[styles.itemText, { color: theme.colors.colorTextSecondary }]}
+          style={[styles.itemText, { color: theme.colors.colorTextPrimary }]}
         >
           {label}
         </Text>
@@ -267,7 +279,7 @@ export default function ProfileScreen() {
       <RemixIcon
         name="arrow-right-s-line"
         size={26}
-        color={theme.colors.colorPrimary600}
+        color={theme.colors.colorTextTertiary}
       />
     </TouchableOpacity>
   );
@@ -276,7 +288,7 @@ export default function ProfileScreen() {
     <SafeAreaView
       style={[
         styles.container,
-        { backgroundColor: theme.colors.colorBgSurface },
+        { backgroundColor: theme.colors.background },
       ]}
     >
       {/* ================= HEADER ================= */}
@@ -290,7 +302,10 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.avatarContainer,
-              { backgroundColor: theme.colors.colorBgSurface },
+              { 
+                backgroundColor: theme.colors.colorBgSurface,
+                borderColor: theme.colors.colorBgSurface,
+              },
             ]}
           >
             {form.photo ? (
@@ -308,25 +323,28 @@ export default function ProfileScreen() {
           <TouchableOpacity 
             style={[
               styles.editIconContainer,
-              { backgroundColor: theme.colors.colorPrimary600 }
+              { 
+                backgroundColor: theme.colors.colorPrimary600,
+                borderColor: theme.colors.colorBgSurface,
+              }
             ]}
             onPress={() => router.push("/profileDetails")}
           >
             <RemixIcon
               name="edit-line"
               size={16}
-              color={theme.colors.colorBgPage}
+              color={theme.colors.colorTextInverse}
             />
           </TouchableOpacity>
         </View>
 
-        <Text style={[styles.name, { color: theme.colors.colorBgPage }]}>
+        <Text style={[styles.name, { color: theme.colors.colorTextInverse }]}>
           {form.firstName} {form.lastName}
         </Text>
-        <Text style={[styles.code, { color: theme.colors.colorBgPage }]}>
+        <Text style={[styles.code, { color: theme.colors.colorTextInverse, opacity: 0.9 }]}>
           {form.email}
         </Text>
-        <Text style={[styles.role, { color: theme.colors.colorBgPage }]}>
+        <Text style={[styles.role, { color: theme.colors.colorTextInverse, opacity: 0.9 }]}>
           {form.phone}
         </Text>
       </View>
@@ -339,7 +357,13 @@ export default function ProfileScreen() {
         <View>
           <TouchableOpacity
             onPress={() => setShowAvailability(!showAvailability)}
-            style={[styles.item, { backgroundColor: theme.colors.colorBgPage }]}
+            style={[
+              styles.item, 
+              { 
+                backgroundColor: theme.colors.colorBgSurface,
+                shadowColor: theme.colors.colorShadow,
+              }
+            ]}
           >
             <View
               style={{ flexDirection: "row", alignItems: "center", gap: 12 }}
@@ -348,7 +372,7 @@ export default function ProfileScreen() {
                 style={{
                   padding: 10,
                   borderRadius: 10,
-                  backgroundColor: theme.colors.colorBgSurface,
+                  backgroundColor: theme.colors.colorBgAlt,
                 }}
               >
                 <RemixIcon
@@ -362,17 +386,16 @@ export default function ProfileScreen() {
                 <Text
                   style={[
                     styles.itemText,
-                    { color: theme.colors.colorTextSecondary },
+                    { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  Availability
+                  {t("profile.availability.title") || "Availability"}
                 </Text>
                 <Text
-                  style={{
-                    fontSize: 13,
-                    marginTop: 2,
-                    color: selectedAvailability?.color,
-                  }}
+                  style={[
+                    styles.availabilityStatus,
+                    { color: selectedAvailability?.color }
+                  ]}
                 >
                   {selectedAvailability?.label}
                 </Text>
@@ -382,20 +405,19 @@ export default function ProfileScreen() {
             <RemixIcon
               name={showAvailability ? "arrow-up-s-line" : "arrow-down-s-line"}
               size={26}
-              color={theme.colors.colorPrimary600}
+              color={theme.colors.colorTextTertiary}
             />
           </TouchableOpacity>
 
           {showAvailability && (
             <View
-              style={{
-                marginTop: -8,
-                marginBottom: 12,
-                backgroundColor: theme.colors.colorBgPage,
-                borderRadius: 12,
-                elevation: 3,
-                overflow: "hidden",
-              }}
+              style={[
+                styles.availabilityDropdown,
+                { 
+                  backgroundColor: theme.colors.colorBgSurface,
+                  shadowColor: theme.colors.colorShadow,
+                }
+              ]}
             >
               {availabilityOptions.map((option) => (
                 <TouchableOpacity
@@ -404,14 +426,15 @@ export default function ProfileScreen() {
                     setAvailability(option.key);
                     setShowAvailability(false);
                   }}
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    gap: 12,
-                    padding: 14,
-                    borderBottomWidth: 0.5,
-                    borderColor: theme.colors.colorBorder,
-                  }}
+                  style={[
+                    styles.availabilityOption,
+                    { 
+                      borderBottomColor: theme.colors.border,
+                      backgroundColor: option.key === availability 
+                        ? theme.colors.colorPrimary50 
+                        : 'transparent'
+                    }
+                  ]}
                 >
                   <RemixIcon
                     name={option.icon as any}
@@ -419,13 +442,25 @@ export default function ProfileScreen() {
                     color={option.color}
                   />
                   <Text
-                    style={{
-                      fontSize: 15,
-                      color: theme.colors.colorTextPrimary,
-                    }}
+                    style={[
+                      styles.availabilityOptionText,
+                      { 
+                        color: theme.colors.colorTextPrimary,
+                        fontFamily: option.key === availability 
+                          ? 'Poppins-SemiBold' 
+                          : 'Poppins-Regular'
+                      }
+                    ]}
                   >
                     {option.label}
                   </Text>
+                  {option.key === availability && (
+                    <RemixIcon
+                      name="check-line"
+                      size={18}
+                      color={theme.colors.colorSuccess600}
+                    />
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -433,7 +468,7 @@ export default function ProfileScreen() {
         </View>
 
         {renderItem(
-          "My Performance",
+          t("profile.menuPerformance") || "My Performance",
           "bar-chart-line",
           () => router.push("/(fro)/(profile)/teamOverView"),
           theme.colors.colorWarning400,
@@ -465,10 +500,13 @@ export default function ProfileScreen() {
           onPress={() => setShowAlert(true)}
           style={[
             styles.logoutBtn,
-            { backgroundColor: theme.colors.colorError100 },
+            { 
+              backgroundColor: theme.colors.colorError100,
+              shadowColor: theme.colors.colorShadow,
+            }
           ]}
         >
-          <View style={{ flexDirection: "row", gap: 10 }}>
+          <View style={{ flexDirection: "row", gap: 10, alignItems: "center" }}>
             <RemixIcon
               name="login-box-line"
               size={26}
@@ -491,12 +529,11 @@ export default function ProfileScreen() {
           cancelText={t("profile.logoutCancel")}
           onConfirm={() => {
             setShowAlert(false);
-            // logOutApi();
-            router.push("/(onboarding)/login");
+            logOutApi();
           }}
           onCancel={() => setShowAlert(false)}
           confirmColor={theme.colors.colorPrimary600}
-          cancelColor={theme.colors.colorBgPage}
+          cancelColor={theme.colors.colorBgSurface}
           subtitleColor={theme.colors.colorTextSecondary}
         />
       </ScrollView>
@@ -513,6 +550,9 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 20,
     alignItems: "center",
     elevation: 6,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 
   avatarWrapper: {
@@ -523,9 +563,14 @@ const styles = StyleSheet.create({
   avatarContainer: {
     width: 90,
     height: 90,
-    borderRadius: 50,
+    borderRadius: 45,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 3,
+    elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 
   editIconContainer: {
@@ -538,13 +583,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: 'white',
     elevation: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 
-  name: { fontSize: 20, fontWeight: "600", marginTop: 5 },
-  code: { fontSize: 14, marginTop: 2 },
-  role: { fontSize: 14, marginTop: 2 },
+  name: { 
+    fontSize: 20, 
+    fontWeight: "600", 
+    marginTop: 5,
+    fontFamily: 'Poppins-SemiBold',
+  },
+  code: { 
+    fontSize: 14, 
+    marginTop: 2,
+    fontFamily: 'Poppins-Regular',
+  },
+  role: { 
+    fontSize: 14, 
+    marginTop: 2,
+    fontFamily: 'Poppins-Regular',
+  },
 
   item: {
     flexDirection: "row",
@@ -554,24 +614,66 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 12,
     elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
 
-  itemText: { fontSize: 16 },
+  itemText: { 
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
+  },
+
+  availabilityStatus: {
+    fontSize: 13,
+    marginTop: 2,
+    fontFamily: 'Poppins-Regular',
+  },
+
+  availabilityDropdown: {
+    marginTop: -8,
+    marginBottom: 12,
+    borderRadius: 12,
+    elevation: 3,
+    overflow: "hidden",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+
+  availabilityOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 14,
+    borderBottomWidth: 0.5,
+  },
+
+  availabilityOptionText: {
+    fontSize: 15,
+    flex: 1,
+    fontFamily: 'Poppins-Regular',
+  },
 
   logoutBtn: {
     marginTop: 15,
     padding: 18,
     borderRadius: 12,
     alignItems: "center",
+    elevation: 2,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
 
   logoutText: {
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   profileImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 84,
+    height: 84,
+    borderRadius: 42,
   },
 });

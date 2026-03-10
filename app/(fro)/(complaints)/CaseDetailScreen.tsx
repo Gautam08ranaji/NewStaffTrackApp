@@ -5,6 +5,7 @@ import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Alert,
   Animated,
@@ -29,11 +30,10 @@ interface Note {
 }
 
 export default function CaseDetailScreen() {
+  const { t } = useTranslation();
   const params = useLocalSearchParams();
   const item = params.item ? JSON.parse(params.item as string) : null;
   const authState = useAppSelector((state) => state.auth);
-
-  
 
   const { theme } = useTheme();
   const [documents, setDocuments] = useState<any[]>([]);
@@ -43,7 +43,7 @@ export default function CaseDetailScreen() {
   // Extract data with proper field names based on your actual data structure
   const ticketNo = item?.transactionNumber;
   const elderName = item?.name || item?.contactName;
-  const age = item?.age; // Note: age might not be in your data
+  const age = item?.age;
   const gender = item?.gender;
   const ContactId = item?.contactId;
 
@@ -51,11 +51,7 @@ export default function CaseDetailScreen() {
   const emergencyPhone = item?.alternateNo;
   const category = item?.categoryName;
   const subCategory = item?.subCategoryName;
-  // subSubCategory might not exist in your data
   const details = item?.taskDescription || item?.caseDescription;
-
-  // console.log("det",item);
-  
 
   const address = item?.address;
   const state = item?.stateName;
@@ -94,9 +90,9 @@ export default function CaseDetailScreen() {
   };
 
   const steps = [
-    { title: "Open", icon: "file-list-line" },
-    { title: "In-Progress", icon: "loader-3-line" },
-    { title: "Closed", icon: "checkbox-circle-line" },
+    { title: t("caseDetail.steps.open") || "Open", icon: "file-list-line" },
+    { title: t("caseDetail.steps.inProgress") || "In-Progress", icon: "loader-3-line" },
+    { title: t("caseDetail.steps.closed") || "Closed", icon: "checkbox-circle-line" },
   ];
 
   const completedSteps = getCurrentStepIndex();
@@ -135,8 +131,6 @@ export default function CaseDetailScreen() {
         relatedToId: String(caseId),
       });
 
-      // console.log("res notes", res?.data);
-
       if (res?.data?.notesList && Array.isArray(res.data.notesList)) {
         setNotes(res.data.notesList);
       } else {
@@ -147,15 +141,15 @@ export default function CaseDetailScreen() {
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        "Something went wrong. Please try again.";
+        t("common.somethingWentWrong") || "Something went wrong. Please try again.";
 
       if (status === 401) {
         Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
+          t("common.sessionExpired") || "Session Expired",
+          t("common.pleaseLoginAgain") || "Your session has expired. Please login again.",
           [
             {
-              text: "OK",
+              text: t("common.ok") || "OK",
               onPress: () => router.replace("/(onboarding)/login"),
             },
           ],
@@ -163,7 +157,7 @@ export default function CaseDetailScreen() {
         return;
       }
 
-      Alert.alert("Error", message);
+      Alert.alert(t("common.error") || "Error", message);
       setNotes([]);
     } finally {
       setLoadingNotes(false);
@@ -171,27 +165,24 @@ export default function CaseDetailScreen() {
   };
 
   const loadDocuments = async (pageNumber = 1) => {
-  if (!caseId) return;
+    if (!caseId) return;
 
-  try {
-    const res = await getCommonDocumentList({
-      pageNumber,
-      pageSize: 10,
-      relatedToId: Number(caseId),
-      csrfToken: String(authState?.antiforgeryToken),
-      authToken: String(authState?.token), // ✅ ADD THIS
-    });
+    try {
+      const res = await getCommonDocumentList({
+        pageNumber,
+        pageSize: 10,
+        relatedToId: Number(caseId),
+        csrfToken: String(authState?.antiforgeryToken),
+        authToken: String(authState?.token),
+      });
 
-    // console.log("res",res);
-    
-
-    if (res?.list) {
-      setDocuments(res.list);
+      if (res?.list) {
+        setDocuments(res.list);
+      }
+    } catch (error) {
+      console.error("Failed to load documents", error);
     }
-  } catch (error) {
-    console.error("Failed to load documents", error);
-  }
-};
+  };
 
   // Helper function to get appropriate icon based on document type
   const getFileIcon = (documentType: string) => {
@@ -241,65 +232,65 @@ export default function CaseDetailScreen() {
     }
   };
 
-  // Get file color based on document type
+  // Get file color based on document type using theme
   const getFileColor = (documentType: string) => {
-    if (!documentType) return "#6B7280";
+    if (!documentType) return theme.colors.colorTextTertiary;
 
     const type = documentType.toLowerCase();
 
     switch (type) {
       case "pdf":
-        return "#FF6B6B";
+        return theme.colors.colorError600;
       case "image":
       case "jpg":
       case "jpeg":
       case "png":
-        return "#10B981";
+        return theme.colors.colorSuccess600;
       case "word":
       case "doc":
       case "docx":
-        return "#2B579A";
+        return theme.colors.colorPrimary600;
       case "excel":
       case "xls":
       case "xlsx":
-        return "#217346";
+        return theme.colors.colorSuccess600;
       case "powerpoint":
       case "ppt":
       case "pptx":
-        return "#D24726";
+        return theme.colors.colorWarning600;
       default:
-        return "#6B7280";
+        return theme.colors.colorTextTertiary;
     }
   };
 
-  // Get background color based on document type
+  // Get background color based on document type using theme
   const getFileBgColor = (documentType: string) => {
-    if (!documentType) return "#F9FAFB";
+    if (!documentType) return theme.colors.colorBgAlt;
 
     const type = documentType.toLowerCase();
 
     switch (type) {
       case "pdf":
-        return "#FEE2E2";
+        return theme.colors.colorError100;
       case "image":
       case "jpg":
       case "jpeg":
       case "png":
-        return "#D1FAE5";
+        return theme.colors.colorSuccess100;
       case "word":
       case "doc":
       case "docx":
-        return "#DBEAFE";
+        return theme.colors.colorPrimary50;
       case "excel":
       case "xls":
       case "xlsx":
-        return "#D1FAE5";
+        return theme.colors.colorSuccess100;
       case "powerpoint":
       case "ppt":
       case "pptx":
-        return "#FEE2E2";
+        return theme.colors.colorWarning100;
       default:
-        return "#F3F4F6";
+        return theme.colors.colorBgAlt;
     }
   };
 
@@ -336,7 +327,6 @@ export default function CaseDetailScreen() {
         },
       });
     } else {
-      // For other document types
       router.push({
         pathname: "/(fro)/(complaints)/DocumentListScreen",
         params: {
@@ -379,7 +369,6 @@ export default function CaseDetailScreen() {
         onPress={() => handleAttachmentPress(doc, index)}
       >
         {isImage && (hasFileData || hasFileUrl) ? (
-          // Show image thumbnail for Image type
           <Image
             source={{
               uri: hasFileData
@@ -390,13 +379,12 @@ export default function CaseDetailScreen() {
             resizeMode="cover"
           />
         ) : (
-          // Show file icon for non-image files
           <View
-            style={[styles.fileIconContainer, { backgroundColor: bgColor }]}
+            style={[styles.fileIconContainer, { backgroundColor: bgColor, borderColor: theme.colors.border }]}
           >
             <RemixIcon name={iconName as any} size={24} color={fileColor} />
             <Text
-              style={[styles.fileNameText, { color: fileColor }]}
+              style={[theme.typography.fontBodySmall, styles.fileNameText, { color: fileColor }]}
               numberOfLines={1}
             >
               {fileName.length > 10
@@ -407,8 +395,10 @@ export default function CaseDetailScreen() {
         )}
 
         {isLast && (
-          <View style={styles.extraOverlay}>
-            <Text style={styles.extraText}>+{extraCount}</Text>
+          <View style={[styles.extraOverlay, { backgroundColor: theme.colors.colorOverlay }]}>
+            <Text style={[theme.typography.fontBody, styles.extraText, { color: theme.colors.colorTextInverse }]}>
+              +{extraCount}
+            </Text>
           </View>
         )}
       </TouchableOpacity>
@@ -418,9 +408,11 @@ export default function CaseDetailScreen() {
   const renderAttachments = () => {
     if (!documents?.length) {
       return (
-        <View style={styles.attachmentBox}>
-          <RemixIcon name="image-2-line" size={24} color="#888" />
-          <Text style={styles.attachmentText}>No attachments yet</Text>
+        <View style={[styles.attachmentBox, { borderColor: theme.colors.border }]}>
+          <RemixIcon name="image-2-line" size={24} color={theme.colors.colorTextTertiary} />
+          <Text style={[theme.typography.fontBodySmall, styles.attachmentText, { color: theme.colors.colorTextTertiary }]}>
+            {t("caseDetail.noAttachments") || "No attachments yet"}
+          </Text>
         </View>
       );
     }
@@ -443,7 +435,7 @@ export default function CaseDetailScreen() {
     const formatDate = (dateString: string) => {
       try {
         const date = new Date(dateString);
-        return date.toLocaleDateString("en-GB", {
+        return date.toLocaleDateString(t('common.locale') || "en-GB", {
           day: "2-digit",
           month: "short",
           year: "numeric",
@@ -456,7 +448,7 @@ export default function CaseDetailScreen() {
     const formatTime = (dateString: string) => {
       try {
         const date = new Date(dateString);
-        return date.toLocaleTimeString("en-US", {
+        return date.toLocaleTimeString(t('common.locale') || "en-US", {
           hour: "2-digit",
           minute: "2-digit",
           hour12: true,
@@ -469,9 +461,11 @@ export default function CaseDetailScreen() {
     return (
       <TouchableOpacity
         key={note.id}
-        style={styles.noteItem}
+        style={[styles.noteItem, { 
+          borderColor: theme.colors.border,
+          backgroundColor: theme.colors.colorBgAlt 
+        }]}
         onPress={() => {
-          // Navigate to note details or show full note
           router.push({
             pathname: "/(fro)/(complaints)/NoteHistory",
             params: {
@@ -489,14 +483,16 @@ export default function CaseDetailScreen() {
               color={theme.colors.colorPrimary600}
             />
             <Text
-              style={[styles.noteType, { color: theme.colors.colorPrimary600 }]}
+              style={[theme.typography.fontBodySmall, styles.noteType, { color: theme.colors.colorPrimary600 }]}
             >
-              {note.noteType === "public" ? "Public Note" : "Private Note"}
+              {note.noteType === "public" ? t("caseDetail.publicNote") || "Public Note" : t("caseDetail.privateNote") || "Private Note"}
             </Text>
-            <Text style={styles.noteDate}>{formatDate(note.createdDate)}</Text>
+            <Text style={[theme.typography.fontBodySmall, styles.noteDate, { color: theme.colors.colorTextTertiary }]}>
+              {formatDate(note.createdDate)}
+            </Text>
           </View>
           <Text
-            style={[styles.noteDesc, { color: theme.colors.colorTextPrimary }]}
+            style={[theme.typography.fontBody, styles.noteDesc, { color: theme.colors.colorTextPrimary }]}
             numberOfLines={2}
           >
             {note.noteDesc}
@@ -504,6 +500,7 @@ export default function CaseDetailScreen() {
           <View style={styles.noteFooter}>
             <Text
               style={[
+                theme.typography.fontBodySmall,
                 styles.noteTime,
                 { color: theme.colors.colorTextSecondary },
               ]}
@@ -511,10 +508,10 @@ export default function CaseDetailScreen() {
               {formatTime(note.createdDate)}
             </Text>
             {note.nextFollowUpDate && (
-              <View style={styles.followUpBadge}>
-                <RemixIcon name="calendar-line" size={12} color="#FF6B6B" />
-                <Text style={styles.followUpText}>
-                  Follow-up: {formatDate(note.nextFollowUpDate)}
+              <View style={[styles.followUpBadge, { backgroundColor: theme.colors.colorError100 }]}>
+                <RemixIcon name="calendar-line" size={12} color={theme.colors.colorError600} />
+                <Text style={[theme.typography.fontBodySmall, styles.followUpText, { color: theme.colors.colorError600 }]}>
+                  {t("caseDetail.followUp") || "Follow-up"}: {formatDate(note.nextFollowUpDate)}
                 </Text>
               </View>
             )}
@@ -527,14 +524,15 @@ export default function CaseDetailScreen() {
   const renderNotes = () => {
     if (loadingNotes) {
       return (
-        <View style={styles.notesLoadingContainer}>
+        <View style={[styles.notesLoadingContainer, { borderColor: theme.colors.border }]}>
           <Text
             style={[
+              theme.typography.fontBodySmall,
               styles.loadingText,
               { color: theme.colors.colorTextSecondary },
             ]}
           >
-            Loading notes...
+            {t("common.loading") || "Loading notes..."}
           </Text>
         </View>
       );
@@ -543,7 +541,7 @@ export default function CaseDetailScreen() {
     if (!notes?.length) {
       return (
         <TouchableOpacity
-          style={styles.noNotesContainer}
+          style={[styles.noNotesContainer, { borderColor: theme.colors.border }]}
           onPress={() => {
             router.push({
               pathname: "/(fro)/(complaints)/NoteHistory",
@@ -554,9 +552,9 @@ export default function CaseDetailScreen() {
             });
           }}
         >
-          <RemixIcon name="sticky-note-line" size={24} color="#888" />
-          <Text style={styles.noNotesText}>
-            No notes yet. Tap to add a note
+          <RemixIcon name="sticky-note-line" size={24} color={theme.colors.colorTextTertiary} />
+          <Text style={[theme.typography.fontBodySmall, styles.noNotesText, { color: theme.colors.colorTextTertiary }]}>
+            {t("caseDetail.noNotes") || "No notes yet. Tap to add a note"}
           </Text>
         </TouchableOpacity>
       );
@@ -581,8 +579,8 @@ export default function CaseDetailScreen() {
               });
             }}
           >
-            <Text style={[styles.viewAllNotesText, { color: theme.colors.colorPrimary600 }]}>
-              View all {notes.length} notes
+            <Text style={[theme.typography.fontBody, styles.viewAllNotesText, { color: theme.colors.colorPrimary600 }]}>
+              {t("caseDetail.viewAllNotes") || "View all"} {notes.length} {t("caseDetail.notes") || "notes"}
             </Text>
             <RemixIcon
               name="arrow-right-s-line"
@@ -595,13 +593,13 @@ export default function CaseDetailScreen() {
     );
   };
 
-  // Action buttons with colors
+  // Action buttons with theme colors
   const actionButtons = [
     {
-      label: "Update Status",
+      label: t("caseDetail.actions.updateStatus") || "Update Status",
       icon: "refresh-line",
-      color: "#027A61",
-      bgColor: "#E6F4F1",
+      color: theme.colors.colorSuccess600,
+      bgColor: theme.colors.colorSuccess100,
       onPress: () =>
         router.push({
           pathname: "/(fro)/(complaints)/updateCase",
@@ -612,10 +610,10 @@ export default function CaseDetailScreen() {
         }),
     },
     {
-      label: "Add Attachments",
+      label: t("caseDetail.actions.addAttachments") || "Add Attachments",
       icon: "attachment-line",
-      color: "#4A6FA5",
-      bgColor: "#E8EFF9",
+      color: theme.colors.colorPrimary600,
+      bgColor: theme.colors.colorPrimary50,
       onPress: () =>
         router.push({
           pathname: "/(fro)/(complaints)/DocumentListScreen",
@@ -626,10 +624,10 @@ export default function CaseDetailScreen() {
         }),
     },
     {
-      label: "Add Note",
+      label: t("caseDetail.actions.addNote") || "Add Note",
       icon: "sticky-note-line",
-      color: "#8B5A2B",
-      bgColor: "#F5EEE6",
+      color: theme.colors.colorWarning600,
+      bgColor: theme.colors.colorWarning100,
       onPress: () =>
         router.push({
           pathname: "/(fro)/(complaints)/NoteHistory",
@@ -640,33 +638,14 @@ export default function CaseDetailScreen() {
         }),
     },
     {
-      label: "Add Voice",
+      label: t("caseDetail.actions.addVoice") || "Add Voice",
       icon: "mic-line",
-      color: "#D35400",
-      bgColor: "#FDEDE8",
+      color: theme.colors.colorError600,
+      bgColor: theme.colors.colorError100,
       onPress: () => {
         router.push("/(fro)/(complaints)/AddVoiceScreen")
       },
     },
-    // {
-    //   label: "Schedule",
-    //   icon: "calendar-line",
-    //   color: "#8E44AD",
-    //   bgColor: "#F3E8F7",
-    //   onPress: () => console.log("Schedule followup pressed"),
-    // },
-    // {
-    //   label: "Call",
-    //   icon: "phone-line",
-    //   color: "#27AE60",
-    //   bgColor: "#E8F8F0",
-    //   onPress: () => {
-    //     if (phone) {
-    //       // Implement call functionality
-    //       console.log("Call pressed", phone);
-    //     }
-    //   },
-    // },
   ];
 
   // Function to render action buttons in grid
@@ -694,8 +673,8 @@ export default function CaseDetailScreen() {
                 color={action.color}
               />
               <Text
-                style={[styles.actionBtnText, { color: action.color }]}
-                numberOfLines={2}
+                style={[theme.typography.fontBodySmall, styles.actionBtnText, { color: action.color }]}
+                numberOfLines={1}
               >
                 {action.label}
               </Text>
@@ -709,16 +688,18 @@ export default function CaseDetailScreen() {
 
   if (!item) {
     return (
-      <BodyLayout type="screen" screenName="Task Details">
+      <BodyLayout type="screen" screenName={t("caseDetail.screenTitle") || "Task Details"}>
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>No task data available</Text>
+          <Text style={[theme.typography.fontBody, styles.errorText, { color: theme.colors.colorTextSecondary }]}>
+            {t("caseDetail.noData") || "No task data available"}
+          </Text>
         </View>
       </BodyLayout>
     );
   }
 
   return (
-    <BodyLayout type="screen" screenName={`Task Details - ${ticketNo || ''}`}>
+    <BodyLayout type="screen" screenName={`${t("caseDetail.screenTitle") || "Task Details"} - ${ticketNo || ''}`}>
       {/* ELDER DETAILS */}
       <View
         style={[
@@ -739,14 +720,14 @@ export default function CaseDetailScreen() {
             />
             <Text
               style={[
+                theme.typography.fontH6,
                 styles.cardTitle,
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Seller Details
+              {t("caseDetail.sellerDetails") || "Seller Details"}
             </Text>
           </View>
-        
         </View>
 
         <View style={styles.row}>
@@ -776,15 +757,17 @@ export default function CaseDetailScreen() {
                 />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.labelKey,
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Name:
+                  {t("caseDetail.name") || "Name"}:
                 </Text>
               </View>
               <Text
                 style={[
+                  theme.typography.fontBody,
                   styles.labelValue,
                   { color: theme.colors.colorTextPrimary },
                 ]}
@@ -803,15 +786,17 @@ export default function CaseDetailScreen() {
                   />
                   <Text
                     style={[
+                      theme.typography.fontBodySmall,
                       styles.labelKey,
                       { color: theme.colors.colorTextSecondary },
                     ]}
                   >
-                    Age:
+                    {t("caseDetail.age") || "Age"}:
                   </Text>
                 </View>
                 <Text
                   style={[
+                    theme.typography.fontBody,
                     styles.labelValue,
                     { color: theme.colors.colorTextPrimary },
                   ]}
@@ -831,15 +816,17 @@ export default function CaseDetailScreen() {
                   />
                   <Text
                     style={[
+                      theme.typography.fontBodySmall,
                       styles.labelKey,
                       { color: theme.colors.colorTextSecondary },
                     ]}
                   >
-                    Gender:
+                    {t("caseDetail.gender") || "Gender"}:
                   </Text>
                 </View>
                 <Text
                   style={[
+                    theme.typography.fontBody,
                     styles.labelValue,
                     { color: theme.colors.colorTextPrimary },
                   ]}
@@ -858,15 +845,17 @@ export default function CaseDetailScreen() {
                 />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.labelKey,
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Phone:   
+                  {t("caseDetail.phone") || "Phone"}:
                 </Text>
               </View>
               <Text
                 style={[
+                  theme.typography.fontBody,
                   styles.labelValue,
                   { color: theme.colors.colorTextPrimary },
                 ]}
@@ -885,15 +874,17 @@ export default function CaseDetailScreen() {
                   />
                   <Text
                     style={[
+                      theme.typography.fontBodySmall,
                       styles.labelKey,
                       { color: theme.colors.colorTextSecondary },
                     ]}
                   >
-                    Emergency:
+                    {t("caseDetail.emergency") || "Emergency"}:
                   </Text>
                 </View>
                 <Text
                   style={[
+                    theme.typography.fontBody,
                     styles.labelValue,
                     { color: theme.colors.colorTextPrimary },
                   ]}
@@ -903,31 +894,33 @@ export default function CaseDetailScreen() {
               </View>
             )}
 
-             <View style={styles.keyValueRow}>
-                <View style={styles.labelContainer}>
-                  <RemixIcon
-                    name="map-line"
-                    size={14}
-                    color={theme.colors.colorTextSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.labelKey,
-                      { color: theme.colors.colorTextSecondary },
-                    ]}
-                  >
-                    Address: 
-                  </Text>
-                </View>
+            <View style={styles.keyValueRow}>
+              <View style={styles.labelContainer}>
+                <RemixIcon
+                  name="map-line"
+                  size={14}
+                  color={theme.colors.colorTextSecondary}
+                />
                 <Text
                   style={[
-                    styles.labelValue,
-                    { color: theme.colors.colorTextPrimary },
+                    theme.typography.fontBodySmall,
+                    styles.labelKey,
+                    { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  {address} 
+                  {t("caseDetail.address") || "Address"}:
                 </Text>
               </View>
+              <Text
+                style={[
+                  theme.typography.fontBody,
+                  styles.labelValue,
+                  { color: theme.colors.colorTextPrimary },
+                ]}
+              >
+                {address || '-'}
+              </Text>
+            </View>
           </View>
         </View>
       </View>
@@ -938,6 +931,7 @@ export default function CaseDetailScreen() {
           styles.card,
           { backgroundColor: theme.colors.colorBgSurface },
           styles.cardShadow,
+          { shadowColor: theme.colors.colorShadow },
         ]}
       >
         <View style={styles.cardHeader}>
@@ -949,11 +943,12 @@ export default function CaseDetailScreen() {
             />
             <Text
               style={[
+                theme.typography.fontH6,
                 styles.cardTitle,
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Complaint Information
+              {t("caseDetail.complaintInfo") || "Complaint Information"}
             </Text>
           </View>
         </View>
@@ -968,16 +963,18 @@ export default function CaseDetailScreen() {
               />
               <Text
                 style={[
+                  theme.typography.fontBodySmall,
                   styles.labelKey,
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Category:
+                {t("caseDetail.category") || "Category"}:
               </Text>
             </View>
             <View style={styles.valueContainer}>
               <Text
                 style={[
+                  theme.typography.fontBody,
                   styles.labelValue,
                   {
                     color: theme.colors.colorTextPrimary,
@@ -989,8 +986,6 @@ export default function CaseDetailScreen() {
             </View>
           </View>
 
-   
-
           <View style={styles.keyValueRow}>
             <View style={styles.labelContainer}>
               <RemixIcon
@@ -1000,20 +995,22 @@ export default function CaseDetailScreen() {
               />
               <Text
                 style={[
+                  theme.typography.fontBodySmall,
                   styles.detailLabel,
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Details:   
+                {t("caseDetail.details") || "Details"}:
               </Text>
             </View>
             <Text
               style={[
+                theme.typography.fontBody,
                 styles.detailText,
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {details || '-'} 
+              {details || '-'}
             </Text>
           </View>
 
@@ -1026,11 +1023,12 @@ export default function CaseDetailScreen() {
               />
               <Text
                 style={[
+                  theme.typography.fontBodySmall,
                   styles.detailLabel,
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Attachments:
+                {t("caseDetail.attachments") || "Attachments"}:
               </Text>
             </View>
             {renderAttachments()}
@@ -1045,11 +1043,12 @@ export default function CaseDetailScreen() {
               />
               <Text
                 style={[
+                  theme.typography.fontBodySmall,
                   styles.detailLabel,
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Notes:
+                {t("caseDetail.notes") || "Notes"}:
               </Text>
             </View>
             {renderNotes()}
@@ -1063,6 +1062,7 @@ export default function CaseDetailScreen() {
             styles.card,
             { backgroundColor: theme.colors.colorBgSurface },
             styles.cardShadow,
+            { shadowColor: theme.colors.colorShadow },
           ]}
         >
           <View style={styles.cardHeader}>
@@ -1074,11 +1074,12 @@ export default function CaseDetailScreen() {
               />
               <Text
                 style={[
+                  theme.typography.fontH6,
                   styles.cardTitle,
                   { color: theme.colors.colorPrimary600 },
                 ]}
               >
-                Quick Actions
+                {t("caseDetail.quickActions") || "Quick Actions"}
               </Text>
             </View>
           </View>
@@ -1087,14 +1088,13 @@ export default function CaseDetailScreen() {
         </View>
       )}
 
-    
-
       {/* TIMELINE */}
       <View
         style={[
           styles.card,
           { backgroundColor: theme.colors.colorBgSurface },
           styles.cardShadow,
+          { shadowColor: theme.colors.colorShadow },
         ]}
       >
         <View style={styles.cardHeader}>
@@ -1106,11 +1106,12 @@ export default function CaseDetailScreen() {
             />
             <Text
               style={[
+                theme.typography.fontH6,
                 styles.cardTitle,
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Timeline
+              {t("caseDetail.timeline") || "Timeline"}
             </Text>
           </View>
         </View>
@@ -1122,12 +1123,6 @@ export default function CaseDetailScreen() {
             const lineProgress = animatedProgress.interpolate({
               inputRange: [index, index + 1],
               outputRange: ["0%", "100%"],
-              extrapolate: "clamp",
-            });
-
-            const dotActive = animatedProgress.interpolate({
-              inputRange: [index - 0.5, index, index + 0.5],
-              outputRange: [0, 1, 1],
               extrapolate: "clamp",
             });
 
@@ -1143,19 +1138,20 @@ export default function CaseDetailScreen() {
                       {
                         backgroundColor: isActive
                           ? theme.colors.colorPrimary600
-                          : theme.colors.colorBorder,
+                          : theme.colors.border,
+                        borderColor: theme.colors.colorBgSurface,
                       },
                     ]}
                   >
                     <RemixIcon
                       name={step.icon as any}
                       size={12}
-                      color="#FFF"
+                      color={theme.colors.colorTextInverse}
                     />
                   </Animated.View>
 
                   {!isLast && (
-                    <View style={styles.lineContainer}>
+                    <View style={[styles.lineContainer, { backgroundColor: theme.colors.border }]}>
                       <Animated.View
                         style={[
                           styles.lineFill,
@@ -1173,6 +1169,7 @@ export default function CaseDetailScreen() {
                 <View style={styles.progressContent}>
                   <Text
                     style={[
+                      theme.typography.fontBody,
                       styles.progressTitle,
                       {
                         color: isActive
@@ -1196,6 +1193,7 @@ export default function CaseDetailScreen() {
           styles.card,
           { backgroundColor: theme.colors.colorBgSurface },
           styles.cardShadow,
+          { shadowColor: theme.colors.colorShadow },
         ]}
       >
         <View style={styles.cardHeader}>
@@ -1207,11 +1205,12 @@ export default function CaseDetailScreen() {
             />
             <Text
               style={[
+                theme.typography.fontH6,
                 styles.cardTitle,
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Task Metadata
+              {t("caseDetail.taskMetadata") || "Task Metadata"}
             </Text>
           </View>
         </View>
@@ -1224,10 +1223,10 @@ export default function CaseDetailScreen() {
                 {
                   backgroundColor:
                     priority === "High"
-                      ? "#FDEDE8"
+                      ? theme.colors.colorError100
                       : priority === "Medium"
-                        ? "#FFF4E6"
-                        : "#E8F8F0",
+                        ? theme.colors.colorWarning100
+                        : theme.colors.colorSuccess100,
                 },
               ]}
             >
@@ -1236,28 +1235,31 @@ export default function CaseDetailScreen() {
                 size={16}
                 color={
                   priority === "High"
-                    ? "#DC2626"
+                    ? theme.colors.colorError600
                     : priority === "Medium"
-                      ? "#F59E0B"
-                      : "#10B981"
+                      ? theme.colors.colorWarning600
+                      : theme.colors.colorSuccess600
                 }
               />
               <Text
                 style={[
+                  theme.typography.fontH6,
                   styles.metadataValue,
                   {
                     color:
                       priority === "High"
-                        ? "#DC2626"
+                        ? theme.colors.colorError600
                         : priority === "Medium"
-                          ? "#F59E0B"
-                          : "#10B981",
+                          ? theme.colors.colorWarning600
+                          : theme.colors.colorSuccess600,
                   },
                 ]}
               >
                 {priority}
               </Text>
-              <Text style={styles.metadataLabel}>Priority</Text>
+              <Text style={[theme.typography.fontBodySmall, styles.metadataLabel, { color: theme.colors.colorTextSecondary }]}>
+                {t("caseDetail.priority") || "Priority"}
+              </Text>
             </View>
           )}
 
@@ -1275,13 +1277,16 @@ export default function CaseDetailScreen() {
               />
               <Text
                 style={[
+                  theme.typography.fontH6,
                   styles.metadataValue,
                   { color: theme.colors.colorPrimary600 },
                 ]}
               >
                 {Taskstatus}
               </Text>
-              <Text style={styles.metadataLabel}>Status</Text>
+              <Text style={[theme.typography.fontBodySmall, styles.metadataLabel, { color: theme.colors.colorTextSecondary }]}>
+                {t("caseDetail.status") || "Status"}
+              </Text>
             </View>
           )}
 
@@ -1289,23 +1294,26 @@ export default function CaseDetailScreen() {
             <View
               style={[
                 styles.metadataItem,
-                { backgroundColor: theme.colors.colorAccent50 },
+                { backgroundColor: theme.colors.colorWarning100 },
               ]}
             >
               <RemixIcon
                 name="flag-line"
                 size={16}
-                color={theme.colors.colorAccent700}
+                color={theme.colors.colorWarning600}
               />
               <Text
                 style={[
+                  theme.typography.fontH6,
                   styles.metadataValue,
-                  { color: theme.colors.colorAccent700 },
+                  { color: theme.colors.colorWarning600 },
                 ]}
               >
                 {subStatus}
               </Text>
-              <Text style={styles.metadataLabel}>Sub Status</Text>
+              <Text style={[theme.typography.fontBodySmall, styles.metadataLabel, { color: theme.colors.colorTextSecondary }]}>
+                {t("caseDetail.subStatus") || "Sub Status"}
+              </Text>
             </View>
           )}
 
@@ -1313,23 +1321,26 @@ export default function CaseDetailScreen() {
             <View
               style={[
                 styles.metadataItem,
-                { backgroundColor: theme.colors.colorAccent100 },
+                { backgroundColor: theme.colors.colorPrimary50 },
               ]}
             >
               <RemixIcon
                 name="phone-line"
                 size={16}
-                color={theme.colors.colorAccent700}
+                color={theme.colors.colorPrimary600}
               />
               <Text
                 style={[
+                  theme.typography.fontH6,
                   styles.metadataValue,
-                  { color: theme.colors.colorAccent700 },
+                  { color: theme.colors.colorPrimary600 },
                 ]}
               >
                 {source}
               </Text>
-              <Text style={styles.metadataLabel}>Source</Text>
+              <Text style={[theme.typography.fontBodySmall, styles.metadataLabel, { color: theme.colors.colorTextSecondary }]}>
+                {t("caseDetail.source") || "Source"}
+              </Text>
             </View>
           )}
         </View>
@@ -1345,15 +1356,17 @@ export default function CaseDetailScreen() {
                 />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.metadataKey,
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Team:
+                  {t("caseDetail.team") || "Team"}:
                 </Text>
               </View>
               <Text
                 style={[
+                  theme.typography.fontBody,
                   styles.metadataDetailValue,
                   { color: theme.colors.colorTextPrimary },
                 ]}
@@ -1373,15 +1386,17 @@ export default function CaseDetailScreen() {
                 />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.metadataKey,
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Assigned To:
+                  {t("caseDetail.assignedTo") || "Assigned To"}:
                 </Text>
               </View>
               <Text
                 style={[
+                  theme.typography.fontBody,
                   styles.metadataDetailValue,
                   { color: theme.colors.colorTextPrimary },
                 ]}
@@ -1401,15 +1416,17 @@ export default function CaseDetailScreen() {
                 />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.metadataKey,
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Callback:
+                  {t("caseDetail.callback") || "Callback"}:
                 </Text>
               </View>
               <Text
                 style={[
+                  theme.typography.fontBody,
                   styles.metadataDetailValue,
                   { color: theme.colors.colorTextPrimary },
                 ]}
@@ -1421,12 +1438,13 @@ export default function CaseDetailScreen() {
         </View>
       </View>
 
-        {/* LOCATION */}
+      {/* LOCATION */}
       <View
         style={[
           styles.card,
           { backgroundColor: theme.colors.colorBgSurface },
           styles.cardShadow,
+          { shadowColor: theme.colors.colorShadow },
         ]}
       >
         <View style={styles.cardHeader}>
@@ -1438,11 +1456,12 @@ export default function CaseDetailScreen() {
             />
             <Text
               style={[
+                theme.typography.fontH6,
                 styles.cardTitle,
                 { color: theme.colors.colorPrimary600 },
               ]}
             >
-              Location
+              {t("caseDetail.location") || "Location"}
             </Text>
           </View>
         </View>
@@ -1457,15 +1476,17 @@ export default function CaseDetailScreen() {
               />
               <Text
                 style={[
+                  theme.typography.fontBodySmall,
                   styles.labelKey,
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                Address:
+                {t("caseDetail.address") || "Address"}:
               </Text>
             </View>
             <Text
               style={[
+                theme.typography.fontBody,
                 styles.labelValue,
                 { color: theme.colors.colorTextPrimary },
               ]}
@@ -1484,15 +1505,17 @@ export default function CaseDetailScreen() {
                 />
                 <Text
                   style={[
+                    theme.typography.fontBodySmall,
                     styles.labelKey,
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  Location:
+                  {t("caseDetail.location") || "Location"}:
                 </Text>
               </View>
               <Text
                 style={[
+                  theme.typography.fontBody,
                   styles.labelValue,
                   { color: theme.colors.colorTextPrimary },
                 ]}
@@ -1518,22 +1541,22 @@ export default function CaseDetailScreen() {
             >
               <Marker
                 coordinate={{ latitude, longitude }}
-                title={elderName || 'Location'}
+                title={elderName || t("caseDetail.location") || 'Location'}
                 description={address}
               >
                 <View style={styles.markerContainer}>
                   <View
                     style={[
                       styles.markerPin,
-                      { backgroundColor: theme.colors.validationErrorText },
+                      { backgroundColor: theme.colors.colorError600, borderColor: theme.colors.colorBgSurface },
                     ]}
                   >
-                    <RemixIcon name="map-pin-fill" size={16} color="#FFF" />
+                    <RemixIcon name="map-pin-fill" size={16} color={theme.colors.colorTextInverse} />
                   </View>
                   <View
                     style={[
                       styles.markerTail,
-                      { borderTopColor: theme.colors.validationErrorText },
+                      { borderTopColor: theme.colors.colorError600 },
                     ]}
                   />
                 </View>
@@ -1541,21 +1564,26 @@ export default function CaseDetailScreen() {
             </MapView>
 
             <TouchableOpacity
-              style={styles.mapOverlayButton}
+              style={[styles.mapOverlayButton, { 
+                backgroundColor: theme.colors.colorBgSurface,
+                borderColor: theme.colors.colorSuccess600 
+              }]}
               onPress={() => {
                 router.push({
                   pathname: "/FullMapScreen",
                   params: {
                     latitude: latitude.toString(),
                     longitude: longitude.toString(),
-                    title: elderName || 'Location',
+                    title: elderName || t("caseDetail.location") || 'Location',
                     description: address,
                   },
                 });
               }}
             >
-              <RemixIcon name="fullscreen-line" size={16} color="#027A61" />
-              <Text style={styles.mapOverlayText}>Full Map</Text>
+              <RemixIcon name="fullscreen-line" size={16} color={theme.colors.colorSuccess600} />
+              <Text style={[theme.typography.fontBodySmall, styles.mapOverlayText, { color: theme.colors.colorSuccess600 }]}>
+                {t("caseDetail.fullMap") || "Full Map"}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -1572,14 +1600,13 @@ export default function CaseDetailScreen() {
               })
             }
           >
-            <RemixIcon name="navigation-line" size={20} color="#fff" />
-            <Text style={styles.navBtnText}>Start Navigation</Text>
+            <RemixIcon name="navigation-line" size={20} color={theme.colors.colorTextInverse} />
+            <Text style={[theme.typography.fontButton, styles.navBtnText, { color: theme.colors.colorTextInverse }]}>
+              {t("caseDetail.startNavigation") || "Start Navigation"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* ACTIONS - Only show if task is not closed */}
-      
     </BodyLayout>
   );
 }
@@ -1593,7 +1620,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 2,
   },
   cardShadow: {
-    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -1610,8 +1636,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   cardTitle: {
-    fontSize: 16,
-    fontWeight: "700",
     marginLeft: 8,
   },
   viewMoreBtn: {
@@ -1653,18 +1677,10 @@ const styles = StyleSheet.create({
     width: 90,
     marginRight: 8,
   },
-  labelIcon: {
-    marginRight: 4,
-  },
   labelKey: {
-    fontSize: 13,
-    fontWeight: "600",
-    opacity: 0.8,
     marginLeft: 4,
   },
   labelValue: {
-    fontSize: 14,
-    fontWeight: "500",
     flex: 1,
     flexWrap: "wrap",
   },
@@ -1685,17 +1701,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   detailLabel: {
-    fontSize: 13,
-    fontWeight: "600",
     marginLeft: 4,
-    opacity: 0.8,
   },
   detailText: {
-    fontSize: 14,
-    lineHeight: 20,
-    fontWeight: "500",
     marginTop: -20,
     marginBottom: 8,
+    lineHeight: 20,
   },
   attachmentBox: {
     height: 80,
@@ -1704,12 +1715,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E5E5",
     borderStyle: "dashed",
   },
   attachmentText: {
-    fontSize: 12,
-    color: "#888",
     marginTop: 6,
   },
   mapContainer: {
@@ -1734,7 +1742,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#FFF",
     elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -1757,19 +1764,14 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 8,
     right: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.95)",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 20,
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#027A61",
   },
   mapOverlayText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#027A61",
     marginLeft: 4,
   },
   navBtn: {
@@ -1781,9 +1783,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   navBtnText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
     marginLeft: 8,
   },
   timelineContainer: {
@@ -1804,13 +1803,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
-    borderColor: "#FFF",
     zIndex: 2,
   },
   lineContainer: {
     width: 2,
     height: 40,
-    backgroundColor: "#E5E5E5",
     overflow: "hidden",
     marginTop: -2,
   },
@@ -1842,14 +1839,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   metadataLabel: {
-    fontSize: 11,
-    fontWeight: "500",
     marginTop: 2,
     opacity: 0.8,
   },
   metadataValue: {
-    fontSize: 14,
-    fontWeight: "700",
     marginTop: 4,
   },
   metadataDetails: {
@@ -1862,14 +1855,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   metadataKey: {
-    fontSize: 13,
-    fontWeight: "600",
     marginLeft: 4,
     opacity: 0.8,
   },
   metadataDetailValue: {
-    fontSize: 14,
-    fontWeight: "600",
     flex: 1,
     textAlign: "right",
   },
@@ -1892,8 +1881,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   actionBtnText: {
-    fontSize: 12,
-    fontWeight: "600",
     textAlign: "center",
     marginTop: 4,
   },
@@ -1920,12 +1907,10 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
     justifyContent: "center",
     alignItems: "center",
   },
   extraText: {
-    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -1936,7 +1921,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
     padding: 4,
   },
   fileNameText: {
@@ -1945,7 +1929,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
   },
-  // Notes styles
   notesContainer: {
     marginTop: 8,
   },
@@ -1956,7 +1939,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E5E5",
     borderStyle: "dashed",
   },
   loadingText: {
@@ -1970,20 +1952,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: "#E5E5E5",
     borderStyle: "dashed",
   },
   noNotesText: {
     fontSize: 12,
-    color: "#888",
     marginTop: 6,
   },
   noteItem: {
     marginBottom: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#F9FAFB",
     padding: 12,
   },
   noteContent: {
@@ -1996,18 +1974,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   noteType: {
-    fontSize: 12,
-    fontWeight: "600",
     flex: 1,
+    fontWeight: "600",
   },
   noteDate: {
     fontSize: 11,
-    color: "#6B7280",
     fontWeight: "500",
   },
   noteDesc: {
-    fontSize: 13,
-    lineHeight: 18,
     marginBottom: 6,
   },
   noteFooter: {
@@ -2021,7 +1995,6 @@ const styles = StyleSheet.create({
   followUpBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FEE2E2",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
@@ -2029,7 +2002,6 @@ const styles = StyleSheet.create({
   },
   followUpText: {
     fontSize: 10,
-    color: "#DC2626",
     fontWeight: "500",
   },
   viewAllNotesBtn: {
@@ -2040,8 +2012,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   viewAllNotesText: {
-    fontSize: 13,
-    fontWeight: "600",
     marginRight: 4,
   },
   errorContainer: {
@@ -2052,6 +2022,5 @@ const styles = StyleSheet.create({
   },
   errorText: {
     fontSize: 16,
-    color: "#666",
   },
 });

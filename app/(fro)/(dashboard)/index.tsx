@@ -87,17 +87,17 @@ export default function HomeScreen() {
     datasets: [
       {
         data: [] as number[],
-        color: () => '#00C950',
+        color: () => theme.colors.colorSuccess600,
         strokeWidth: 2
       },
       {
         data: [] as number[],
-        color: () => '#FFA500',
+        color: () => theme.colors.colorWarning600,
         strokeWidth: 2
       },
       {
         data: [] as number[],
-        color: () => '#6A7282',
+        color: () => theme.colors.colorTextTertiary,
         strokeWidth: 2
       }
     ]
@@ -108,17 +108,17 @@ export default function HomeScreen() {
     datasets: [
       {
         data: [] as number[],
-        color: () => '#00C950',
+        color: () => theme.colors.colorSuccess600,
         strokeWidth: 2
       },
       {
         data: [] as number[],
-        color: () => '#FFA500',
+        color: () => theme.colors.colorWarning600,
         strokeWidth: 2
       },
       {
         data: [] as number[],
-        color: () => '#6A7282',
+        color: () => theme.colors.colorTextTertiary,
         strokeWidth: 2
       }
     ]
@@ -172,14 +172,15 @@ export default function HomeScreen() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      setFirstName(response?.data?.firstName || "User");
+      setFirstName(response?.data?.firstName || t("common.user") || "User");
       setLastName(response?.data?.lastName || "");
     } catch (error) {
       console.error("User fetch error:", error);
-      alert(
-        "Failed to fetch user data. " +
-        (error instanceof Error ? error?.message : "Unknown error"),
-      );
+      Toast.show({
+        type: "error",
+        text1: t("dashboard.errors.userFetchFailed") || "Failed to fetch user data",
+        text2: error instanceof Error ? error?.message : t("common.unknownError") || "Unknown error",
+      });
     }
   };
 
@@ -200,46 +201,48 @@ export default function HomeScreen() {
       console.error("Count fetch error:", error);
       Toast.show({
         type: "error",
-        text1: "Failed to fetch dashboard counts",
+        text1: t("dashboard.errors.countFetchFailed") || "Failed to fetch dashboard counts",
       });
     }
   };
 
   const handleGetDayCasePerformance = async () => {
-  setLoading(true);
+    setLoading(true);
 
-  try {
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
+    try {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = String(currentDate.getMonth() + 1).padStart(2, "0");
 
-    const response = await getFROCasePerformanceDayWise({
-      Year: currentYear,
-      Month: currentMonth,
-      AssignToId: String(authState.userId),
-      token: String(authState.token),
-      csrfToken: String(authState.antiforgeryToken),
-    });
+      const response = await getFROCasePerformanceDayWise({
+        Year: currentYear,
+        Month: currentMonth,
+        AssignToId: String(authState.userId),
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken),
+      });
 
-    // console.log("DAY PERFORMANCE", response);
+      if (response?.data) {
+        const processedData = processDayPerformanceData(
+          response.data,
+          currentYear,
+          Number(currentMonth)
+        );
 
-    if (response?.data) {
-      const processedData = processDayPerformanceData(
-        response.data,
-        currentYear,
-        Number(currentMonth)
-      );
+        setDayPerformanceData(processedData);
+        prepareDayChartData(processedData);
+      }
 
-      setDayPerformanceData(processedData);
-      prepareDayChartData(processedData);
+    } catch (error) {
+      console.error("Error fetching day performance:", error);
+      Toast.show({
+        type: "error",
+        text1: t("dashboard.errors.dayPerformanceFailed") || "Failed to fetch day performance",
+      });
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    console.error("Error fetching day performance:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
   const handleGetMonthCasePerformance = async () => {
     try {
@@ -255,15 +258,11 @@ export default function HomeScreen() {
         prepareMonthChartData(response.data);
       }
 
-
-      // console.log("month perf",response?.data);
-      
-
     } catch (error: any) {
       console.error("Error fetching month performance:", error);
       Toast.show({
         type: "error",
-        text1: error?.response?.data?.message || "Failed to fetch month performance",
+        text1: error?.response?.data?.message || t("dashboard.errors.monthPerformanceFailed") || "Failed to fetch month performance",
       });
     }
   };
@@ -278,7 +277,7 @@ export default function HomeScreen() {
         return {
           ...item,
           day: day,
-          formattedDate: `${day} ${new Date(year, month - 1).toLocaleString('default', { month: 'short' })}`
+          formattedDate: `${day} ${new Date(year, month - 1).toLocaleString(t('common.locale') || 'default', { month: 'short' })}`
         };
       }).sort((a, b) => (a.day || 0) - (b.day || 0))
     };
@@ -288,11 +287,11 @@ export default function HomeScreen() {
   const prepareDayChartData = (data: DayCasePerformanceResponse) => {
     if (!data?.data || data.data.length === 0) {
       setDayChartData({
-        labels: ['No Data'],
+        labels: [t('common.noData') || 'No Data'],
         datasets: [
-          { data: [0], color: () => '#00C950', strokeWidth: 2 },
-          { data: [0], color: () => '#FFA500', strokeWidth: 2 },
-          { data: [0], color: () => '#6A7282', strokeWidth: 2 }
+          { data: [0], color: () => theme.colors.colorSuccess600, strokeWidth: 2 },
+          { data: [0], color: () => theme.colors.colorWarning600, strokeWidth: 2 },
+          { data: [0], color: () => theme.colors.colorTextTertiary, strokeWidth: 2 }
         ]
       });
       return;
@@ -326,9 +325,9 @@ export default function HomeScreen() {
     setDayChartData({
       labels,
       datasets: [
-        { data: openData, color: () => '#00C950', strokeWidth: 2 },
-        { data: inProgressData, color: () => '#FFA500', strokeWidth: 2 },      
-        { data: closedData, color: () => '#6A7282', strokeWidth: 2 }
+        { data: openData, color: () => theme.colors.colorSuccess600, strokeWidth: 2 },
+        { data: inProgressData, color: () => theme.colors.colorWarning600, strokeWidth: 2 },      
+        { data: closedData, color: () => theme.colors.colorTextTertiary, strokeWidth: 2 }
       ]
     });
   };
@@ -337,11 +336,11 @@ export default function HomeScreen() {
   const prepareMonthChartData = (data: MonthPerformanceResponse) => {
     if (!data?.data || data.data.length === 0) {
       setMonthChartData({
-        labels: ['No Data'],
+        labels: [t('common.noData') || 'No Data'],
         datasets: [
-          { data: [0], color: () => '#00C950', strokeWidth: 2 },
-          { data: [0], color: () => '#FFA500', strokeWidth: 2 },
-          { data: [0], color: () => '#6A7282', strokeWidth: 2 }
+          { data: [0], color: () => theme.colors.colorSuccess600, strokeWidth: 2 },
+          { data: [0], color: () => theme.colors.colorWarning600, strokeWidth: 2 },
+          { data: [0], color: () => theme.colors.colorTextTertiary, strokeWidth: 2 }
         ]
       });
       return;
@@ -359,30 +358,22 @@ export default function HomeScreen() {
       closedData.push(item.closed || 0);
     });
 
-    // Log to verify data
-    // console.log('Monthly Chart Data:', {
-    //   labels,
-    //   open: openData,
-    //   inProgress: inProgressData,
-    //   closed: closedData
-    // });
-
     setMonthChartData({
       labels,
       datasets: [
         { 
           data: openData, 
-          color: () => '#00C950', 
+          color: () => theme.colors.colorSuccess600, 
           strokeWidth: 2 
         },
         { 
           data: inProgressData, 
-          color: () => '#FFA500', 
+          color: () => theme.colors.colorWarning600, 
           strokeWidth: 2 
         },
         { 
           data: closedData, 
-          color: () => '#6A7282', 
+          color: () => theme.colors.colorTextTertiary, 
           strokeWidth: 2 
         }
       ]
@@ -410,23 +401,23 @@ export default function HomeScreen() {
 
   const caseCardConfig = {
     open: {
-      title: "Open",
+      title: t("dashboard.cards.open") || "Open",
       icon: "folder-check-line",
-      iconBg: "#00C950",
+      iconBg: theme.colors.colorSuccess600,
       cardBg: theme.colors.validationSuccessBg,
       countColor: theme.colors.colorPrimary600,
       filter: "Open",
     },
     InProgress: {
-      title: "In-Progress",
+      title: t("dashboard.cards.inProgress") || "In-Progress",
       icon: "time-line",
-      iconBg: theme.colors.validationWarningText,
+      iconBg: theme.colors.colorWarning600,
       cardBg: theme.colors.validationWarningBg,
-      countColor: theme.colors.validationWarningText,
+      countColor: theme.colors.colorWarning600,
       filter: "inProgress",
     },
     Total: {
-      title: "Total",
+      title: t("dashboard.cards.total") || "Total",
       icon: "arrow-right-box-line",
       iconBg: theme.colors.colorHeadingH1,
       cardBg: theme.colors.validationInfoBg,
@@ -434,9 +425,9 @@ export default function HomeScreen() {
       filter: "tickets",
     },
     closed: {
-      title: "Closed",
+      title: t("dashboard.cards.closed") || "Closed",
       icon: "close-circle-line",
-      iconBg: "#6A7282",
+      iconBg: theme.colors.colorTextTertiary,
       cardBg: theme.colors.navDivider,
       countColor: theme.colors.colorTextSecondary,
       filter: "Closed",
@@ -487,7 +478,7 @@ export default function HomeScreen() {
               { color: theme.colors.colorPrimary600 },
             ]}
           >
-            Attendance
+            {t("dashboard.attendance") || "Attendance"}
           </Text>
 
           <PunchInCard />
@@ -496,11 +487,11 @@ export default function HomeScreen() {
           <View style={styles.kpiRow}>
             <CircularKPIChart
               percentage={attendanceRateNum}
-              label="Attendance"
+              label={t("dashboard.kpi.attendance") || "Attendance"}
             />
             <CircularKPIChart
               percentage={completionRate}
-              label="Completion Rate"
+              label={t("dashboard.kpi.completionRate") || "Completion Rate"}
             />
           </View>
 
@@ -511,7 +502,7 @@ export default function HomeScreen() {
               { color: theme.colors.colorPrimary600, marginTop: 20 },
             ]}
           >
-            Overview
+            {t("dashboard.overview") || "Overview"}
           </Text>
 
           {/* Case Cards */}
@@ -582,30 +573,41 @@ export default function HomeScreen() {
           </View>
 
           {/* Daily Performance Chart */}
-          <View style={styles.chartContainer}>
+          <View style={[styles.chartContainer, { 
+            backgroundColor: theme.colors.colorBgSurface,
+            borderColor: theme.colors.border 
+          }]}>
             <Text style={[theme.typography.fontH6, { color: theme.colors.colorPrimary600 }]}>
-              Daily Performance - {new Date().toLocaleString('default', { month: 'long' })} {new Date().getFullYear()}
+              {t("dashboard.charts.daily.title") || "Daily Performance"} - {new Date().toLocaleString(t('common.locale') || 'default', { month: 'long' })} {new Date().getFullYear()}
             </Text>
 
             {loading ? (
               <View style={styles.loadingContainer}>
-                <Text>Loading chart...</Text>
+                <Text style={[theme.typography.fontBodyRegular, { color: theme.colors.colorTextSecondary }]}>
+                  {t("common.loading") || "Loading chart..."}
+                </Text>
               </View>
             ) : dayPerformanceData && dayPerformanceData.data && dayPerformanceData.data.length > 0 ? (
               <>
                 {/* Legend for daily chart */}
                 <View style={styles.legendContainer}>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#00C950' }]} />
-                    <Text style={styles.legendText}>Open</Text>
+                    <View style={[styles.legendDot, { backgroundColor: theme.colors.colorSuccess600 }]} />
+                    <Text style={[styles.legendText, theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                      {t("dashboard.cards.open") || "Open"}
+                    </Text>
                   </View>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#FFA500' }]} />
-                    <Text style={styles.legendText}>In Progress</Text>
+                    <View style={[styles.legendDot, { backgroundColor: theme.colors.colorWarning600 }]} />
+                    <Text style={[styles.legendText, theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                      {t("dashboard.cards.inProgress") || "In Progress"}
+                    </Text>
                   </View>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#6A7282' }]} />
-                    <Text style={styles.legendText}>Closed</Text>
+                    <View style={[styles.legendDot, { backgroundColor: theme.colors.colorTextTertiary }]} />
+                    <Text style={[styles.legendText, theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                      {t("dashboard.cards.closed") || "Closed"}
+                    </Text>
                   </View>
                 </View>
 
@@ -620,19 +622,19 @@ export default function HomeScreen() {
                       width={dayChartWidth}
                       height={220}
                       chartConfig={{
-                        backgroundColor: '#ffffff',
-                        backgroundGradientFrom: '#ffffff',
-                        backgroundGradientTo: '#ffffff',
+                        backgroundColor: theme.colors.colorBgSurface,
+                        backgroundGradientFrom: theme.colors.colorBgSurface,
+                        backgroundGradientTo: theme.colors.colorBgSurface,
                         decimalPlaces: 0,
-                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                        color: (opacity = 1) => theme.colors.colorTextPrimary,
+                        labelColor: (opacity = 1) => theme.colors.colorTextSecondary,
                         style: {
                           borderRadius: 16,
                         },
                         propsForDots: {
                           r: '4',
                           strokeWidth: '2',
-                          stroke: '#fff'
+                          stroke: theme.colors.colorBgSurface
                         },
                         formatYLabel: (yValue) => Math.round(Number(yValue)).toString(),
                       }}
@@ -655,20 +657,27 @@ export default function HomeScreen() {
                 </ScrollView>
                 
                 {dayChartWidth > screenWidth && (
-                  <Text style={styles.scrollHint}>← Swipe to see more →</Text>
+                  <Text style={[styles.scrollHint, theme.typography.fontBodySmall, { color: theme.colors.colorTextTertiary }]}>
+                    {t("common.swipeToSeeMore") || "← Swipe to see more →"}
+                  </Text>
                 )}
               </>
             ) : (
-              <View style={styles.noDataContainer}>
-                <Text style={styles.noDataText}>No daily performance data available</Text>
+              <View style={[styles.noDataContainer, { backgroundColor: theme.colors.colorBgAlt }]}>
+                <Text style={[styles.noDataText, theme.typography.fontBodyRegular, { color: theme.colors.colorTextTertiary }]}>
+                  {t("dashboard.charts.daily.noData") || "No daily performance data available"}
+                </Text>
               </View>
             )}
           </View>
 
           {/* Monthly Performance Chart - THREE SEPARATE LINES */}
-          <View style={styles.chartContainer}>
+          <View style={[styles.chartContainer, { 
+            backgroundColor: theme.colors.colorBgSurface,
+            borderColor: theme.colors.border 
+          }]}>
             <Text style={[theme.typography.fontH6, { color: theme.colors.colorPrimary600 }]}>
-              Monthly Performance - {monthPerformanceData?.year || new Date().getFullYear()}
+              {t("dashboard.charts.monthly.title") || "Monthly Performance"} - {monthPerformanceData?.year || new Date().getFullYear()}
             </Text>
 
             {monthPerformanceData && monthPerformanceData.data && monthPerformanceData.data.length > 0 ? (
@@ -676,16 +685,22 @@ export default function HomeScreen() {
                 {/* Legend for monthly chart */}
                 <View style={styles.legendContainer}>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#00C950' }]} />
-                    <Text style={styles.legendText}>Open</Text>
+                    <View style={[styles.legendDot, { backgroundColor: theme.colors.colorSuccess600 }]} />
+                    <Text style={[styles.legendText, theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                      {t("dashboard.cards.open") || "Open"}
+                    </Text>
                   </View>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#FFA500' }]} />
-                    <Text style={styles.legendText}>In Progress</Text>
+                    <View style={[styles.legendDot, { backgroundColor: theme.colors.colorWarning600 }]} />
+                    <Text style={[styles.legendText, theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                      {t("dashboard.cards.inProgress") || "In Progress"}
+                    </Text>
                   </View>
                   <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: '#6A7282' }]} />
-                    <Text style={styles.legendText}>Closed</Text>
+                    <View style={[styles.legendDot, { backgroundColor: theme.colors.colorTextTertiary }]} />
+                    <Text style={[styles.legendText, theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                      {t("dashboard.cards.closed") || "Closed"}
+                    </Text>
                   </View>
                 </View>
 
@@ -700,19 +715,19 @@ export default function HomeScreen() {
                       width={monthChartWidth}
                       height={220}
                       chartConfig={{
-                        backgroundColor: '#ffffff',
-                        backgroundGradientFrom: '#ffffff',
-                        backgroundGradientTo: '#ffffff',
+                        backgroundColor: theme.colors.colorBgSurface,
+                        backgroundGradientFrom: theme.colors.colorBgSurface,
+                        backgroundGradientTo: theme.colors.colorBgSurface,
                         decimalPlaces: 0,
-                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                        color: (opacity = 1) => theme.colors.colorTextPrimary,
+                        labelColor: (opacity = 1) => theme.colors.colorTextSecondary,
                         style: {
                           borderRadius: 16,
                         },
                         propsForDots: {
                           r: '4',
                           strokeWidth: '2',
-                          stroke: '#fff'
+                          stroke: theme.colors.colorBgSurface
                         },
                         formatYLabel: (yValue) => Math.round(Number(yValue)).toString(),
                       }}
@@ -735,27 +750,35 @@ export default function HomeScreen() {
                 </ScrollView>
                 
                 {monthChartWidth > screenWidth && (
-                  <Text style={styles.scrollHint}>← Swipe to see more →</Text>
+                  <Text style={[styles.scrollHint, theme.typography.fontBodySmall, { color: theme.colors.colorTextTertiary }]}>
+                    {t("common.swipeToSeeMore") || "← Swipe to see more →"}
+                  </Text>
                 )}
 
                 {/* Yearly Summary Stats */}
                 {yearlyTotals && (
-                  <View style={styles.chartStats}>
+                  <View style={[styles.chartStats, { borderTopColor: theme.colors.border }]}>
                     <View style={styles.statCard}>
-                      <Text style={theme.typography.fontBodySmall}>Total Open</Text>
-                      <Text style={[theme.typography.fontH6, { color: '#00C950' }]}>
+                      <Text style={[theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                        {t("dashboard.stats.totalOpen") || "Total Open"}
+                      </Text>
+                      <Text style={[theme.typography.fontH6, { color: theme.colors.colorSuccess600 }]}>
                         {yearlyTotals.open}
                       </Text>
                     </View>
                     <View style={styles.statCard}>
-                      <Text style={theme.typography.fontBodySmall}>Total In Progress</Text>
-                      <Text style={[theme.typography.fontH6, { color: '#FFA500' }]}>
+                      <Text style={[theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                        {t("dashboard.stats.totalInProgress") || "Total In Progress"}
+                      </Text>
+                      <Text style={[theme.typography.fontH6, { color: theme.colors.colorWarning600 }]}>
                         {yearlyTotals.inProgress}
                       </Text>
                     </View>
                     <View style={styles.statCard}>
-                      <Text style={theme.typography.fontBodySmall}>Total Closed</Text>
-                      <Text style={[theme.typography.fontH6, { color: '#6A7282' }]}>
+                      <Text style={[theme.typography.fontBodySmall, { color: theme.colors.colorTextSecondary }]}>
+                        {t("dashboard.stats.totalClosed") || "Total Closed"}
+                      </Text>
+                      <Text style={[theme.typography.fontH6, { color: theme.colors.colorTextTertiary }]}>
                         {yearlyTotals.closed}
                       </Text>
                     </View>
@@ -763,8 +786,10 @@ export default function HomeScreen() {
                 )}
               </>
             ) : (
-              <View style={styles.noDataContainer}>
-                <Text style={styles.noDataText}>No monthly performance data available</Text>
+              <View style={[styles.noDataContainer, { backgroundColor: theme.colors.colorBgAlt }]}>
+                <Text style={[styles.noDataText, theme.typography.fontBodyRegular, { color: theme.colors.colorTextTertiary }]}>
+                  {t("dashboard.charts.monthly.noData") || "No monthly performance data available"}
+                </Text>
               </View>
             )}
           </View>
@@ -791,10 +816,8 @@ const styles = StyleSheet.create({
   chartContainer: {
     marginTop: 30,
     padding: 15,
-    backgroundColor: "#ffffff",
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
   },
   chart: {
     marginVertical: 8,
@@ -809,7 +832,6 @@ const styles = StyleSheet.create({
     marginTop: 20,
     paddingTop: 15,
     borderTopWidth: 1,
-    borderTopColor: '#f0f0f0'
   },
   statCard: {
     alignItems: 'center'
@@ -836,12 +858,10 @@ const styles = StyleSheet.create({
   },
   legendText: {
     fontSize: 12,
-    color: '#333',
     fontFamily: 'Poppins-Regular',
   },
   scrollHint: {
     textAlign: 'center',
-    color: '#999',
     fontSize: 12,
     marginTop: 8,
     fontFamily: 'Poppins-Regular',
@@ -855,12 +875,10 @@ const styles = StyleSheet.create({
     height: 150,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f9f9f9',
     borderRadius: 10,
     marginTop: 10,
   },
   noDataText: {
-    color: '#999',
     fontSize: 14,
     fontFamily: 'Poppins-Regular',
   },

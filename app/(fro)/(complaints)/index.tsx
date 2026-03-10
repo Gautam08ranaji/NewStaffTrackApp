@@ -41,13 +41,6 @@ const STATUS_DISPLAY_MAP: Record<string, string> = {
   Closed: "Closed",
 };
 
-const statusColors: Record<string, string> = {
-  Open: "#00C950",
-  "In-Progress": "#F57C00",
-  "In Progress": "#F57C00",
-  Closed: "#6A7282",
-};
-
 // Helper function to safely get status from your actual data structure
 const getSafeStatus = (item: any): string => {
   // Check all possible status field names
@@ -60,23 +53,21 @@ const getDisplayStatus = (statusName: string): string => {
   return STATUS_DISPLAY_MAP[statusName] || statusName;
 };
 
-// Helper function to get status color
-const getStatusColor = (statusName: string): string => {
-  if (!statusName) return "#6A7282"; // Default gray
+// Helper function to get status color from theme
+const getStatusColor = (theme: any, statusName: string): string => {
+  if (!statusName) return theme.colors.colorTextTertiary;
 
-  const displayStatus = getDisplayStatus(statusName);
+  const statusLower = statusName.toLowerCase();
   
-  // Check if we have a color defined for this status
-  if (statusColors[statusName]) {
-    return statusColors[statusName];
+  if (statusLower.includes("open")) {
+    return theme.colors.colorSuccess600; // Green for Open
+  } else if (statusLower.includes("progress")) {
+    return theme.colors.colorWarning600; // Orange for In-Progress
+  } else if (statusLower.includes("closed")) {
+    return theme.colors.colorTextTertiary; // Gray for Closed
   }
   
-  // Check by display status
-  const statusKey = Object.keys(statusColors).find(
-    (key) => key.toLowerCase() === displayStatus.toLowerCase(),
-  );
-  
-  return statusKey ? statusColors[statusKey] : "#6A7282";
+  return theme.colors.colorTextTertiary;
 };
 
 export default function TasksScreen() {
@@ -98,14 +89,14 @@ export default function TasksScreen() {
 
   /* ---------------- 4 TABS ---------------- */
   const tabs = [
-    { label: "All", key: "all", displayKey: "all" },
-    { label: "Open", key: "open", displayKey: "Open" },
+    { label: t("tasks.tabs.all") || "All", key: "all", displayKey: "all" },
+    { label: t("tasks.tabs.open") || "Open", key: "open", displayKey: "Open" },
     {
-      label: "In-progress",
+      label: t("tasks.tabs.inProgress") || "In-progress",
       key: "inProgress",
       displayKey: "In-Progress",
     },
-    { label: "Closed", key: "closed", displayKey: "Closed" },
+    { label: t("tasks.tabs.closed") || "Closed", key: "closed", displayKey: "Closed" },
   ];
 
   const initialTabIndex = tabs.findIndex((t) => t.key === params.filter);
@@ -210,36 +201,52 @@ export default function TasksScreen() {
   const renderTaskCard = (item: any, index: number) => {
     const statusName = getSafeStatus(item);
     const displayStatus = getDisplayStatus(statusName);
-    const statusColor = getStatusColor(statusName);
+    const statusColor = getStatusColor(theme, statusName);
 
     return (
       <View
         key={index}
-        style={[styles.card, { backgroundColor: theme.colors.colorBgPage }]}
+        style={[
+          styles.card, 
+          { 
+            backgroundColor: theme.colors.colorBgSurface,
+            ...Platform.select({
+              ios: {
+                shadowColor: theme.colors.colorShadow,
+              },
+            }),
+          }
+        ]}
       >
         <View style={styles.rowBetween}>
           <Text
-            style={[styles.cardTitle, { color: theme.colors.colorPrimary600 }]}
+            style={[
+              theme.typography.fontH6,
+              styles.cardTitle, 
+              { color: theme.colors.colorPrimary600 }
+            ]}
             numberOfLines={2}
             ellipsizeMode="tail"
           >
-            Task No: {item.transactionNumber || "-"}
+            {t("tasks.taskNo") || "Task No"}: {item.transactionNumber || "-"}
           </Text>
 
           <View style={[styles.tagBadge, { backgroundColor: statusColor }]}>
-            <Text style={styles.tagText}>{displayStatus}</Text>
+            <Text style={[theme.typography.fontBodySmall, styles.tagText]}>
+              {displayStatus}
+            </Text>
           </View>
         </View>
 
         <View style={styles.infoContainer}>
-          <Text style={[styles.cardText, styles.infoText]}>
-            {item.name || t("Tasks.unnamedCase")}
+          <Text style={[theme.typography.fontBodyRegular, styles.cardText, { color: theme.colors.colorTextSecondary }]}>
+            {item.name || t("tasks.unnamedCase")}
           </Text>
-          <Text style={[styles.cardText, styles.infoText]}>
-            {t("Tasks.category")}: {item.categoryName || "-"}
+          <Text style={[theme.typography.fontBodyRegular, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
+            {t("tasks.category")}: {item.categoryName || "-"}
           </Text>
-          <Text style={[styles.cardText, styles.infoText]}>
-            {"Priority"}: {item.priority || "-"}
+          <Text style={[theme.typography.fontBodyRegular, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
+            {t("tasks.priority")}: {item.priority || "-"}
           </Text>
         </View>
 
@@ -248,17 +255,21 @@ export default function TasksScreen() {
             <RemixIcon
               name="map-pin-line"
               size={moderateScale(16)}
-              color="#666"
+              color={theme.colors.colorTextSecondary}
             />
-            <Text style={styles.metaText} numberOfLines={1}>
+            <Text style={[theme.typography.fontBodySmall, styles.metaText, { color: theme.colors.colorTextSecondary }]} numberOfLines={1}>
               {item.districtName || "-"}
             </Text>
           </View>
           <View style={styles.metaItem}>
-            <RemixIcon name="time-line" size={moderateScale(16)} color="#666" />
-            <Text style={styles.metaText} numberOfLines={1}>
+            <RemixIcon 
+              name="time-line" 
+              size={moderateScale(16)} 
+              color={theme.colors.colorTextSecondary} 
+            />
+            <Text style={[theme.typography.fontBodySmall, styles.metaText, { color: theme.colors.colorTextSecondary }]} numberOfLines={1}>
               {item.createdDate
-                ? new Date(item.createdDate).toLocaleString()
+                ? new Date(item.createdDate).toLocaleString(t('common.locale') || 'default')
                 : "-"}
             </Text>
           </View>
@@ -276,7 +287,9 @@ export default function TasksScreen() {
             })
           }
         >
-          <Text style={styles.actionBtnText}>View Task</Text>
+          <Text style={[theme.typography.fontButton, styles.actionBtnText]}>
+            {t("tasks.viewTask") || "View Task"}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -287,14 +300,18 @@ export default function TasksScreen() {
       <RemixIcon
         name="inbox-line"
         size={moderateScale(48)}
-        color={theme.colors.colorTextSecondary}
+        color={theme.colors.colorTextTertiary}
       />
       <Text
-        style={[styles.emptyText, { color: theme.colors.colorTextSecondary }]}
+        style={[
+          theme.typography.fontBodyRegular,
+          styles.emptyText, 
+          { color: theme.colors.colorTextSecondary }
+        ]}
       >
         {selectedFilterKey !== "all"
-          ? `No ${tabs[activeTab].label} tasks found`
-          : "No tasks found"}
+          ? `${t("tasks.noTasksFound") || "No"} ${tabs[activeTab].label} ${t("tasks.tasksFound") || "tasks found"}`
+          : t("tasks.noTasks") || "No tasks found"}
       </Text>
     </View>
   );
@@ -302,15 +319,19 @@ export default function TasksScreen() {
   const renderLoadingState = () => (
     <View style={styles.loadingContainer}>
       <Text
-        style={[styles.loadingText, { color: theme.colors.colorTextSecondary }]}
+        style={[
+          theme.typography.fontBodyRegular,
+          styles.loadingText, 
+          { color: theme.colors.colorTextSecondary }
+        ]}
       >
-        Loading...
+        {t("common.loading") || "Loading..."}
       </Text>
     </View>
   );
 
   return (
-    <BodyLayout type="screen" screenName={t("Tasks.screenTitle")}>
+    <BodyLayout type="screen" screenName={t("tasks.screenTitle")}>
       {/* ---------------- TABS (4 TABS) ---------------- */}
       <View style={styles.tabsWrapper}>
         <ScrollView
@@ -328,18 +349,21 @@ export default function TasksScreen() {
               }}
               style={[
                 styles.tab,
-                { backgroundColor: theme.colors.colorBgPage },
-                activeTab === index && {
-                  backgroundColor: theme.colors.colorPrimary600,
+                { 
+                  backgroundColor: activeTab === index 
+                    ? theme.colors.colorPrimary600 
+                    : theme.colors.colorBgAlt,
                 },
               ]}
             >
               <Text
                 style={[
+                  theme.typography.fontBodyRegular,
                   styles.tabText,
-                  { color: theme.colors.colorTextSecondary },
-                  activeTab === index && {
-                    color: theme.colors.colorBgPage,
+                  { 
+                    color: activeTab === index 
+                      ? theme.colors.colorTextInverse 
+                      : theme.colors.colorTextSecondary,
                   },
                 ]}
               >
@@ -374,10 +398,13 @@ export default function TasksScreen() {
       {/* ---------------- MODALS ---------------- */}
       <NewCasePopupModal
         visible={showPopUp}
-        name="New TaskAssigned"
+        name={t("tasks.newTaskAssigned") || "New Task Assigned"}
         age={72}
         timerSeconds={30}
-        details={[{ label: "Ticket Number:", value: "Auto Assigned" }]}
+        details={[{ 
+          label: t("tasks.ticketNumber") || "Ticket Number:", 
+          value: t("tasks.autoAssigned") || "Auto Assigned" 
+        }]}
         onAccept={() => {
           setShowPopUp(false);
           setShowStatusModal(true);
@@ -390,23 +417,23 @@ export default function TasksScreen() {
 
       <StatusModal
         visible={showStatusModal}
-        title="TaskAccepted"
+        title={t("tasks.taskAccepted") || "Task Accepted"}
         iconName="check-line"
-        iconColor="#00796B"
-        iconBgColor="#E0F2F1"
+        iconColor={theme.colors.colorSuccess600}
+        iconBgColor={theme.colors.colorSuccess100}
         autoCloseAfter={2000}
         onClose={() => setShowStatusModal(false)}
       />
 
       <StatusModal
         visible={showDeclinedStatusModal}
-        title="TaskDeclined"
-        iconName="check-line"
-        iconColor={theme.colors.validationErrorText}
-        iconBgColor={theme.colors.validationErrorText + "22"}
+        title={t("tasks.taskDeclined") || "Task Declined"}
+        iconName="close-line"
+        iconColor={theme.colors.colorError600}
+        iconBgColor={theme.colors.colorError100}
         autoCloseAfter={2000}
         onClose={() => setShowDeclinedStatusModal(false)}
-        titleColor={theme.colors.colorAccent500}
+        titleColor={theme.colors.colorError600}
       />
     </BodyLayout>
   );
@@ -455,7 +482,6 @@ const styles = StyleSheet.create({
     borderRadius: moderateScale(10),
     ...Platform.select({
       ios: {
-        shadowColor: "#000",
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.08,
         shadowRadius: 3,
@@ -472,8 +498,6 @@ const styles = StyleSheet.create({
     marginBottom: verticalScale(6),
   },
   cardTitle: {
-    fontSize: moderateScale(15),
-    fontWeight: "600",
     flex: 1,
     marginRight: moderateScale(8),
     lineHeight: moderateScale(20),
@@ -483,7 +507,6 @@ const styles = StyleSheet.create({
   },
   cardText: {
     fontSize: moderateScale(13),
-    color: "#666",
     lineHeight: moderateScale(18),
   },
   infoText: {
@@ -519,7 +542,6 @@ const styles = StyleSheet.create({
   metaText: {
     marginLeft: moderateScale(5),
     fontSize: moderateScale(12),
-    color: "#666",
     flex: 1,
   },
   actionBtn: {
@@ -543,6 +565,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: moderateScale(14),
     fontWeight: "600",
+    textAlign: "center",
   },
   emptyContainer: {
     flex: 1,

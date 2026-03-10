@@ -5,14 +5,15 @@ import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 /* ================= TYPES ================= */
@@ -32,6 +33,7 @@ type CaseItem = {
 /* ================= SCREEN ================= */
 export default function NotesHistoryScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
   const params = useLocalSearchParams();
   const caseId = params.caseId ? Number(params.caseId) : null;
@@ -69,15 +71,15 @@ export default function NotesHistoryScreen() {
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        "Something went wrong. Please try again.";
+        t("common.somethingWentWrong") || "Something went wrong. Please try again.";
 
       if (status === 401) {
         Alert.alert(
-          "Session Expired",
-          "Your session has expired. Please login again.",
+          t("common.sessionExpired") || "Session Expired",
+          t("common.pleaseLoginAgain") || "Your session has expired. Please login again.",
           [
             {
-              text: "OK",
+              text: t("common.ok") || "OK",
               onPress: () => router.replace("/(onboarding)/login"),
             },
           ],
@@ -85,7 +87,7 @@ export default function NotesHistoryScreen() {
         return;
       }
 
-      Alert.alert("Error", message);
+      Alert.alert(t("common.error") || "Error", message);
     } finally {
       setLoading(false);
     }
@@ -100,8 +102,8 @@ export default function NotesHistoryScreen() {
 
   /* ================= UI ================= */
   return (
-    <BodyLayout type="screen" screenName="Notes">
-      <View style={styles.body}>
+    <BodyLayout type="screen" screenName={t("notes.screenTitle") || "Notes"}>
+      <View style={[styles.body, { backgroundColor: theme.colors.background }]}>
         <FlatList
           data={notes}
           keyExtractor={(item) => item.id}
@@ -113,7 +115,7 @@ export default function NotesHistoryScreen() {
               <TouchableOpacity
                 style={[
                   styles.addButton,
-                  { backgroundColor: theme.colors.colorPrimary600 },
+                  { backgroundColor: theme.colors.btnPrimaryBg },
                 ]}
                 onPress={() =>
                   router.push({
@@ -128,15 +130,15 @@ export default function NotesHistoryScreen() {
                 <Ionicons
                   name="add"
                   size={20}
-                  color={theme.colors.colorBgSurface}
+                  color={theme.colors.btnPrimaryText}
                 />
                 <Text
                   style={[
                     styles.addButtonText,
-                    { color: theme.colors.colorBgSurface },
+                    { color: theme.colors.btnPrimaryText },
                   ]}
                 >
-                  Add New Note
+                  {t("notes.addNewNote") || "Add New Note"}
                 </Text>
               </TouchableOpacity>
 
@@ -147,7 +149,7 @@ export default function NotesHistoryScreen() {
                   { color: theme.colors.colorPrimary600 },
                 ]}
               >
-                Notes History
+                {t("notes.history") || "Notes History"}
               </Text>
             </>
           }
@@ -166,7 +168,7 @@ export default function NotesHistoryScreen() {
                   color: theme.colors.colorTextSecondary,
                 }}
               >
-                No notes found
+                {t("notes.noNotes") || "No notes found"}
               </Text>
             )
           }
@@ -174,16 +176,22 @@ export default function NotesHistoryScreen() {
             <View
               style={[
                 styles.card,
-                { backgroundColor: theme.colors.colorBgPage },
+                { 
+                  backgroundColor: theme.colors.colorBgSurface,
+                  shadowColor: theme.colors.colorShadow,
+                  borderColor: theme.colors.border,
+                },
               ]}
             >
               <Text
                 style={[
                   styles.cardTitle,
-                  { color: theme.colors.colorHeadingH1 },
+                  { color: theme.colors.colorPrimary600 },
                 ]}
               >
-                {item.noteType === "public" ? "Public Note" : "Private Note"}
+                {item.noteType === "public" 
+                  ? (t("notes.publicNote") || "Public Note") 
+                  : (t("notes.privateNote") || "Private Note")}
               </Text>
 
               <Text
@@ -192,7 +200,7 @@ export default function NotesHistoryScreen() {
                   { color: theme.colors.colorTextSecondary },
                 ]}
               >
-                TaskNo: {item.relatedToName}
+                {t("notes.taskNo") || "Task No"}: {item.relatedToName}
               </Text>
 
               <Text
@@ -201,7 +209,7 @@ export default function NotesHistoryScreen() {
                   { color: theme.colors.colorTextPrimary },
                 ]}
               >
-                Description: {item.noteDesc}
+                {t("notes.description") || "Description"}: {item.noteDesc}
               </Text>
             </View>
           )}
@@ -217,7 +225,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -225,24 +232,30 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 10,
     marginBottom: 16,
+    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   addButtonText: {
     fontSize: 16,
     fontWeight: "600",
     marginLeft: 6,
   },
-
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 12,
   },
-
   card: {
     borderRadius: 16,
     padding: 16,
-    elevation: 5,
+    elevation: 3,
     marginBottom: 20,
+    borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   cardTitle: {
     fontSize: 16,

@@ -9,16 +9,18 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+
 import {
-    Alert,
-    Modal,
-    Platform,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
 /* ---------- NOTE TYPES ---------- */
@@ -26,6 +28,7 @@ const NOTE_TYPES = ["PUBLIC", "PRIVATE"];
 
 export default function AddNoteScreen() {
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = createStyles(theme);
 
   const authState = useAppSelector((state) => state.auth);
@@ -42,7 +45,15 @@ export default function AddNoteScreen() {
   const caseId = params.caseId ? Number(params.caseId) : null;
   const transactionNumber = (params.transactionNumber as string) || "";
 
-  /* ---------- SAVE ACTIVITY HISTORY ---------- */
+  /* ---------- DATE HELPER ---------- */
+  const getTomorrow = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    date.setHours(0, 0, 0, 0);
+    return date;
+  };
+
+  /* ---------- SAVE ACTIVITY ---------- */
   const saveActivity = async ({
     interactionId,
     noteType,
@@ -50,16 +61,8 @@ export default function AddNoteScreen() {
     followUpDate,
     activityStatus,
     transactionNumber,
-  }: {
-    interactionId: number;
-    noteType: string;
-    noteDescription: string;
-    followUpDate: Date;
-    activityStatus: string;
-    transactionNumber: string;
-  }) => {
+  }: any) => {
     try {
-      /* ---------------- FETCH USER DATA FIRST ---------------- */
       const userRes = await getUserDataById({
         userId: String(authState?.userId),
         token: String(authState?.token),
@@ -70,11 +73,10 @@ export default function AddNoteScreen() {
       const lastName = userRes?.data?.lastName || "";
       const activityByName = `${firstName} ${lastName}`.trim();
 
-      /* ---------------- BUILD ACTIVITY DESCRIPTION ---------------- */
       const formattedDate = followUpDate.toLocaleDateString();
+
       const activityDescription = `${noteType} note added: "${noteDescription}" with follow-up date: ${formattedDate}`;
 
-      /* ---------------- ACTIVITY PAYLOAD ---------------- */
       const payload = {
         activityTime: new Date().toISOString(),
         activityInteractionId: interactionId,
@@ -88,47 +90,36 @@ export default function AddNoteScreen() {
         activityRelatedToName: transactionNumber,
       };
 
-      console.log("📤 Note Activity Payload:", payload);
-
-      const response = await addInteractionActivityHistory({
+      await addInteractionActivityHistory({
         token: String(authState?.token),
         csrfToken: String(authState?.antiforgeryToken),
         body: payload,
       });
-
-      console.log("✅ Note Activity Response:", response);
     } catch (err) {
-      console.error("❌ Note Activity save error:", err);
+      console.log("Activity error", err);
     }
-  };
-
-  /* ---------- TOMORROW ONLY ---------- */
-  const getTomorrow = () => {
-    const date = new Date();
-    date.setDate(date.getDate() + 1);
-    date.setHours(0, 0, 0, 0);
-    return date;
   };
 
   /* ---------- SUBMIT ---------- */
   const submitNote = async () => {
-    if (!noteType) {
-      Alert.alert("Validation", "Please select note type");
-      return;
-    }
-
     if (!description.trim()) {
-      Alert.alert("Validation", "Please enter description");
+      Alert.alert(
+        t("common.validation"),
+        t("notes.enterDescription")
+      );
       return;
     }
 
     if (!followUpDate) {
-      Alert.alert("Validation", "Please select follow-up date");
+      Alert.alert(
+        t("common.validation"),
+        t("notes.selectFollowUpDate")
+      );
       return;
     }
 
     if (!caseId) {
-      Alert.alert("Error", "TaskID not found");
+      Alert.alert(t("common.error"), t("notes.caseNotFound"));
       return;
     }
 
@@ -137,8 +128,8 @@ export default function AddNoteScreen() {
     try {
       const payload = {
         relatedTo: "CAS",
-        relatedToId: caseId ?? 0,
-        relatedToName: transactionNumber ?? "",
+        relatedToId: caseId,
+        relatedToName: transactionNumber,
         noteType: noteType.toLowerCase(),
         noteDesc: description,
         createdBy: String(authState.userId),
@@ -153,48 +144,36 @@ export default function AddNoteScreen() {
         },
       });
 
-      // Save activity history after successful note addition
       await saveActivity({
-        interactionId: Number(caseId),
-        noteType: noteType,
+        interactionId: caseId,
+        noteType,
         noteDescription: description,
-        followUpDate: followUpDate,
+        followUpDate,
         activityStatus: "Busy",
-        transactionNumber: transactionNumber,
+        transactionNumber,
       });
 
-      Alert.alert("Success", "Note added successfully");
+      Alert.alert(t("common.success"), t("notes.noteAdded"));
       router.back();
     } catch (error: any) {
-      console.log("❌ Note addition error:", error);
-
-      const status = error?.response?.status;
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        "Unable to add note. Please try again.";
+        t("common.somethingWentWrong");
 
-      if (status === 401) {
-        Alert.alert("Session Expired", "Please login again.", [
-          {
-            text: "OK",
-            onPress: () => router.replace("/login"),
-          },
-        ]);
-        return;
-      }
-
-      Alert.alert("Error", message);
+      Alert.alert(t("common.error"), message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <BodyLayout type="screen">
+    <BodyLayout type="screen" screenName={t("notes.addNote") || "Add Note"}>
       <View style={styles.container}>
-        {/* ---------- FOLLOW UP DATE ---------- */}
-        <Text style={styles.label}>Next Follow-up Date</Text>
+        {/* FOLLOW UP DATE */}
+        <Text style={styles.label}>
+          {t("notes.followUpDate") || "Next Follow-up Date"}
+        </Text>
 
         <TouchableOpacity
           style={styles.dropdown}
@@ -205,7 +184,7 @@ export default function AddNoteScreen() {
           >
             {followUpDate
               ? followUpDate.toDateString()
-              : "Select follow-up date"}
+              : t("notes.selectDate")}
           </Text>
 
           <Ionicons
@@ -215,15 +194,19 @@ export default function AddNoteScreen() {
           />
         </TouchableOpacity>
 
-        {/* ---------- NOTE TYPE ---------- */}
-        <Text style={[styles.label, { marginTop: 16 }]}>Note Type</Text>
+        {/* NOTE TYPE */}
+        <Text style={[styles.label, { marginTop: 16 }]}>
+          {t("notes.noteType")}
+        </Text>
 
         <TouchableOpacity
           style={styles.dropdown}
           onPress={() => setShowSheet(true)}
         >
-          <Text style={noteType ? styles.textPrimary : styles.textSecondary}>
-            {noteType || "Select note type"}
+          <Text style={styles.textPrimary}>
+            {noteType === "PUBLIC"
+              ? t("notes.publicNote")
+              : t("notes.privateNote")}
           </Text>
 
           <Ionicons
@@ -233,37 +216,46 @@ export default function AddNoteScreen() {
           />
         </TouchableOpacity>
 
-        {/* ---------- DESCRIPTION ---------- */}
-        <Text style={[styles.label, { marginTop: 20 }]}>Description</Text>
+        {/* DESCRIPTION */}
+        <Text style={[styles.label, { marginTop: 20 }]}>
+          {t("notes.description")}
+        </Text>
 
         <TextInput
           multiline
           value={description}
           onChangeText={setDescription}
-          placeholder="Write note description..."
+          placeholder={t("notes.descriptionPlaceholder")}
           placeholderTextColor={theme.colors.colorTextSecondary}
           style={styles.textArea}
         />
 
-        {/* ---------- SAVE BUTTON ---------- */}
+        {/* SAVE BUTTON */}
         <TouchableOpacity
-          style={[styles.saveButton, loading && { opacity: 0.6 }]}
+          style={[
+            styles.saveButton,
+            { backgroundColor: theme.colors.btnPrimaryBg },
+          ]}
           onPress={submitNote}
-          disabled={loading}
         >
-          <Text style={styles.saveText}>
-            {loading ? "Adding Note..." : "Save Note"}
+          <Text
+            style={[
+              styles.saveText,
+              { color: theme.colors.btnPrimaryText },
+            ]}
+          >
+            {loading ? t("notes.addingNote") : t("notes.saveNote")}
           </Text>
         </TouchableOpacity>
       </View>
 
-      {/* ---------- DATE PICKER ---------- */}
+      {/* DATE PICKER */}
       {showDatePicker && (
         <DateTimePicker
           value={followUpDate ?? getTomorrow()}
           mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
           minimumDate={getTomorrow()}
+          display={Platform.OS === "ios" ? "spinner" : "default"}
           onChange={(event, selectedDate) => {
             setShowDatePicker(false);
             if (selectedDate) setFollowUpDate(selectedDate);
@@ -271,12 +263,14 @@ export default function AddNoteScreen() {
         />
       )}
 
-      {/* ---------- NOTE TYPE BOTTOM SHEET ---------- */}
+      {/* NOTE TYPE SHEET */}
       <Modal transparent visible={showSheet} animationType="slide">
         <Pressable style={styles.overlay} onPress={() => setShowSheet(false)} />
 
         <View style={styles.sheet}>
-          <Text style={styles.sheetTitle}>Select Note Type</Text>
+          <Text style={styles.sheetTitle}>
+            {t("notes.selectNoteType")}
+          </Text>
 
           {NOTE_TYPES.map((type) => (
             <TouchableOpacity
@@ -287,7 +281,11 @@ export default function AddNoteScreen() {
                 setShowSheet(false);
               }}
             >
-              <Text style={styles.textPrimary}>{type}</Text>
+              <Text style={styles.textPrimary}>
+                {type === "PUBLIC"
+                  ? t("notes.publicNote")
+                  : t("notes.privateNote")}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -296,13 +294,13 @@ export default function AddNoteScreen() {
   );
 }
 
-/* ---------- THEMED STYLES ---------- */
+/* ---------- STYLES ---------- */
 const createStyles = (theme: any) =>
   StyleSheet.create({
     container: {
       flex: 1,
       padding: 16,
-      backgroundColor: theme.colors.colorBgPage,
+      backgroundColor: theme.colors.background,
     },
 
     label: {
@@ -320,7 +318,7 @@ const createStyles = (theme: any) =>
       justifyContent: "space-between",
       alignItems: "center",
       backgroundColor: theme.colors.colorBgSurface,
-      borderColor: theme.colors.navDivider,
+      borderColor: theme.colors.border,
     },
 
     textPrimary: {
@@ -341,7 +339,7 @@ const createStyles = (theme: any) =>
       textAlignVertical: "top",
       fontSize: 14,
       backgroundColor: theme.colors.colorBgSurface,
-      borderColor: theme.colors.navDivider,
+      borderColor: theme.colors.border,
       color: theme.colors.colorTextPrimary,
     },
 
@@ -350,15 +348,12 @@ const createStyles = (theme: any) =>
       paddingVertical: 14,
       borderRadius: 12,
       alignItems: "center",
-      backgroundColor: theme.colors.colorPrimary600,
     },
 
     saveText: {
-      color: theme.colors.colorBgSurface,
       fontWeight: "600",
     },
 
-    /* Bottom Sheet */
     overlay: {
       flex: 1,
       backgroundColor: "rgba(0,0,0,0.4)",

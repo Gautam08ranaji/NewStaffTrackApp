@@ -1,675 +1,568 @@
 {
-  "LanguageScreen": {
-    "title": "Choose Language",
-    "subtitle": "Select the language you are comfortable with",
-    "continue": "Continue",
-    "loading": "Saving..."
+  "common": {
+    "user": "User",
+    "unknownError": "Unknown error",
+    "noData": "No Data",
+    "loading": "Loading chart...",
+    "swipeToSeeMore": "← Swipe to see more →",
+    "locale": "en",
+    "ok": "OK",
+    "optional": "Optional",
+    "update": "Update",
+    "error": "Error",
+    "success": "Success",
+    "validationError": "Validation Error",
+    "sessionExpired": "Session Expired",
+    "pleaseLoginAgain": "Please login again.",
+    "somethingWentWrong": "Something went wrong. Please try again.",
+    "networkError": "Network Error",
+    "checkInternet": "Please check your internet connection and try again.",
+    "noDescription": "No description",
+    "loadingMore": "Loading more...",
+    "applying": "Applying...","cancel": "Cancel",
+    "remove": "Remove",
+    "clear": "Clear Search",
+    "unknown": "Unknown",
+    "permissionRequired": "Permission Required"
+    
   },
-  "OnboardingScreen": {
-    "title1": "National Senior Citizen",
-    "title2": "Support Center",
-    "chooseLanguage": "Choose Language"
-  },
-  "login": {
-    "title": "Welcome Back",
-    "subtitle": "Login to continue to your account",
-
-    "email": "Email Address",
-    "password": "Password",
-
-    "login": "Login",
-    "loggingIn": "Logging in...",
-
-    "forgotPassword": "Forgot password?",
-
-    "errorTitle": "Login Error",
-
+  "dashboard": {
+    "attendance": "Attendance",
+    "overview": "Overview",
+    "kpi": {
+      "attendance": "Attendance",
+      "completionRate": "Completion Rate"
+    },
+    "cards": {
+      "open": "Open",
+      "inProgress": "In-Progress",
+      "total": "Total",
+      "closed": "Closed"
+    },
+    "charts": {
+      "daily": {
+        "title": "Daily Performance",
+        "noData": "No daily performance data available"
+      },
+      "monthly": {
+        "title": "Monthly Performance",
+        "noData": "No monthly performance data available"
+      }
+    },
+    "stats": {
+      "totalOpen": "Total Open",
+      "totalInProgress": "Total In Progress",
+      "totalClosed": "Total Closed"
+    },
     "errors": {
-      "invalidEmail": "Please enter a valid email address",
-      "invalidPassword": "Password must be at least 8 characters, start with a capital letter, and include at least one number and one special symbol",
-      "loginFailed": "Invalid email or password",
-      "generic": "Something went wrong. Please try again."
+      "userFetchFailed": "Failed to fetch user data",
+      "countFetchFailed": "Failed to fetch dashboard counts",
+      "dayPerformanceFailed": "Failed to fetch day performance",
+      "monthPerformanceFailed": "Failed to fetch month performance"
     }
   },
-  "onboarding": {
-    "step1Title": "Receive new Tasks instantly",
-    "step1Subtitle": "View all newly assigned Tasks here.",
-
-    "step2Title": "Navigate to location easily",
-    "step2Subtitle": "Use GPS to navigate directly to the citizen's location.",
-
-    "step3Title": "Update Task status",
-    "step3Subtitle": "Complete the Task by adding photos, notes and evidence.",
-
-    "prev": "Previous",
-    "next": "Next",
-    "gotoDashboard": "Go to Dashboard"
-  },
-  "otp": {
-    "enterOtp": "Enter OTP",
-    "sentTo": "We have sent a 6-digit OTP to",
-    "verify": "Verify",
-    "resendAfter": "seconds left",
-    "resendOtp": "Resend OTP"
-  },
-  "profileSteps": {
-    "step1Title": "Officer Details",
-    "fullName": "Full Name",
-    "enterFullName": "Enter your full name",
-    "position": "Position",
-    "empCode": "Employee Code",
-
-    "step2Title": "Your Work Area",
-    "step2Description": "Choose your work area so appropriate Tasks can be assigned.",
-    "state": "State",
-    "enterState": "Enter state",
-    "district": "District",
-    "enterDistrict": "Enter district",
-    "block": "Block / Police Station",
-    "enterBlock": "Enter block / police station",
-    "teamLead": "Team Leader Name",
-
-    "step3Title": "Contact Details",
-    "mobile": "Mobile Number",
-    "enterMobile": "Enter mobile number",
-    "email": "Email (optional)",
-    "enterEmail": "Enter email",
-
-    "mobileRequired": "Please enter mobile number",
-    "mobileInvalid": "Enter a valid 10-digit mobile number",
-    "emailInvalid": "Enter valid email",
-
-    "next": "Next",
-    "submit": "Submit"
-  },
-  "button": {
-    "back": "Back",
-    "continue": "Continue"
-  },
-  "profileSuccess": {
-    "welcome": ", welcome",
-    "message": "All details have been successfully collected, and we are preparing them for use."
-  },
-  "welcome": {
-    "title": "Welcome, Field Response Officer",
-    "subtitle": "This app is used to view, update, and provide assistance for the Tasks assigned to you.",
-    "login": "Login",
-    "aboutApp": "Learn about the app"
-  },
-  "home": {
-    "TasksOverview": "TaskOverview",
-
-    "newTasks": "New Tasks",
-    "approvedTasks": "Approved Tasks",
-    "onTheWay": "On The Way",
-    "working": "In Progress",
-    "followup": "Follow-Up",
-    "closedTasks": "Closed Tasks",
-
-    "todayDuty": "Today's Duty",
-    "totalTasks": "Total Tasks",
-    "highPriority": "High Priority Tasks:",
-    "quickActions": "Quick Actions",
-    "addNewCase": "Add New Task",
-    "viewMap": "View Map"
-  },
-  "escalation": {
-    "screenTitle": "Send Escalation",
-
-    "warningText": "⚠️ Use escalation only for serious Tasks. Your supervisor will be notified immediately.",
-
-    "chooseReason": "Select Reason",
-    "reasonPlaceholder": "Select reason",
-    "notesLabel": "Add Notes",
-    "notesPlaceholder": "Write here...",
-    "uploadLabel": "Add Photo / Document",
-    "uploadText": "Upload File",
-    "fileSelected": "File Selected ✓",
-
-    "camera": "📷 Camera",
-    "gallery": "🖼️ Gallery",
-    "cancel": "Cancel",
-
-    "submitEscalation": "Submit Escalation",
-
-    "reason1": "Emergency situation",
-    "reason2": "Reason unclear",
-    "reason3": "No cooperation",
-    "reason4": "Delay in treatment"
-  },
-  "notifications": {
+   "attendanceCard": {
+    "punchedIn": "Punched In",
+    "punchedOut": "Punched Out",
+    "punchIn": "Punch In",
+    "punchOut": "Punch Out",
+    "workingTime": "Working Time",
+    "target": "Target",
+    "punchInSuccess": "Punch In Successful",
+    "punchOutSuccess": "Punch Out Successful",
+    "startedAt": "Started at",
+    "worked": "Worked",
+    "failed": "Attendance Failed",
+    "tryAgain": "Please try again",
+    "error": "Error",
+    "unableToLoad": "Unable to load attendance",
+    "sessionExpired": "Session Expired",
+    "pleaseLoginAgain": "Please login again"
+  }, "notifications": {
     "screenTitle": "Notifications",
-
-    "newCaseAssigned": "A new Task has been assigned to you",
-    "ticketUpdated": "Ticket has been updated",
-    "supervisorComment": "Supervisor added a comment",
-
-    "ticketNumber": "Ticket Number:",
-    "newMessage": "Senior citizen sent a new message",
-    "newComment": "New comment",
-
-    "minAgo": "minutes ago",
-    "hourAgo": "hours ago"
-  },
-  "Tasks": {
+    "noNotifications": "No notifications available",
+    "ticketNumber": "Ticket #",
+    "minAgo": "min ago",
+    "hourAgo": "hour ago",
+    "hoursAgo": "hours ago",
+    "dayAgo": "day ago",
+    "daysAgo": "days ago"
+  },"tasks": {
     "screenTitle": "Tasks",
-
-    "tabNew": "New",
-    "tabApproved": "Approved",
-    "tabOnWay": "On The Way",
-    "tabWorking": "In Progress",
-    "tabFollowup": "Follow-Up",
-    "tabClosed": "Closed",
-
-    "noTasks": "No Tasks available",
-
-    "age": "Age",
+    "tabs": {
+      "all": "All",
+      "open": "Open",
+      "inProgress": "In-progress",
+      "closed": "Closed"
+    },
+    "taskNo": "Task No",
+    "unnamedCase": "Unnamed Case",
     "category": "Category",
-    "ticket": "TaskNo",
-    "away": "away",
-    "viewCase": "View Task",
-
-    "timeMinutesAgo": "minutes ago",
-    "timeHoursAgo": "hours ago"
-  },
-  "caseDetail": {
-    "screenTitle": "Ticket No: {{ticket}}",
-
-    "elderDetails": "Elder Details",
+    "priority": "Priority",
+    "viewTask": "View Task",
+    "noTasks": "No tasks found",
+    "noTasksFound": "No",
+    "tasksFound": "tasks found",
+    "newTaskAssigned": "New Task Assigned",
+    "ticketNumber": "Ticket Number:",
+    "autoAssigned": "Auto Assigned",
+    "taskAccepted": "Task Accepted",
+    "taskDeclined": "Task Declined"
+  },"caseDetail": {
+    "screenTitle": "Task Details",
+    "sellerDetails": "Seller Details",
     "name": "Name",
     "age": "Age",
     "gender": "Gender",
-    "phone": "Phone Number",
-    "emergency": "Emergency Contact",
-
-    "complaintInfo": "Complaint Info",
+    "phone": "Phone",
+    "emergency": "Emergency",
+    "address": "Address",
+    "complaintInfo": "Complaint Information",
     "category": "Category",
     "details": "Details",
     "attachments": "Attachments",
-
-    "location": "Location",
-    "address": "Address",
-    "startNavigation": "Start Navigation",
-
+    "notes": "Notes",
+    "noAttachments": "No attachments yet",
+    "noNotes": "No notes yet. Tap to add a note",
+    "publicNote": "Public Note",
+    "privateNote": "Private Note",
+    "followUp": "Follow-up",
+    "viewAllNotes": "View all",
+    "quickActions": "Quick Actions",
+    "actions": {
+      "updateStatus": "Update Status",
+      "addAttachments": "Add Attachments",
+      "addNote": "Add Note",
+      "addVoice": "Add Voice"
+    },
     "timeline": "Timeline",
-
-    "actions": "Actions",
-    "updateStatus": "Update Status",
-    "addPhoto": "Add Photo/Video",
-    "addNote": "Add Note",
-    "addVoice": "Add Voice Note",
-    "scheduleFollowup": "Schedule Follow-Up",
-    "closeCase": "Close Task",
-
-    "genderMale": "Male",
-    "years": "years",
-
     "steps": {
-      "registered": "Complaint Registered",
-      "assigned": "Assigned to FRO",
-      "approved": "Approved",
-      "onway": "On The Way",
-      "arrived": "Arrived on Location",
-      "working": "Work in Progress"
-    }
+      "open": "Open",
+      "inProgress": "In-Progress",
+      "closed": "Closed"
+    },
+    "taskMetadata": "Task Metadata",
+    "priority": "Priority",
+    "status": "Status",
+    "subStatus": "Sub Status",
+    "source": "Source",
+    "team": "Team",
+    "assignedTo": "Assigned To",
+    "callback": "Callback",
+    "location": "Location",
+    "fullMap": "Full Map",
+    "startNavigation": "Start Navigation",
+    "noData": "No task data available"
+  }, "updateStatus": {
+    "title": "Update Task",
+    "loadingTask": "Loading Task data...",
+    "loadFailed": "Failed to load case data",
+    "noData": "No case data found",
+    "statusLoadFailed": "Failed to load status",
+    "subStatusLoadFailed": "Failed to load sub status",
+    "selectTaskStatus": "Select TaskStatus",
+    "selectSubStatus": "Select Sub Status",
+    "selectStatus": "Please select a case status",
+    "selectStatusFirst": "Please select TaskStatus first",
+    "comment": "Comment",
+    "enterClosingRemarks": "Enter closing remarks...",
+    "commentRequired": "Please enter comment for closed status",
+    "updateSuccess": "Task Updated Successfully",
+    "updateFailed": "Update Failed",
+    "statusChanged": "TaskStatus changed from",
+    "subStatusChanged": "Sub Status changed from",
+    "to": "to",
+    "commentRemoved": "Comment removed",
+    "commentAdded": "Comment added",
+    "commentUpdated": "Comment updated from",
+    "noChanges": "No changes were made",
+    "task": "Task",
+    "unknownLocation": "Unknown location"
+  },"updateDocument": {
+    "screenTitle": "Upload Document",
+    "description": "Description",
+    "enterDescription": "Enter document description",
+    "attachDocument": "Attach Document",
+    "camera": "Camera",
+    "gallery": "Gallery",
+    "pdf": "PDF",
+    "cameraPermission": "Camera permission required",
+    "cameraImage": "Camera_Image.jpg",
+    "galleryImage": "Gallery_Image.jpg",
+    "missingFile": "Missing file or case ID",
+    "uploadButton": "Upload Document",
+    "uploadSuccess": "Uploaded successfully",
+    "uploadFailed": "Upload failed",
+    "activityDescription": "Document uploaded: \"{{documentName}}\" - {{documentDescription}} (Type: {{documentType}})"
   },
-  "navigation": {
-    "screenTitle": "Go to Location",
-    "distance": "Distance",
-    "eta": "Estimated Time",
-    "address": "Address",
-    "openMaps": "Open in Google Maps",
-    "onTheWay": "I am on the way",
-
-    "name": "Ramlal Sharma",
-    "distanceValue": "2.3 km",
-    "etaValue": "8 minutes",
-    "fullAddress": "123, Gandhi Nagar, Sector 5, Mumbai, Maharashtra - 400001"
-  },
-  "statusUpdate": {
-    "screenTitle": "Update Status",
-
-    "step1Title": "TaskApproved",
-    "step1Subtitle": "Accept the Task and continue",
-    "acceptCase": "Accept Task",
-
-    "step2Title": "I'm on the way",
-    "step2Subtitle": "Your location is being shared.",
-    "locationTracking": "📍 Your live location is being tracked",
-    "updateStatus": "Update Status",
-
-    "step3Title": "Have you reached the location?",
-    "step3Subtitle": "Please confirm and start work.",
-    "step3Yes": "Yes, reached",
-    "step3No": "No, could not find address",
-
-    "step4Title": "Did you contact the senior citizen?",
-    "step4Yes": "Yes",
-    "step4No": "No",
-
-    "step5Title": "Details of work done",
-    "notesPlaceholder": "Write here...",
-    "uploadPhoto": "Photo",
-    "uploadVoice": "Voice Note",
-    "saveAndUpdate": "Save & Update"
-  },
-  "addPhoto": {
-    "screenTitle": "Add Photo",
-    "openCamera": "Open Camera",
-    "chooseGallery": "Choose from Gallery",
-    "selectedPhoto": "Selected Photo",
-    "savePhoto": "Save Photo"
-  },
-  "voiceNote": {
-    "screenTitle": "Record Voice Note",
+    "voiceNote": {
+    "screenTitle": "Voice Note",
     "recording": "Recording...",
     "ready": "Ready to record",
     "start": "Start Recording",
     "stop": "Stop Recording",
-    "savedNote": "Recorded Voice Note",
     "play": "Play",
-    "pause": "Pause"
+    "pause": "Pause",
+    "recordedVoiceNote": "Recorded Voice Note"
   },
-  "availability": {
-    "screenTitle": "Reporting",
+  "documents": {
+    "screenTitle": "Documents",
+    "addDocument": "Add Document",
+    "noDocuments": "No documents found",
+    "documentType": {
+      "pdf": "PDF Document",
+      "image": "Image"
+    }
+},  "fullMap": {
+    "screenTitle": "Location Map",
+    "location": "Location"
+  },
+  "notes": {
+    "history": "Notes History",
+    "noNotes": "No notes found",
+    "taskNo": "Task No",
+    "screenTitle": "Notes",
+    "addNote": "Add Note",
+    "addNewNote": "Add New Note",
+    "noteAdded": "Note added successfully",
+    "saveNote": "Save Note",
+    "addingNote": "Adding Note...",
+    "noteType": "Note Type",
+    "publicNote": "Public Note",
+    "privateNote": "Private Note",
+    "description": "Description",
+    "descriptionPlaceholder": "Write note description...",
+    "followUpDate": "Next Follow-up Date",
+    "selectDate": "Select follow-up date",
+    "selectNoteType": "Select Note Type",
+    "enterDescription": "Please enter description",
+    "selectFollowUpDate": "Please select follow-up date"
+  },
+    "availability": {
+    "screenTitle": "Availability",
     "tabAttendance": "Attendance",
-    "tabDaily": "Daily",
-    "tabWeekly": "Weekly",
-    "tabMonthly": "Monthly"
-  },
-  "attendance": {
+    "tabLeaves": "Leaves",
+    "tabReimbursement": "Reimbursement"
+  }, "leaves": {
+    "applyLeave": "Apply Leave",
+    "type": "Type",
+    "cause": "Cause",
+    "from": "From",
+    "to": "To",
+    "selectDate": "Select date",
+    "applyButton": "Apply Leave",
+    "history": "Leave History",
+    "noHistory": "No leave history found",
+    "selectLeaveType": "Please select leave type",
+    "enterReason": "Please enter reason for leave",
+    "enterReasonPlaceholder": "Enter reason",
+    "selectFromDate": "Please select from date",
+    "selectToDate": "Please select to date",
+    "applySuccess": "Leave Applied Successfully",
+    "applyFailed": "Failed to apply leave",
+    "fetchFailed": "Failed to fetch leave history",
+    "halfDay": "Half Day Application",
+    "oneDay": "1 Day Application",
+    "multiDay": "{{days}} Days Application",
+    "types": {
+      "casual": "Casual",
+      "sick": "Sick",
+      "earned": "Earned"
+    },
+    "filters": {
+      "all": "All",
+      "awaiting": "Awaiting",
+      "approved": "Approved",
+      "declined": "Declined"
+    },
+    "status": {
+      "awaiting": "Awaiting",
+      "approved": "Approved",
+      "declined": "Declined"
+    },
+    "balance": {
+      "sick": "Sick",
+      "earnedleaves": "Earned Leaves",
+      "casualleaves": "Casual Leaves"
+    }
+  },  "attendance": {
     "todayAttendanceTitle": "Today's Attendance",
     "startTimeLabel": "Start Time",
     "endTimeLabel": "End Time",
     "totalTimeLabel": "Total Time",
     "startDutyButton": "Start Duty",
     "endDutyButton": "End Duty",
-    "hoursSuffix": "hours",
-
+    "dutyStarted": "Duty Started",
+    "dutyEnded": "Duty Ended Successfully",
+    "failed": "Attendance failed",
+    "unableToLoad": "Unable to fetch attendance. Please try again.",
+    "hours": "hrs",
     "tabs": {
       "all": "All",
-      "Present": "Present",
-      "Absent": "Absent",
-      "Leave": "Leave"
+      "present": "Present",
+      "absent": "Absent",
+      "leave": "Leave"
     },
-
-    "history": {
-      "presentStatus": "Present",
-      "absentStatus": "Absent",
-      "leaveStatus": "Leave",
-      "checkInOutLabel": "Check-in / Check-out",
-      "totalWorkingHoursLabel": "Total Working Hours",
-      "toLabel": "To"
+    "status": {
+      "present": "Present",
+      "absent": "Absent",
+      "leave": "Leave"
     }
   },
-
-  "dailyReport": {
-    "title": "Daily Report",
-    "totalTasks": "Total Tasks",
-    "solvedTasks": "Solved Tasks",
-    "followUp": "Follow Up",
-    "placeVisited": "Places Visited"
-  },
-  "weeklyReport": {
-    "title": "Weekly Report",
-    "totalTasks": "Total Tasks",
-    "solvedTasks": "Solved Tasks",
-    "days": {
-      "mon": "Mon",
-      "tue": "Tue",
-      "wed": "Wed",
-      "thu": "Thu",
-      "fri": "Fri",
-      "sat": "Sat",
-      "sun": "Sun"
+   "reimbursement": {
+    "title": "Reimbursement Request",
+    "taskNumber": "Task Number",
+    "selectTask": "Select Task",
+    "amount": "Amount",
+    "enterAmount": "Enter amount",
+    "attachments": "Attachments",
+    "attachmentHint": "Upload photos, PDF, or documents (Max 10MB each)",
+    "addAttachment": "Add Attachment",
+    "remarks": "Remarks",
+    "remarksPlaceholder": "Enter any additional remarks...",
+    "submitButton": "Submit Reimbursement",
+    "submitting": "Submitting...",
+    "summary": "Summary",
+    "transactionNo": "Transaction No",
+    "contact": "Contact",
+    "category": "Category",
+    "status": "Status",
+    "files": "file(s)",
+    "history": "Reimbursement History",
+    "noReimbursements": "No Reimbursements Yet",
+    "emptyMessage": "Your submitted reimbursements will appear here",
+    "loadingList": "Loading reimbursements...",
+    "taskLoadFailed": "Failed to load tasks. Please try again.",
+    "listLoadFailed": "Failed to load reimbursement list",
+    "attachmentRequired": "Please add at least one attachment",
+    "taskRequired": "Please select a task number",
+    "priceRequired": "Please enter a valid price amount",
+    "submitSuccess": "Reimbursement submitted successfully",
+    "submitFailed": "Failed to submit reimbursement. Please try again.",
+    "fileAdded": "File Added",
+    "fileAddedMessage": "{{fileName}} has been attached successfully.",
+    "filePickFailed": "Failed to pick file. Please try again.",
+    "imageAdded": "Image Added",
+    "imageAddedMessage": "Image has been attached successfully.",
+    "imagePickFailed": "Failed to pick image. Please try again.",
+    "photoAdded": "Photo Added",
+    "photoAddedMessage": "Photo has been captured and attached successfully.",
+    "cameraCaptureFailed": "Failed to capture image. Please try again.",
+    "galleryPermission": "Please grant camera roll permissions to upload images.",
+    "cameraPermission": "Please grant camera permissions to take photos.",
+    "removeAttachment": "Remove Attachment",
+    "removeConfirmation": "Are you sure you want to remove this attachment?",
+    "defaultRemarks": "Reimbursement request",
+    "searchPlaceholder": "Search by transaction, contact, category...",
+    "noSearchResults": "No tasks match your search",
+    "noTasks": "No tasks available",
+    "chooseSource": "Choose a source to upload from",
+    "camera": "Camera",
+    "takePhoto": "Take a photo",
+    "gallery": "Gallery",
+    "chooseFromLibrary": "Choose from library",
+    "documents": "Documents",
+    "documentTypes": "PDF, DOC, etc.",
+    "recentFiles": "Recent Files",
+    "details": "Reimbursement Details",
+    "createdDate": "Created Date",
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
     }
-  },
-  "monthlyReport": {
-    "title": "Monthly Report",
-    "totalTasks": "Total Tasks",
-    "solvedTasks": "Solved Tasks",
-    "followUp": "Follow Up",
-    "placeVisited": "Places Visited"
-  },
-  "profile": {
-    "name": "Rajesh Kumar",
-    "code": "FRO-14567-001",
-    "role": "FRO - Field Response Officer",
-
-    "menuOfficerDetails": "Officer Details",
-    "menuWorkArea": "Work Area",
+  },"profile": {
+    "menuPerformance": "My Performance",
     "menuLanguage": "Language",
     "menuSettings": "Settings",
     "menuChangePassword": "Change Password",
-
     "logout": "Logout",
-    "logoutTitle": "Do you want to logout?",
-    "logoutDescription": "You will be logged out from your account.",
-    "logoutConfirm": "Yes, logout",
-    "logoutCancel": "Cancel"
-  },
-  "officerDetails": {
+    "logoutTitle": "Logout",
+    "logoutDescription": "Are you sure you want to logout?",
+    "logoutConfirm": "Yes, Logout",
+    "logoutCancel": "Cancel",
+    "logoutFailed": "Logout Failed",
+    "availability": {
+      "title": "Availability",
+      "available": "Available",
+      "busy": "Busy",
+      "inMeeting": "In Meeting",
+      "unavailable": "Unavailable"
+    }}, "officerDetails": {
     "screenTitle": "Officer Details",
-    "name": "Name",
-    "nameValue": "Rajesh Kumar",
-    "employeeCode": "Employee Code",
-    "employeeCodeValue": "FRO-14567-001",
-    "mobile": "Mobile Number",
-    "mobileValue": "+91-9876543210",
+    "firstName": "First Name",
+    "enterFirstName": "Enter first name",
+    "lastName": "Last Name",
+    "enterLastName": "Enter last name",
+    "phone": "Phone",
+    "enterPhone": "Enter phone number",
     "email": "Email",
-    "emailValue": "rajesh.kumar@example.com",
-    "save": "Save"
-  },
-  "locationDetails": {
-    "screenTitle": "Work Area",
+    "enterEmail": "Enter email address",
+    "gender": "Gender",
+    "selectGender": "Select gender",
     "state": "State",
-    "district": "District",
-    "block": "Block / Police Station",
-    "blockPlaceholder": "Enter Block / Police Station",
-    "teamLeadName": "Team Leader Name",
-    "teamLeadPlaceholder": "Enter Team Leader Name",
-    "save": "Save",
-    "defaultName": "Rajesh Kumar",
-
-    "states": {
-      "up": "Uttar Pradesh",
-      "br": "Bihar",
-      "rj": "Rajasthan"
-    },
-
-    "districts": {
-      "lucknow": "Lucknow",
-      "kanpur": "Kanpur",
-      "varanasi": "Varanasi"
+    "selectState": "Select state",
+    "city": "City",
+    "selectCity": "Select city",
+    "pincode": "Pincode",
+    "enterPincode": "Enter pincode",
+    "address": "Address",
+    "enterAddress": "Enter address",
+    "choosePhoto": "Choose Profile Photo",
+    "camera": "Camera",
+    "cameraDescription": "Take a photo using camera",
+    "gallery": "Gallery",
+    "galleryDescription": "Choose from gallery",
+    "errors": {
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "phoneInvalid": "Phone must be 10 digits",
+      "emailInvalid": "Invalid email address",
+      "pincodeInvalid": "Pincode must be 6 digits",
+      "stateRequired": "State is required",
+      "cityRequired": "City is required"
     }
-  },
-  "settings": {
+  },"changePassword": {
+    "screenTitle": "Change Password",
+    "oldPassword": "Old Password",
+    "enterOldPassword": "Enter old password",
+    "newPassword": "New Password",
+    "enterNewPassword": "Enter new password",
+    "confirmPassword": "Confirm Password",
+    "enterConfirmPassword": "Confirm new password",
+    "save": "Change Password",
+    "successMessage": "Password changed successfully",
+    "errorMessage": "Failed to change password. Please try again.",
+    "errors": {
+      "oldRequired": "Old password is required",
+      "newRequired": "New password is required",
+      "sameAsOld": "New password cannot be same as old password",
+      "passwordRequirements": "Password must be at least 8 characters, include 1 uppercase, 1 number and 1 special character",
+      "confirmRequired": "Confirm password is required",
+      "passwordMismatch": "Passwords do not match"
+    }},  "overview": {
+    "performanceSummary": "My Performance Summary",
+    "totalTasks": "Total Tasks",
+    "completed": "Completed",
+    "pending": "Pending",
+    "resolutionRate": "Resolution Rate",
+    "averageTaskTime": "My Average Task Time",
+    "taskAcceptance": "Task Acceptance",
+    "arrivalTime": "Arrival Time",
+    "taskResolution": "Task Resolution",
+    "weeklyTrend": "Tasks Resolved - Weekly Trend",
+    "todayPerformance": "Today's Performance",
+    "tasksAssigned": "Tasks Assigned",
+    "tasksCompleted": "Tasks Completed",
+    "pendingTasks": "Pending Tasks",
+    "averageRating": "Average Rating",
+    "exportReport": "Export My Report (PDF)",
+    "days": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+  },"analytics": {
+    "categoryDistribution": "Task Category Distribution",
+    "statusBreakdown": "Current Status Breakdown",
+    "exportReport": "Export Report (PDF)",
+    "categories": {
+      "medical": "Medical Emergency",
+      "legal": "Legal Aid",
+      "pension": "Pension Support",
+      "food": "Food Security",
+      "housing": "Housing"
+    },
+    "status": {
+      "new": "New",
+      "assigned": "Assigned",
+      "inProgress": "In Progress",
+      "resolved": "Resolved",
+      "followup": "Follow-up",
+      "closed": "Closed"
+    }
+  },  "performance": {
+    "kpiTitle": "My Performance KPIs",
+    "exportReport": "Export My Performance Report",
+    "kpi": {
+      "resolutionRate": "Task Resolution Rate",
+      "customerRating": "Customer Rating",
+      "slaCompliance": "SLA Compliance"
+    },
+    "alerts": {
+      "title": "My Performance Alerts",
+      "count": "{{count}} Alerts",
+      "pendingTasks": "Pending Tasks",
+      "pendingDesc": "You have {{count}} tasks pending resolution",
+      "slaWarning": "SLA Warning",
+      "slaDesc": "{{count}} tasks nearing SLA deadline"
+    }
+  },"settings": {
     "screenTitle": "Settings",
-
     "notification": "Notifications",
     "locationPermission": "Location Permission",
-    "changeTheme": "Change Theme",
+    "changeTheme": "Dark Mode",
     "textSize": "Text Size",
     "textSizeSmall": "Small",
     "textSizeMedium": "Medium",
     "textSizeLarge": "Large",
     "helpSupport": "Help & Support",
-
-    "locationAlertTitle": "Turn off location",
-    "locationAlertMessage": "Open app settings to turn off location permission.",
+    "locationAlertTitle": "Location Permission",
+    "locationAlertMessage": "Location access has been disabled. You can re-enable it in system settings.",
     "locationAlertCancel": "Cancel",
     "locationAlertOpenSettings": "Open Settings"
-  },
-  "changePassword": {
-    "screenTitle": "Change Password",
-
-    "oldPassword": "Old Password",
-    "oldPasswordPlaceholder": "Enter old password",
-
-    "newPassword": "New Password",
-    "newPasswordPlaceholder": "Enter new password",
-
-    "confirmPassword": "Confirm Password",
-    "confirmPasswordPlaceholder": "Re-enter new password",
-
-    "save": "Save"
-  },
-  "info": {
-    "tabs": {
-      "all": "All",
-      "housing": "Housing",
-      "legal": "Legal",
-      "support": "Support"
-    },
-    "items": {
-      "item1": {
-        "title": "Government Support Scheme",
-        "tag": "Support",
-        "desc": "Information about government welfare support schemes available for eligible citizens."
-      },
-      "item2": {
-        "title": "Affordable Housing Program",
-        "tag": "Housing",
-        "desc": "Details about housing schemes that help people access affordable homes."
-      },
-      "item3": {
-        "title": "Free Legal Aid",
-        "tag": "Legal",
-        "desc": "Legal assistance programs provided by the government for eligible individuals."
-      },
-      "item4": {
-        "title": "Community Help Services",
-        "tag": "Support",
-        "desc": "Local community support initiatives and help services information."
-      }
+  }, "login": {
+    "title": "Welcome",
+    "subtitle": "Login to your account",
+    "email": "Email Address",
+    "password": "Password",
+    "login": "Login",
+    "loggingIn": "Logging in...",
+    "forgotPassword": "Forgot Password?",
+    "errorTitle": "Login Error",
+    "errors": {
+      "invalidEmail": "Please enter a valid email address",
+      "invalidPassword": "Password must be at least 8 characters, start with uppercase, and include one number and one special character",
+      "loginFailed": "Incorrect email or password",
+      "generic": "Something went wrong. Please try again."
     }
   },
-  "article": {
-    "title": "Government Welfare Scheme Guide",
-    "tag": "Support",
-
-    "watchVideo": "Watch Video",
-    "features": "Key Features",
-    "howToUse": "How to Use",
-    "conclusionTitle": "Conclusion",
-
-    "point1": "Provides financial assistance to eligible beneficiaries.",
-    "point2": "Easy online application process available.",
-    "point3": "Support available through government offices.",
-    "point4": "Transparent and secure system for tracking applications.",
-
-    "step1": "Check eligibility criteria before applying.",
-    "step2": "Fill out the application form with correct details.",
-    "step3": "Submit documents and track application status online.",
-
-    "conclusionText": "This scheme aims to support citizens by providing essential services, financial aid, and guidance for a better quality of life."
+  "onboarding": {
+    "step1Title": "Get New Cases Instantly",
+    "step1Subtitle": "View all new cases assigned to you here.",
+    "step2Title": "Easy Navigation to Location",
+    "step2Subtitle": "Navigate directly to the citizen's location with GPS.",
+    "step3Title": "Update Case Status",
+    "step3Subtitle": "Complete the case by adding photos, notes and evidence.",
+    "prev": "Previous",
+    "next": "Next",
+    "gotoDashboard": "Go to Dashboard"
   },
-  "detailCardScreen": {
-    "tabs": {
-      "hospitals": "Hospitals",
-      "diagnosticCentres": "Diagnostic Centres",
-      "psychiatricClinic": "Psychiatric Clinic",
-      "palliativeCare": "Palliative Care",
-      "bloodBanks": "Blood Banks",
-      "organDonationOrgs": "Organ Donation Organizations",
-      "elderHomes": "Elder Homes",
-      "dayCareCentres": "Day Care Centres",
-      "caregivers": "Caregivers",
-      "elderFriendlyProducts": "Elder-friendly Products",
-      "counsellingCentres": "Counselling Centres",
-      "ngos": "NGOs",
-      "faqs": "FAQs"
-    },
-    "allStates": "All States",
-    "allDistricts": "All Districts",
-    "selectState": "Select State",
-    "selectDistrict": "Select District",
-    "totalNationwide": "Total Nationwide",
-    "facilitiesInState": "Facilities in {{state}}",
-    "inDistrict": "In {{district}}",
-    "loading": "Loading...",
-    "open": "Open",
-    "closed": "Closed",
-    "viewDetails": "View Details",
-    "call": "Call",
-    "searchPlaceholder": "Search {{category}}...",
-    "searchFAQPlaceholder": "Search FAQs...",
-    "loadingFacilities": "Loading facilities...",
-    "loadingFAQs": "Loading FAQs...",
-    "noResults": "No results found",
-    "noFAQsFound": "No FAQs found",
-    "adjustSearch": "Try adjusting your search",
-    "distanceAway": "{{distance}} km away"
-  },  "info": {
-    "tabs": {
-      "all": "All",
-      "housing": "Housing",
-      "legal": "Legal Rights",
-      "support": "Support"
-    },
-    "viewMore": "View full details",
-    "items": {
-      "item1": {
-        "title": "New update in health benefits",
-        "tag": "Health",
-        "desc": "New discounts and assistance have been added to health schemes for senior citizens."
-      },
-      "item2": {
-        "title": "New updates in housing support",
-        "tag": "Housing",
-        "desc": "Improved housing support including rental relief and process updates."
-      },
-      "item3": {
-        "title": "Improvement in legal support",
-        "tag": "Legal Aid",
-        "desc": "Legal assistance made simpler with faster Task hearings for senior citizens."
-      },
-      "item4": {
-        "title": "New rights improvements for senior citizens",
-        "tag": "Rights",
-        "desc": "New legal and financial support rules added for senior citizens."
-      }
-    }
+  "otp": {
+    "enterOtp": "Enter OTP",
+    "sentTo": "We've sent a 6-digit OTP to",
+    "verify": "Verify",
+    "resendAfter": "seconds",
+    "resendOtp": "Resend OTP"
+  },"LanguageScreen": {
+    "title": "Choose Language",
+    "subtitle": "Select the language you're comfortable with",
+    "continue": "Continue",
+    "loading": "Saving..."
   },
-  "article": {
-    "title": "Health Benefits and Facilities for Senior Citizens",
-    "tag": "Health Benefits",
-    "watchVideo": "Watch Video:",
-    "features": "Key Features:",
-    "point1": "Medical insurance schemes tailored for senior citizens.",
-    "point2": "Free medical check-ups at government hospitals.",
-    "point3": "Free medicines for common illnesses.",
-    "point4": "Dedicated support helpline for senior citizens.",
-    "howToUse": "How to avail benefits:",
-    "step1": "Register at the nearest health center.",
-    "step2": "Get details from government hospitals.",
-    "step3": "Attend regular check-ups and follow medical advice.",
-    "conclusionTitle": "Conclusion:",
-    "conclusionText": "These government health programs aim to improve the safety and well-being of senior citizens. Regular checkups and timely support can ensure a healthier life."
-  },
-  "informationTab": {
-    "healthTitle": "Health",
-    "healthSubtitle": "Awareness, Diagnostics, Treatment",
-    "shelterTitle": "Shelter, Old Age Homes",
-    "shelterSubtitle": "Govt homes, Private homes, Admission & Eligibility",
-    "nutritionTitle": "Nutrition",
-    "nutritionSubtitle": "Nutrition for health, Diet charts, Govt nutrition programs",
-    "daycareTitle": "Day-care Centres",
-    "daycareSubtitle": "Centre list, Activities, Timing/Fees",
-    "elderProductsTitle": "Elderly-friendly Products",
-    "elderProductsSubtitle": "Mobility aids, Daily living aids, Safety aids",
-    "culturalTitle": "Cultural, Spiritual, Art",
-    "culturalSubtitle": "Cultural / Spiritual programs, Art workshops, Recreational events",
-    "companionshipTitle": "Companionship",
-    "companionshipSubtitle": "Community groups, Social groups, Volunteer companionship"
-  },
-   "hospitalScreen": {
-    "searchPlaceholder": "Search ",
-    "allStates": "All States",
-    "allDistricts": "All Districts",
-    "selectState": "Select State",
-    "selectDistrict": "Select District",
-    "totalNationwide": "Total hospitals nationwide",
-    "hospitalsInState": "Hospitals in {{state}}",
-    "inDistrict": "In {{district}}",
-    "nearestHospital": "Nearest hospital to you • 2.4 km Away",
-    "distanceAway": "{{distance}} km Away",
-    "distanceKm": "Distance: {{distance}} km Away",
-    "open": "Open",
-    "closed": "Closed",
-    "learnMore": "Learn More",
-    "viewDetails": "View Details",
-    "call": "Call",
-    "noResults": "No results found",
-    "adjustSearch": "Try adjusting your search or filters",
-    "tabs": {
-      "hospitals": "Hospitals",
-      "diagnostics": "Diagnostic Centres",
-      "treatment": "Treatment",
-      "awareness": "Awareness"
-    },
-    "awareness": {
-      "covidTitle": "COVID-19 Vaccination: What to Know",
-      "covidSummary": "Eligibility, nearest centres, documents required and safety tips.",
-      "strokeTitle": "Recognising Stroke Symptoms",
-      "strokeSummary": "FAST: Face, Arms, Speech, Time — act fast and call emergency services.",
-      "agingTitle": "Healthy Ageing Tips",
-      "agingSummary": "Simple daily habits to improve mobility, nutrition and mental health."
-    }},
-    "guidanceTab": {
-    "legalTitle": "Legal",
-    "legalSubtitle": "Personal/Family Legal Issues, Right and Protection",
-    "disputeTitle": "Dispute Resolution",
-    "disputeSubtitle": "Property/Neighbourhood disputes, Mediation process",
-    "financialTitle": "Financial",
-    "financialSubtitle": "Financial help, Investment guidance, Medical emergency",
-    "pensionTitle": "Pension-related",
-    "pensionSubtitle": "Eligibility, Application process, Pension issue resolution",
-    "schemesTitle": "Government Schemes",
-    "schemesSubtitle": "Central govt schemes, State govt schemes, How to apply"
-  },
-   "fieldInterventionTab": {
-    "directSupportTitle": "Direct Support",
-    "directSupportSubtitle": "Abused Elderly, Missing/Homeless, Engagement Opportunities",
-    "indirectSupportTitle": "Indirect Support",
-    "indirectSupportSubtitle": "Wish Fulfilment, Charity/donation, Product, Service Needs, Other"
-  },
-  "emotionalSupportTab": {
-    "anxietyTitle": "Anxiety Resolution",
-    "anxietySubtitle": "Stress handling, Panic episodes, Emotional reassurance",
-    "lifeTitle": "Life Management",
-    "lifeSubtitle": "Time/stress/anger management, Documentation prior to death",
-    "deathTitle": "Death-related Support",
-    "deathSubtitle": "Preparing for death, Last rites guidance",
-    "bereavementTitle": "Bereavement",
-    "bereavementSubtitle": "Grief support, Coping mechanisms",
-    "relationshipTitle": "Relationship Management",
-    "relationshipSubtitle": "Family conflict, Communication support"
-  },
-  "documentsTab": {
-  "tabs": {
-    "policy": "Policy",
-    "actRules": "Act & Rules",
-    "documents": "Documents",
-    "pressRelease": "Press Release"
-  },
-  "policyTitle": "National Housing Policy Guidelines",
-  "policyDesc": "Overview of housing schemes, eligibility criteria, and benefits under government initiatives.",
-
-  "actTitle": "Senior Citizen Welfare Act",
-  "actDesc": "Legal provisions, rights, and protections available for senior citizens.",
-
-  "documentsTitle": "Application & Reference Documents",
-  "documentsDesc": "Official documents, forms, and references required for public services.",
-
-  "pressTitle": "Latest Government Press Release",
-  "pressDesc": "Recent announcements and official press releases issued by the department.",
-
-  "viewDocument": "View Document"
-},
-
- "infoTabs": {
-    "scheme": "Articles",
-    "information": "Information",
-    "guidance": "Guidance",
-    "fieldIntervention": "Field Intervention",
-    "emotionalSupport": "Emotional Support",
-    "documents": "Documents"
-  },
-
-  "frl": {
-    "home": {
-      "TasksOverview": "FROs & Tasks",
-      "newTasks": "Active FROs",
-      "approvedTasks": "On Duty",
-      "onTheWay": "Off Duty",
-      "working": "Active Tasks",
-      "todayDuty": "Today's Duty",
-      "totalTasks": "Total Tasks",
-      "highPriority": "High Priority",
-      "quickActions": "Quick Actions",
-      "addNewCase": "Add New Task",
-      "viewMap": "View Map"
-    }
+  "OnboardingScreen": {
+    "title1": "FRO",
+    "title2": "Service Platform",
+    "chooseLanguage": "Choose Language"
+  },"navigation": {
+    "screenTitle": "Navigation",
+    "destination": "Destination",
+    "location": "Location",
+    "distance": "Distance",
+    "eta": "ETA",
+    "km": "km",
+    "min": "min",
+    "address": "Address",
+    "addressNotAvailable": "Address not available",
+    "openInMaps": "Open in Maps",
+    "onTheWay": "On the Way"
   }
+
+
 }

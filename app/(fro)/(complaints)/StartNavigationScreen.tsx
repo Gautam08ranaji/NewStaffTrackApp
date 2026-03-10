@@ -120,12 +120,14 @@ export default function StartNavigationScreen() {
           showsUserLocation
           showsMyLocationButton
           followsUserLocation
+          loadingEnabled={true}
+          loadingIndicatorColor={colors.colorPrimary600}
         >
           {destination && (
             <Marker
               coordinate={destination}
-              title={item?.contactName || "Destination"}
-              description={item?.completeAddress || "Location"}
+              title={item?.contactName || t("navigation.destination") || "Destination"}
+              description={item?.completeAddress || t("navigation.location") || "Location"}
             />
           )}
 
@@ -135,7 +137,7 @@ export default function StartNavigationScreen() {
               destination={destination}
               apikey={GOOGLE_MAPS_API_KEY}
               strokeWidth={5}
-              strokeColor="#1E90FF"
+              strokeColor={colors.colorPrimary600}
               mode="DRIVING"
               onReady={(result) => {
                 setDistance(result.distance);
@@ -165,11 +167,12 @@ export default function StartNavigationScreen() {
           {
             backgroundColor: colors.colorBgSurface,
             borderColor: colors.colorBorder,
+            shadowColor: colors.colorShadow,
           },
         ]}
       >
         <Text style={[styles.name, { color: colors.colorTextPrimary }]}>
-          {item?.contactName || "Unknown"}
+          {item?.contactName || t("common.unknown") || "Unknown"}
         </Text>
 
         <View style={styles.row}>
@@ -179,7 +182,7 @@ export default function StartNavigationScreen() {
             color={colors.colorTextSecondary}
           />
           <Text style={[styles.rowText, { color: colors.colorTextSecondary }]}>
-            Distance: {distance ? `${distance.toFixed(1)} km` : "--"}
+            {t("navigation.distance")}: {distance ? `${distance.toFixed(1)} ${t("navigation.km")}` : "--"}
           </Text>
         </View>
 
@@ -190,16 +193,16 @@ export default function StartNavigationScreen() {
             color={colors.colorTextSecondary}
           />
           <Text style={[styles.rowText, { color: colors.colorTextSecondary }]}>
-            ETA: {duration ? `${Math.ceil(duration)} min` : "--"}
+            {t("navigation.eta")}: {duration ? `${Math.ceil(duration)} ${t("navigation.min")}` : "--"}
           </Text>
         </View>
 
         <Text style={[styles.label, { color: colors.colorTextSecondary }]}>
-          Address:
+          {t("navigation.address")}:
         </Text>
 
         <Text style={[styles.address, { color: colors.colorTextPrimary }]}>
-          {item?.area || "Address not available"}
+          {item?.area || t("navigation.addressNotAvailable")}
         </Text>
       </View>
 
@@ -215,7 +218,7 @@ export default function StartNavigationScreen() {
           style={{ marginRight: 6 }}
         />
         <Text style={[styles.primaryBtnText, { color: colors.btnPrimaryText }]}>
-          Open in Maps
+          {t("navigation.openInMaps")}
         </Text>
       </TouchableOpacity>
 
@@ -225,13 +228,18 @@ export default function StartNavigationScreen() {
           {
             borderColor: colors.btnSecondaryBorder,
             backgroundColor: colors.colorBgSurface,
+            shadowColor: colors.colorShadow,
           },
         ]}
+        onPress={() => {
+          // Handle "On the Way" action
+          console.log("On the Way pressed");
+        }}
       >
         <Text
           style={[styles.secondaryBtnText, { color: colors.colorPrimary500 }]}
         >
-          On the Way
+          {t("navigation.onTheWay")}
         </Text>
       </TouchableOpacity>
     </BodyLayout>
@@ -253,11 +261,16 @@ const styles = StyleSheet.create({
     padding: 16,
     marginTop: 18,
     borderWidth: 1,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   name: {
     fontSize: 18,
     fontWeight: "600",
     marginBottom: 10,
+    fontFamily: 'Poppins-SemiBold',
   },
   row: {
     flexDirection: "row",
@@ -267,16 +280,19 @@ const styles = StyleSheet.create({
   rowText: {
     marginLeft: 6,
     fontSize: 14,
+    fontFamily: 'Poppins-Regular',
   },
   label: {
     marginTop: 12,
     fontSize: 13,
     fontWeight: "500",
+    fontFamily: 'Poppins-Medium',
   },
   address: {
     marginTop: 4,
     fontSize: 14,
     lineHeight: 20,
+    fontFamily: 'Poppins-Regular',
   },
   primaryBtn: {
     height: 50,
@@ -285,10 +301,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     marginTop: 22,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   primaryBtnText: {
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
   secondaryBtn: {
     height: 50,
@@ -297,9 +318,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 14,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
   },
   secondaryBtnText: {
     fontSize: 16,
     fontWeight: "600",
+    fontFamily: 'Poppins-SemiBold',
   },
 });
