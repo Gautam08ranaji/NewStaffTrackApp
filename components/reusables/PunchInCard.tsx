@@ -71,11 +71,14 @@ export default function PunchInCard() {
         ? res.data.attendanceList
         : [];
 
-      const today = formatDateOnly(new Date());
+    const today = new Date().toISOString().split("T")[0];
 
-      const todayAttendance = list.find(
-        (item: any) => item.attendancedate === today,
-      );
+const todayAttendance = list.find(
+  (item: any) => item.attendancedate === today
+);
+
+      console.log("res",res?.data);
+      
 
       if (!todayAttendance) {
         setIsPunchedIn(false);
@@ -176,11 +179,14 @@ export default function PunchInCard() {
         userId: String(authState.userId),
       };
 
-      await addAttendance({
+    const res =  await addAttendance({
         data: payload,
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
       });
+
+      console.log("punch res",res);
+      
 
       if (action === "start") {
         setPunchInTime(now);

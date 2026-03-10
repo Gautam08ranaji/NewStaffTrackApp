@@ -48,18 +48,18 @@ const formatDate = (dateStr: string) => {
   return isNaN(date.getTime())
     ? "--"
     : date.toLocaleDateString(i18n.language, {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
 };
 
 const formatTimeAMPM = (date: Date | null) =>
   date
     ? date.toLocaleTimeString(i18n.language, {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
+      hour: "2-digit",
+      minute: "2-digit",
+    })
     : "--:--";
 
 const formatMinutesToTime = (minutes: number) => {
@@ -201,6 +201,9 @@ export default function AttendanceTab() {
       const todayAttendance = findCurrentDateAttendance(list);
       setCurrentDateAttendance(todayAttendance);
 
+
+      console.log("todayAttendance", res?.data);
+
       // Initialize punch status
       initializePunchStatus(todayAttendance);
 
@@ -240,10 +243,10 @@ export default function AttendanceTab() {
   };
 
   useFocusEffect(
-  useCallback(() => {
-    loadAttendance();
-  }, [])
-);
+    useCallback(() => {
+      loadAttendance();
+    }, [])
+  );
 
   /* ================= LIVE TIMER ================= */
 
@@ -279,8 +282,8 @@ export default function AttendanceTab() {
           checkintime: action === "start" ? currentDateTime : "",
           checkouttime: action === "end" ? currentDateTime : "",
           status: "Present",
-          totalworkinghours:
-            action === "end" ? formatMinutesToTime(workedMinutes) : "00:00",
+          // totalworkinghours:
+          //   action === "end" ? formatMinutesToTime(workedMinutes) : "00:00",
           userId: String(authState.userId),
         },
         token: String(authState.token),
