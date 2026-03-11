@@ -1,7 +1,8 @@
 import { getAttendanceHistory } from "@/features/fro/addAttendance";
 import { addAttendance } from "@/features/fro/addAttendanceStatus";
 import { useLocation } from "@/hooks/LocationContext";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
@@ -48,6 +49,8 @@ export default function PunchInCard() {
   const { theme } = useTheme();
   const { t } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
+     const dispatch = useAppDispatch(); 
+  
 
   const [punchInTime, setPunchInTime] = useState<Date | null>(null);
   const [punchOutTime, setPunchOutTime] = useState<Date | null>(null);
@@ -64,95 +67,79 @@ export default function PunchInCard() {
   /* ================= LOAD ATTENDANCE ================= */
 
   const loadAttendance = async () => {
-    try {
-      setLoading(true);
+  try {
+    dispatch(showLoader());
 
-      const res = await getAttendanceHistory({
-        userId: String(authState.userId),
-        pageNumber: 1,
-        pageSize: 30,
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-      });
+    const res = await getAttendanceHistory({
+      userId: String(authState.userId),
+      pageNumber: 1,
+      pageSize: 30,
+      token: String(authState.token),
+      csrfToken: String(authState.antiforgeryToken),
+    });
 
-      const list = Array.isArray(res?.data?.attendanceList)
-        ? res.data.attendanceList
-        : [];
+    const list = Array.isArray(res?.data?.attendanceList)
+      ? res.data.attendanceList
+      : [];
 
-      const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
 
-      const todayAttendance = list.find(
-        (item: any) => item.attendancedate === today
-      );
+    const todayAttendance = list.find(
+      (item: any) => item.attendancedate === today
+    );
 
-      console.log("res", res?.data);
-
-      if (!todayAttendance) {
-        setIsPunchedIn(false);
-        setPunchInTime(null);
-        setPunchOutTime(null);
-        setWorkedMinutes(0);
-        setDutyEnded(false);
-        return;
-      }
-
-      const checkIn = todayAttendance.checkintime;
-      const checkOut = todayAttendance.checkouttime;
-
-      if (checkIn) {
-        const checkInDate = new Date(checkIn);
-        setPunchInTime(checkInDate);
-      }
-
-      if (checkOut) {
-        const checkOutDate = new Date(checkOut);
-        setPunchOutTime(checkOutDate);
-      }
-
-      const hasCheckIn = isValidDate(checkIn);
-      const hasCheckOut = isValidDate(checkOut);
-
-      if (hasCheckIn && !hasCheckOut) {
-        setIsPunchedIn(true);
-        setDutyEnded(false);
-
-        const minutes = calculateMinutes(checkIn);
-        setWorkedMinutes(minutes);
-      }
-
-      if (hasCheckIn && hasCheckOut) {
-        setIsPunchedIn(false);
-        setDutyEnded(true);
-
-        const minutes = calculateMinutes(checkIn, checkOut);
-        setWorkedMinutes(minutes);
-      }
-    } catch (err: any) {
-      const status = err?.status || err?.response?.status;
-
-      if (status === 401) {
-        Alert.alert(
-          t("attendanceCard.sessionExpired") || "Session Expired",
-          t("attendanceCard.pleaseLoginAgain") || "Please login again",
-          [
-            {
-              text: t("common.ok") || "OK",
-              onPress: () => router.replace("/login")
-            },
-          ]
-        );
-        return;
-      }
-
-      Toast.show({
-        type: "error",
-        text1: t("attendanceCard.error") || "Error",
-        text2: t("attendanceCard.unableToLoad") || "Unable to load attendance",
-      });
-    } finally {
-      setLoading(false);
+    if (!todayAttendance) {
+      setIsPunchedIn(false);
+      setPunchInTime(null);
+      setPunchOutTime(null);
+      setWorkedMinutes(0);
+      setDutyEnded(false);
+      return;
     }
-  };
+
+    const checkIn = todayAttendance.checkintime;
+    const checkOut = todayAttendance.checkouttime;
+
+    if (checkIn) setPunchInTime(new Date(checkIn));
+    if (checkOut) setPunchOutTime(new Date(checkOut));
+
+    const hasCheckIn = isValidDate(checkIn);
+    const hasCheckOut = isValidDate(checkOut);
+
+    if (hasCheckIn && !hasCheckOut) {
+      setIsPunchedIn(true);
+      setDutyEnded(false);
+      setWorkedMinutes(calculateMinutes(checkIn));
+    }
+
+    if (hasCheckIn && hasCheckOut) {
+      setIsPunchedIn(false);
+      setDutyEnded(true);
+      setWorkedMinutes(calculateMinutes(checkIn, checkOut));
+    }
+
+  } catch (err: any) {
+    const status = err?.status || err?.response?.status;
+
+    if (status === 401) {
+      Alert.alert(
+        "Session Expired",
+        "Please login again",
+        [{ text: "OK", onPress: () => router.replace("/login") }]
+      );
+      return;
+    }
+
+    Toast.show({
+      type: "error",
+      text1: "Error",
+      text2: "Unable to load attendance",
+    });
+
+  } finally {
+    dispatch(hideLoader());
+  }
+};
 
   useFocusEffect(
     useCallback(() => {
@@ -180,72 +167,73 @@ export default function PunchInCard() {
   /* ================= PUNCH ACTION ================= */
 
   const punchAttendance = async () => {
-    if (loading || dutyEnded) return;
+  if (loading || dutyEnded) return;
 
-    setLoading(true);
+  // setLoading(true);
+  dispatch(showLoader()); // ✅ GLOBAL LOADER START
 
-    try {
-      const now = new Date();
-      const currentDateTime = now.toISOString();
-      const action: "start" | "end" = isPunchedIn ? "end" : "start";
+  try {
+    const now = new Date();
+    const currentDateTime = now.toISOString();
+    const action: "start" | "end" = isPunchedIn ? "end" : "start";
 
-      const payload = {
-        attendancedate: formatDateOnly(now),
-        checkintime: action === "start" ? currentDateTime : "",
-        checkouttime: action === "end" ? currentDateTime : "",
-        status: "Present" as const,
-        userId: String(authState.userId),
-      };
-      const location = await fetchLocation();
-      if (!location) return;
+    const payload = {
+      attendancedate: formatDateOnly(now),
+      checkintime: action === "start" ? currentDateTime : "",
+      checkouttime: action === "end" ? currentDateTime : "",
+      status: "Present" as const,
+      userId: String(authState.userId),
+    };
 
-      const { latitude, longitude } = location.coords;
-      console.log(location.coords,"kehvsc");
-      
+    const location = await fetchLocation();
+    if (!location) return;
 
+    const { latitude, longitude } = location.coords;
 
-      const res = await addAttendance({
-        data: payload,
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-        checkInLocation: String(action === "start" ? address : ""),
-        checkOutLocation: String(action === "end" ? address : ""),
-        userId: String(authState?.userId)
-      });
+    const res = await addAttendance({
+      data: payload,
+      token: String(authState.token),
+      csrfToken: String(authState.antiforgeryToken),
+      checkInLocation: String(action === "start" ? address : ""),
+      checkOutLocation: String(action === "end" ? address : ""),
+      userId: String(authState?.userId),
+    });
 
-      console.log("punch res", res);
+    console.log("punch res", res);
 
-      if (action === "start") {
-        setPunchInTime(now);
-        setWorkedMinutes(0);
-        setIsPunchedIn(true);
+    if (action === "start") {
+      setPunchInTime(now);
+      setWorkedMinutes(0);
+      setIsPunchedIn(true);
 
-        Toast.show({
-          type: "success",
-          text1: t("attendanceCard.punchInSuccess") || "Punch In Successful",
-          text2: `${t("attendanceCard.startedAt") || "Started at"} ${formatTimeAMPM(now)}`,
-        });
-      } else {
-        setPunchOutTime(now);
-        setIsPunchedIn(false);
-        setDutyEnded(true);
-
-        Toast.show({
-          type: "success",
-          text1: t("attendanceCard.punchOutSuccess") || "Punch Out Successful",
-          text2: `${t("attendanceCard.worked") || "Worked"} ${formatMinutesToTime(workedMinutes)}`,
-        });
-      }
-    } catch {
       Toast.show({
-        type: "error",
-        text1: t("attendanceCard.failed") || "Attendance Failed",
-        text2: t("attendanceCard.tryAgain") || "Please try again",
+        type: "success",
+        text1: t("attendanceCard.punchInSuccess") || "Punch In Successful",
+        text2: `${t("attendanceCard.startedAt") || "Started at"} ${formatTimeAMPM(now)}`,
       });
-    } finally {
-      setLoading(false);
+    } else {
+      setPunchOutTime(now);
+      setIsPunchedIn(false);
+      setDutyEnded(true);
+
+      Toast.show({
+        type: "success",
+        text1: t("attendanceCard.punchOutSuccess") || "Punch Out Successful",
+        text2: `${t("attendanceCard.worked") || "Worked"} ${formatMinutesToTime(workedMinutes)}`,
+      });
     }
-  };
+
+  } catch (error) {
+    Toast.show({
+      type: "error",
+      text1: t("attendanceCard.failed") || "Attendance Failed",
+      text2: t("attendanceCard.tryAgain") || "Please try again",
+    });
+  } finally {
+    // setLoading(false);
+    dispatch(hideLoader()); // ✅ GLOBAL LOADER STOP
+  }
+};
 
   /* ================= UI ================= */
 
@@ -356,3 +344,5 @@ export default function PunchInCard() {
     </View>
   );
 }
+
+

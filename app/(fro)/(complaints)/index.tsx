@@ -2,7 +2,8 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import NewCasePopupModal from "@/components/reusables/NewCasePopupModal";
 import StatusModal from "@/components/reusables/StatusModal";
 import { getInteractionsListByAssignToId } from "@/features/fro/interactionApi";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, {
@@ -58,7 +59,7 @@ const getStatusColor = (theme: any, statusName: string): string => {
   if (!statusName) return theme.colors.colorTextTertiary;
 
   const statusLower = statusName.toLowerCase();
-  
+
   if (statusLower.includes("open")) {
     return theme.colors.colorSuccess600; // Green for Open
   } else if (statusLower.includes("progress")) {
@@ -66,7 +67,7 @@ const getStatusColor = (theme: any, statusName: string): string => {
   } else if (statusLower.includes("closed")) {
     return theme.colors.colorTextTertiary; // Gray for Closed
   }
-  
+
   return theme.colors.colorTextTertiary;
 };
 
@@ -75,6 +76,7 @@ export default function TasksScreen() {
   const { t } = useTranslation();
   const params = useLocalSearchParams();
   const authState = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
 
   /* ---------------- MODAL STATES ---------------- */
   const [showPopUp, setShowPopUp] = useState(false);
@@ -84,7 +86,6 @@ export default function TasksScreen() {
 
   /* ---------------- DATA STATE ---------------- */
   const [interactions, setInteractions] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   /* ---------------- 4 TABS ---------------- */
@@ -117,7 +118,7 @@ export default function TasksScreen() {
 
   const fetchInteractions = async () => {
     try {
-      setLoading(true);
+      dispatch(showLoader()); // ⭐ show global loader
 
       const res = await getInteractionsListByAssignToId({
         assignToId: String(authState.userId),
@@ -128,12 +129,13 @@ export default function TasksScreen() {
       });
 
       console.log("Fetched interactions:", res?.data?.interactions);
+
       setInteractions(res?.data?.interactions || []);
     } catch (error) {
       console.error("❌ Failed to fetch Tasks:", error);
     } finally {
-      setLoading(false);
       setRefreshing(false);
+      dispatch(hideLoader()); // ⭐ hide global loader
     }
   };
 
@@ -161,7 +163,7 @@ export default function TasksScreen() {
         (x: number) => {
           scrollEl.scrollTo({ x: x - width / 3, animated: true });
         },
-        () => {},
+        () => { },
       );
     }
   }, [activeTab]);
@@ -177,7 +179,7 @@ export default function TasksScreen() {
 
     return interactions.filter((item) => {
       const status = getSafeStatus(item);
-      
+
       // Convert to lowercase for case-insensitive comparison
       const statusLower = status.toLowerCase();
 
@@ -185,9 +187,9 @@ export default function TasksScreen() {
         case "open":
           return statusLower === "open";
         case "inProgress":
-          return statusLower === "in-progress" || 
-                 statusLower === "inprogress" || 
-                 statusLower === "in progress";
+          return statusLower === "in-progress" ||
+            statusLower === "inprogress" ||
+            statusLower === "in progress";
         case "closed":
           return statusLower === "closed";
         default:
@@ -207,8 +209,8 @@ export default function TasksScreen() {
       <View
         key={index}
         style={[
-          styles.card, 
-          { 
+          styles.card,
+          {
             backgroundColor: theme.colors.colorBgSurface,
             ...Platform.select({
               ios: {
@@ -222,7 +224,7 @@ export default function TasksScreen() {
           <Text
             style={[
               theme.typography.fontH6,
-              styles.cardTitle, 
+              styles.cardTitle,
               { color: theme.colors.colorPrimary600 }
             ]}
             numberOfLines={2}
@@ -239,13 +241,13 @@ export default function TasksScreen() {
         </View>
 
         <View style={styles.infoContainer}>
-          <Text style={[theme.typography.fontBodyRegular, styles.cardText, { color: theme.colors.colorTextSecondary }]}>
+          <Text style={[theme.typography.fontBody, styles.cardText, { color: theme.colors.colorTextSecondary }]}>
             {item.name || t("tasks.unnamedCase")}
           </Text>
-          <Text style={[theme.typography.fontBodyRegular, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
+          <Text style={[theme.typography.fontBody, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
             {t("tasks.category")}: {item.categoryName || "-"}
           </Text>
-          <Text style={[theme.typography.fontBodyRegular, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
+          <Text style={[theme.typography.fontBody, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
             {t("tasks.priority")}: {item.priority || "-"}
           </Text>
         </View>
@@ -262,10 +264,10 @@ export default function TasksScreen() {
             </Text>
           </View>
           <View style={styles.metaItem}>
-            <RemixIcon 
-              name="time-line" 
-              size={moderateScale(16)} 
-              color={theme.colors.colorTextSecondary} 
+            <RemixIcon
+              name="time-line"
+              size={moderateScale(16)}
+              color={theme.colors.colorTextSecondary}
             />
             <Text style={[theme.typography.fontBodySmall, styles.metaText, { color: theme.colors.colorTextSecondary }]} numberOfLines={1}>
               {item.createdDate
@@ -304,8 +306,8 @@ export default function TasksScreen() {
       />
       <Text
         style={[
-          theme.typography.fontBodyRegular,
-          styles.emptyText, 
+          theme.typography.fontBody,
+          styles.emptyText,
           { color: theme.colors.colorTextSecondary }
         ]}
       >
@@ -316,19 +318,7 @@ export default function TasksScreen() {
     </View>
   );
 
-  const renderLoadingState = () => (
-    <View style={styles.loadingContainer}>
-      <Text
-        style={[
-          theme.typography.fontBodyRegular,
-          styles.loadingText, 
-          { color: theme.colors.colorTextSecondary }
-        ]}
-      >
-        {t("common.loading") || "Loading..."}
-      </Text>
-    </View>
-  );
+
 
   return (
     <BodyLayout type="screen" screenName={t("tasks.screenTitle")}>
@@ -349,20 +339,20 @@ export default function TasksScreen() {
               }}
               style={[
                 styles.tab,
-                { 
-                  backgroundColor: activeTab === index 
-                    ? theme.colors.colorPrimary600 
+                {
+                  backgroundColor: activeTab === index
+                    ? theme.colors.colorPrimary600
                     : theme.colors.colorBgAlt,
                 },
               ]}
             >
               <Text
                 style={[
-                  theme.typography.fontBodyRegular,
+                  theme.typography.fontBody,
                   styles.tabText,
-                  { 
-                    color: activeTab === index 
-                      ? theme.colors.colorTextInverse 
+                  {
+                    color: activeTab === index
+                      ? theme.colors.colorTextInverse
                       : theme.colors.colorTextSecondary,
                   },
                 ]}
@@ -388,11 +378,9 @@ export default function TasksScreen() {
           />
         }
       >
-        {loading && !refreshing
-          ? renderLoadingState()
-          : filteredData.length > 0
-            ? filteredData.map(renderTaskCard)
-            : renderEmptyState()}
+        {filteredData.length > 0
+          ? filteredData.map(renderTaskCard)
+          : renderEmptyState()}
       </ScrollView>
 
       {/* ---------------- MODALS ---------------- */}
@@ -401,9 +389,9 @@ export default function TasksScreen() {
         name={t("tasks.newTaskAssigned") || "New Task Assigned"}
         age={72}
         timerSeconds={30}
-        details={[{ 
-          label: t("tasks.ticketNumber") || "Ticket Number:", 
-          value: t("tasks.autoAssigned") || "Auto Assigned" 
+        details={[{
+          label: t("tasks.ticketNumber") || "Ticket Number:",
+          value: t("tasks.autoAssigned") || "Auto Assigned"
         }]}
         onAccept={() => {
           setShowPopUp(false);

@@ -10,6 +10,7 @@ import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
 import { useFROLocationUpdater } from "@/hooks/useFROLocationUpdater";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -168,6 +169,7 @@ export default function HomeScreen() {
   /* ================= API ================= */
 
   const fetchUserData = async () => {
+    dispatch(showLoader());
     console.log("authState.userId", authState.antiforgeryToken);
     console.log("authState.token", authState.userId);
 
@@ -194,7 +196,9 @@ export default function HomeScreen() {
         text1: t("dashboard.errors.userFetchFailed") || "Failed to fetch user data",
         text2: error instanceof Error ? error?.message : t("common.unknownError") || "Unknown error",
       });
-    }
+    } finally {
+    dispatch(hideLoader());
+  }
   };
 
   const fetchCountData = async () => {
@@ -596,7 +600,7 @@ export default function HomeScreen() {
 
             {loading ? (
               <View style={styles.loadingContainer}>
-                <Text style={[theme.typography.fontBodyRegular, { color: theme.colors.colorTextSecondary }]}>
+                <Text style={[theme.typography.fontBody, { color: theme.colors.colorTextSecondary }]}>
                   {t("common.loading") || "Loading chart..."}
                 </Text>
               </View>
@@ -677,7 +681,7 @@ export default function HomeScreen() {
               </>
             ) : (
               <View style={[styles.noDataContainer, { backgroundColor: theme.colors.colorBgAlt }]}>
-                <Text style={[styles.noDataText, theme.typography.fontBodyRegular, { color: theme.colors.colorTextTertiary }]}>
+                <Text style={[styles.noDataText, theme.typography.fontBody, { color: theme.colors.colorTextTertiary }]}>
                   {t("dashboard.charts.daily.noData") || "No daily performance data available"}
                 </Text>
               </View>
@@ -800,7 +804,7 @@ export default function HomeScreen() {
               </>
             ) : (
               <View style={[styles.noDataContainer, { backgroundColor: theme.colors.colorBgAlt }]}>
-                <Text style={[styles.noDataText, theme.typography.fontBodyRegular, { color: theme.colors.colorTextTertiary }]}>
+                <Text style={[styles.noDataText, theme.typography.fontBody, { color: theme.colors.colorTextTertiary }]}>
                   {t("dashboard.charts.monthly.noData") || "No monthly performance data available"}
                 </Text>
               </View>

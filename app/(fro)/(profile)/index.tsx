@@ -182,9 +182,9 @@ export default function ProfileScreen() {
       // ✅ Handle Session Expired / Logged in elsewhere
       if (status === 440) {
         Alert.alert(
-          t("common.sessionExpired") || "Session Expired", 
-          message, 
-          [{ text: t("common.ok") || "OK" }], 
+          t("common.sessionExpired") || "Session Expired",
+          message,
+          [{ text: t("common.ok") || "OK" }],
           {
             cancelable: false,
           }
@@ -201,7 +201,7 @@ export default function ProfileScreen() {
 
       // ❌ Fallback error
       Alert.alert(
-        t("profile.logoutFailed") || "Logout Failed", 
+        t("profile.logoutFailed") || "Logout Failed",
         t("common.somethingWentWrong") || "Something went wrong. Please try again."
       );
     }
@@ -247,8 +247,8 @@ export default function ProfileScreen() {
     <TouchableOpacity
       onPress={onPress}
       style={[
-        styles.item, 
-        { 
+        styles.item,
+        {
           backgroundColor: theme.colors.colorBgSurface,
           shadowColor: theme.colors.colorShadow,
         }
@@ -302,7 +302,7 @@ export default function ProfileScreen() {
           <View
             style={[
               styles.avatarContainer,
-              { 
+              {
                 backgroundColor: theme.colors.colorBgSurface,
                 borderColor: theme.colors.colorBgSurface,
               },
@@ -318,12 +318,12 @@ export default function ProfileScreen() {
               />
             )}
           </View>
-          
+
           {/* Edit Icon Button */}
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.editIconContainer,
-              { 
+              {
                 backgroundColor: theme.colors.colorPrimary600,
                 borderColor: theme.colors.colorBgSurface,
               }
@@ -358,8 +358,8 @@ export default function ProfileScreen() {
           <TouchableOpacity
             onPress={() => setShowAvailability(!showAvailability)}
             style={[
-              styles.item, 
-              { 
+              styles.item,
+              {
                 backgroundColor: theme.colors.colorBgSurface,
                 shadowColor: theme.colors.colorShadow,
               }
@@ -413,7 +413,7 @@ export default function ProfileScreen() {
             <View
               style={[
                 styles.availabilityDropdown,
-                { 
+                {
                   backgroundColor: theme.colors.colorBgSurface,
                   shadowColor: theme.colors.colorShadow,
                 }
@@ -428,10 +428,10 @@ export default function ProfileScreen() {
                   }}
                   style={[
                     styles.availabilityOption,
-                    { 
+                    {
                       borderBottomColor: theme.colors.border,
-                      backgroundColor: option.key === availability 
-                        ? theme.colors.colorPrimary50 
+                      backgroundColor: option.key === availability
+                        ? theme.colors.colorPrimary50
                         : 'transparent'
                     }
                   ]}
@@ -444,10 +444,10 @@ export default function ProfileScreen() {
                   <Text
                     style={[
                       styles.availabilityOptionText,
-                      { 
+                      {
                         color: theme.colors.colorTextPrimary,
-                        fontFamily: option.key === availability 
-                          ? 'Poppins-SemiBold' 
+                        fontFamily: option.key === availability
+                          ? 'Poppins-SemiBold'
                           : 'Poppins-Regular'
                       }
                     ]}
@@ -500,7 +500,7 @@ export default function ProfileScreen() {
           onPress={() => setShowAlert(true)}
           style={[
             styles.logoutBtn,
-            { 
+            {
               backgroundColor: theme.colors.colorError100,
               shadowColor: theme.colors.colorShadow,
             }
@@ -529,7 +529,8 @@ export default function ProfileScreen() {
           cancelText={t("profile.logoutCancel")}
           onConfirm={() => {
             setShowAlert(false);
-            logOutApi();
+            dispatch(logout());
+            router.replace("/(onboarding)/login")
           }}
           onCancel={() => setShowAlert(false)}
           confirmColor={theme.colors.colorPrimary600}
@@ -589,19 +590,19 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
 
-  name: { 
-    fontSize: 20, 
-    fontWeight: "600", 
+  name: {
+    fontSize: 20,
+    fontWeight: "600",
     marginTop: 5,
     fontFamily: 'Poppins-SemiBold',
   },
-  code: { 
-    fontSize: 14, 
+  code: {
+    fontSize: 14,
     marginTop: 2,
     fontFamily: 'Poppins-Regular',
   },
-  role: { 
-    fontSize: 14, 
+  role: {
+    fontSize: 14,
     marginTop: 2,
     fontFamily: 'Poppins-Regular',
   },
@@ -619,7 +620,7 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
 
-  itemText: { 
+  itemText: {
     fontSize: 16,
     fontFamily: 'Poppins-Medium',
   },

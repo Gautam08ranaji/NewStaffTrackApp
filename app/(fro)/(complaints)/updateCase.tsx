@@ -147,7 +147,7 @@ const UpdateStatusScreen = () => {
         String(authState.token),
         String(authState.antiforgeryToken),
       );
-      console.log("status", res);
+      console.log("statuwqfews", res);
       const mapped = (res?.data ?? []).map((item: any) => ({
         id: item.value,
         name: item.label,

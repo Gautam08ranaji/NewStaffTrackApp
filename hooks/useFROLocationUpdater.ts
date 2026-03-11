@@ -56,7 +56,7 @@ const csrfToken = authState?.antiforgeryToken
 };
 
     sendLocation();
-    intervalRef.current = setInterval(sendLocation, 30000);
+    intervalRef.current = setInterval(sendLocation, 120000);
 
     return () => {
       if (intervalRef.current !== null) {
