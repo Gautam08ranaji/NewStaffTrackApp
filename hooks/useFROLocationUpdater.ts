@@ -14,6 +14,10 @@ export const useFROLocationUpdater = (userId?: string | null) => {
   const authState = useAppSelector((state) => state.auth);
   const fullName = `${authState?.firstName ?? ""} ${authState?.lastName ?? ""}`.trim();
   const [isBackgroundTrackingActive, setIsBackgroundTrackingActive] = useState(false);
+  
+  // Add a ref to track if interval is already set up
+  const isIntervalSet = useRef(false);
+  const intervalCounter = useRef(0);
 
   // Store auth data in AsyncStorage for background task
   useEffect(() => {
@@ -41,7 +45,6 @@ export const useFROLocationUpdater = (userId?: string | null) => {
       console.log("Setting up background tracking...");
       console.log("Has background permission:", hasBackgroundPermission);
 
-      // Check if background permission is granted
       if (!hasBackgroundPermission) {
         console.log("Requesting background permission...");
         const granted = await requestBackgroundPermission();
@@ -55,7 +58,6 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         }
       }
 
-      // Start background tracking
       const started = await startBackgroundTracking();
       setIsBackgroundTrackingActive(started);
       
@@ -74,6 +76,9 @@ export const useFROLocationUpdater = (userId?: string | null) => {
     if (!hasPermission || !userId) return;
 
     try {
+      intervalCounter.current += 1;
+      console.log(`📍 Foreground update #${intervalCounter.current} at ${new Date().toLocaleTimeString()}`);
+      
       const location = await fetchLocation();
       if (!location) return;
 
@@ -96,8 +101,8 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         userId,
       };
 
-      console.log("payload fore",payload);
-      
+      console.log("📤 Payload sent at:", new Date().toLocaleTimeString());
+      console.log("📍 Coordinates:", latitude, longitude);
 
       const res = await addAndUpdateFROLocation(
         payload,
@@ -105,7 +110,7 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         csrfToken || ""
       );
 
-      console.log("✅ Location update success");
+      console.log("✅ Location update success at:", new Date().toLocaleTimeString());
     } catch (error) {
       console.error("❌ Location update error:", error);
     }
@@ -116,12 +121,13 @@ export const useFROLocationUpdater = (userId?: string | null) => {
     if (!hasPermission || !userId) return;
 
     const subscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+      console.log(`App state changed from ${appStateRef.current} to ${nextAppState}`);
+      
       if (
         appStateRef.current.match(/inactive|background/) &&
         nextAppState === "active"
       ) {
-        // App has come to foreground
-        console.log("App came to foreground");
+        console.log("App came to foreground - sending location immediately");
         sendLocation();
       }
 
@@ -133,29 +139,58 @@ export const useFROLocationUpdater = (userId?: string | null) => {
     };
   }, [hasPermission, userId, sendLocation]);
 
-  // Main effect for foreground tracking
+  // Main effect for foreground tracking - FIXED VERSION
   useEffect(() => {
-    if (!hasPermission || !userId) return;
+    if (!hasPermission || !userId) {
+      // Clear interval if no permission or user
+      if (intervalRef.current !== null) {
+        console.log("Clearing interval due to no permission/user");
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+        isIntervalSet.current = false;
+      }
+      return;
+    }
+
+    // Clear any existing interval first
+    if (intervalRef.current !== null) {
+      console.log("Clearing existing interval before setting new one");
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      isIntervalSet.current = false;
+    }
 
     // Send initial location
+    console.log("Sending initial location");
     sendLocation();
     
-    // Set up foreground interval (every 10 seconds)
-    intervalRef.current = setInterval(sendLocation, 10000);
+    // Set up foreground interval (20 minutes = 1200000 ms)
+    const INTERVAL_TIME = 120000; // 20 minutes
+    console.log(`Setting up foreground interval for ${INTERVAL_TIME/60000} minutes`);
+    
+    intervalRef.current = setInterval(() => {
+      console.log(`⏰ Interval triggered at ${new Date().toLocaleTimeString()}`);
+      sendLocation();
+    }, INTERVAL_TIME);
+    
+    isIntervalSet.current = true;
 
-    // Cleanup
+    // Cleanup function
     return () => {
+      console.log("Cleaning up foreground interval");
       if (intervalRef.current !== null) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+        isIntervalSet.current = false;
       }
     };
-  }, [hasPermission, userId, sendLocation]);
+  }, [hasPermission, userId]); // Remove sendLocation from dependencies to prevent recreating interval
 
   // Cleanup on unmount or when userId becomes null
   useEffect(() => {
     return () => {
       if (!userId) {
+        console.log("User logged out, stopping background tracking");
         stopBackgroundTracking();
       }
     };
@@ -165,9 +200,11 @@ export const useFROLocationUpdater = (userId?: string | null) => {
     isTracking: hasPermission && !!userId,
     isBackgroundTracking: isBackgroundTrackingActive,
     stopTracking: async () => {
+      console.log("Manually stopping tracking");
       if (intervalRef.current !== null) {
         clearInterval(intervalRef.current);
         intervalRef.current = null;
+        isIntervalSet.current = false;
       }
       await stopBackgroundTracking();
       setIsBackgroundTrackingActive(false);

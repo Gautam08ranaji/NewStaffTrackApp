@@ -100,7 +100,7 @@ export const startBackgroundTracking = async (): Promise<boolean> => {
     // For Android, we need to ensure we have the right configuration
     const options: Location.LocationTaskOptions = {
       accuracy: Location.Accuracy.Balanced,
-      timeInterval: 60000, // 1 minute
+      timeInterval: 1200000, // 1 minute
       distanceInterval: 50, // 50 meters
       showsBackgroundLocationIndicator: true,
       pausesUpdatesAutomatically: false,
