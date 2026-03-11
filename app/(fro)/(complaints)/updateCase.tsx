@@ -539,7 +539,7 @@ const UpdateStatusScreen = () => {
       };
 
       const res = await addAndUpdateFROLocation(payload);
-      // console.log("✅ Update Ticket:", res);
+      console.log("✅ Update Ticket:", res);
     } catch (error) {
       // console.error("❌ Location update error:", error);
     }

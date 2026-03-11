@@ -28,13 +28,13 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         // console.log("📤 Sending payload:", payload);
 
         const res = await addAndUpdateFROLocation(payload);
-        // console.log("✅ Location update success:", res);
+        console.log("✅ Location update success:", res);
       } catch (error) {
-        // console.error("❌ Location update error:", error);
+        console.error("❌ Location update error:", error);
       }
     };
 
-    // sendLocation();
+    sendLocation();
     intervalRef.current = setInterval(sendLocation, 30000);
 
     return () => {
