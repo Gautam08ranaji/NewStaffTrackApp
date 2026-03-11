@@ -1,8 +1,8 @@
-  // app/_layout.tsx
+// app/_layout.tsx
 
-  import "@/i18n"; // ⭐ VERY IMPORTANT → load translations first
+import "@/i18n";
 
-  import { Stack } from "expo-router";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
@@ -13,76 +13,88 @@ import Toast from "react-native-toast-message";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
 
-  import GlobalLoader from "@/components/GlobalLoader";
+import GlobalLoader from "@/components/GlobalLoader";
 import { useThemedToastConfig } from "@/components/reusables/ThemedToast";
+
 import { AudioRecorderProvider } from "@/hooks/AudioRecorderProvider";
 import { CameraPermissionProvider } from "@/hooks/CameraPermissionProvider";
 import { LocationProvider } from "@/hooks/LocationContext";
+
 import { persistor, store } from "@/store";
 import { ThemeProvider, useTheme } from "@/theme/ThemeContext";
 
-  // Prevent splash auto hide
-  SplashScreen.preventAutoHideAsync();
+import { startBackgroundTracking } from "@/services/backgroundLocation"; // ⭐ add this
 
-  export default function RootLayout() {
-    const toastConfig = useThemedToastConfig();
+SplashScreen.preventAutoHideAsync();
 
-    return (
-      <Provider store={store}>
-        <PersistGate
-          persistor={persistor}
-          onBeforeLift={() => SplashScreen.hideAsync()}
-        >
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <SafeAreaProvider>
-              <LocationProvider>
-                <CameraPermissionProvider>
-                  <ThemeProvider>
-                    <AudioRecorderProvider>
-                      <>
-                        <ThemedStack />
-                        <GlobalLoader />
-                        <Toast
-                          config={toastConfig}
-                          position="bottom"
-                          bottomOffset={70}
-                        />
-                      </>
-                    </AudioRecorderProvider>
-                  </ThemeProvider>
-                </CameraPermissionProvider>
-              </LocationProvider>
-            </SafeAreaProvider>
-          </GestureHandlerRootView>
-        </PersistGate>
-      </Provider>
-    );
-  }
+export default function RootLayout() {
+  const toastConfig = useThemedToastConfig();
 
-  function ThemedStack() {
-    const { theme, isDarkMode } = useTheme();
+  return (
+    <Provider store={store}>
+      <PersistGate
+        persistor={persistor}
+        onBeforeLift={() => SplashScreen.hideAsync()}
+      >
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <SafeAreaProvider>
+            <LocationProvider>
+              <CameraPermissionProvider>
+                <ThemeProvider>
+                  <AudioRecorderProvider>
+                    <>
+                      <ThemedStack />
+                      <GlobalLoader />
 
-    useEffect(() => {
-      if (Platform.OS === "android") {
-        RNStatusBar.setBackgroundColor(theme.colors.btnPrimaryBg);
-        RNStatusBar.setBarStyle(isDarkMode ? "light-content" : "dark-content");
-      }
-    }, [theme, isDarkMode]);
+                      <Toast
+                        config={toastConfig}
+                        position="bottom"
+                        bottomOffset={70}
+                      />
+                    </>
+                  </AudioRecorderProvider>
+                </ThemeProvider>
+              </CameraPermissionProvider>
+            </LocationProvider>
+          </SafeAreaProvider>
+        </GestureHandlerRootView>
+      </PersistGate>
+    </Provider>
+  );
+}
 
-    return (
-      <>
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="(onboarding)" />
-          <Stack.Screen name="(fro)" />
-          <Stack.Screen name="(frl)" />
-          <Stack.Screen name="modal" options={{ presentation: "modal" }} />
-        </Stack>
+function ThemedStack() {
+  const { theme, isDarkMode } = useTheme();
 
-        <StatusBar
-          style={isDarkMode ? "light" : "dark"}
-          translucent={false}
-          backgroundColor={theme.colors.colorAccent500}
-        />
-      </>
-    );
-  }
+  /* ---------------- STATUS BAR ---------------- */
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      RNStatusBar.setBackgroundColor(theme.colors.btnPrimaryBg);
+      RNStatusBar.setBarStyle(isDarkMode ? "light-content" : "dark-content");
+    }
+  }, [theme, isDarkMode]);
+
+  /* ---------------- START BACKGROUND TRACKING ---------------- */
+
+  useEffect(() => {
+    startBackgroundTracking();
+  }, []);
+
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(onboarding)" />
+        <Stack.Screen name="(fro)" />
+        <Stack.Screen name="(frl)" />
+        <Stack.Screen name="modal" options={{ presentation: "modal" }} />
+      </Stack>
+
+      <StatusBar
+        style={isDarkMode ? "light" : "dark"}
+        translucent={false}
+        backgroundColor={theme.colors.colorAccent500}
+      />
+    </>
+  );
+}
