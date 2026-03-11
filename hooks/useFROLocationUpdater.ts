@@ -40,7 +40,7 @@ const csrfToken = authState?.antiforgeryToken
       userId,
     };
 
-    console.log("📤 Sending payload:", payload);
+    // console.log("📤 Sending payload:", payload);
 
     const res = await addAndUpdateFROLocation(
       payload,
@@ -48,7 +48,7 @@ const csrfToken = authState?.antiforgeryToken
       csrfToken || ""
     );
 
-    console.log("✅ Location update success:", res);
+    // console.log("✅ Location update success:", res);
 
   } catch (error) {
     console.error("❌ Location update error:", error);
