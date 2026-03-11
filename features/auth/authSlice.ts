@@ -8,6 +8,8 @@ interface AuthState {
   token: string | null;
   role: UserRole | null;
   antiforgeryToken: string | null;
+  firstName: string | null;
+  lastName: string | null;
 }
 
 const initialState: AuthState = {
@@ -15,6 +17,8 @@ const initialState: AuthState = {
   token: null,
   role: null,
   antiforgeryToken: null,
+  firstName:  null,
+  lastName:  null,
 };
 
 const authSlice = createSlice({
@@ -36,6 +40,18 @@ const authSlice = createSlice({
       state.antiforgeryToken = action.payload.antiforgeryToken ?? null;
     },
 
+      
+    setUserProfile(
+      state,
+      action: PayloadAction<{
+        firstName: string;
+        lastName: string;
+      }>
+    ) {
+      state.firstName = action.payload.firstName;
+      state.lastName = action.payload.lastName;
+    },
+
     logout(state) {
       state.userId = null;
       state.token = null;
@@ -45,5 +61,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setAuth, logout } = authSlice.actions;
+export const { setAuth, logout, setUserProfile } = authSlice.actions;
 export default authSlice.reducer;

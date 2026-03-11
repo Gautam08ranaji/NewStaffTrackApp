@@ -326,8 +326,8 @@ export default function AttendanceTab() {
         },
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
-        checkInLocation: action === "start" ? locationString : "",
-        checkOutLocation: action === "end" ? locationString : "",
+        checkInLocation: String(action === "start" ? address : ""),
+        checkOutLocation: String(action === "end" ? address : ""),
         userId: String(authState.userId),
       });
 

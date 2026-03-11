@@ -2,13 +2,14 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import CircularKPIChart from "@/components/reusables/CircularKPIChart";
 import PunchInCard from "@/components/reusables/PunchInCard";
 import ReusableCard from "@/components/reusables/ReusableCard";
+import { setUserProfile } from "@/features/auth/authSlice";
 import { getFROCasePerformanceDayWise } from "@/features/fro/dashboard/dayWisePerformance";
 import { getFROMonthCasePerformanceDayWise } from "@/features/fro/dashboard/monthWisePerformance";
 import { getDashCount } from "@/features/fro/interaction/countApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
 import { useFROLocationUpdater } from "@/hooks/useFROLocationUpdater";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useMemo, useRef, useState } from "react";
@@ -64,6 +65,7 @@ export default function HomeScreen() {
   const authState = useAppSelector((state) => state.auth);
   const { Popup } = useInteractionPopupPoller();
   const scrollViewRef = useRef<ScrollView>(null);
+   const dispatch = useAppDispatch(); 
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -73,6 +75,10 @@ export default function HomeScreen() {
     inProgress: 0,
     tickets: 0,
   });
+
+ 
+
+  
 
   const [dayPerformanceData, setDayPerformanceData] = useState<DayCasePerformanceResponse | null>(null);
   const [monthPerformanceData, setMonthPerformanceData] = useState<MonthPerformanceResponse | null>(null);
@@ -171,6 +177,13 @@ export default function HomeScreen() {
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
       });
+
+      dispatch(
+  setUserProfile({
+    firstName: response?.data?.firstName || "User",
+    lastName: response?.data?.lastName || "",
+  })
+);
 
       setFirstName(response?.data?.firstName || t("common.user") || "User");
       setLastName(response?.data?.lastName || "");

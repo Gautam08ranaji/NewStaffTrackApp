@@ -5,7 +5,7 @@ export interface AddOrUpdateFROLocationPayload {
   latitute: string;
   longititute: string;
   discriptions: string;
-  elderPinLocation: string;
+  // elderPinLocation: string;
   froPinLocation: string;
   userId: string;
 }

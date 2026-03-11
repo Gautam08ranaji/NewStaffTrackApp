@@ -57,6 +57,9 @@ export default function PunchInCard() {
   const [loading, setLoading] = useState(false);
   const { hasPermission, fetchLocation, address } = useLocation();
 
+  // console.log(address,"jewhfljh");
+  
+
 
   /* ================= LOAD ATTENDANCE ================= */
 
@@ -205,8 +208,8 @@ export default function PunchInCard() {
         data: payload,
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
-        checkInLocation: String(`${latitude},${longitude}`),
-        checkOutLocation: String(`${latitude},${longitude}`),
+        checkInLocation: String(action === "start" ? address : ""),
+        checkOutLocation: String(action === "end" ? address : ""),
         userId: String(authState?.userId)
       });
 
