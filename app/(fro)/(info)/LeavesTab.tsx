@@ -159,44 +159,50 @@ export default function LeavesTab() {
   };
 
   const submitLeave = async () => {
-    if (!validateForm()) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      const res = await createLeave({
-        leaveType: leaveType,
-        fromDate: fromDate?.toISOString() || new Date().toISOString(),
-        toDate: toDate?.toISOString() || new Date().toISOString(),
-        reason: cause.trim(),
-        userId: String(authState.userId),
-        createdBy: String(authState.userId),
-        createdByName: getUserName(),
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-      });
-      
-      console.log("Leave created:", res);
-      
-      Toast.show({
-        type: "success",
-        text1: t("leaves.applySuccess"),
-      });
-      
-      resetForm();
-      fetchLeaveList(1, true);
-      
-    } catch (error: any) {
-      console.error("Error creating leave:", error);
-      
-      Toast.show({
-        type: "error",
-        text1: error?.response?.data?.message || t("leaves.applyFailed"),
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+  if (!validateForm()) return;
+
+  setIsSubmitting(true);
+
+  const fullName = `${authState?.firstName ?? ""} ${authState?.lastName ?? ""}`.trim();
+
+  const payload = {
+    leaveType: leaveType,
+    fromDate: fromDate?.toISOString() || new Date().toISOString(),
+    toDate: toDate?.toISOString() || new Date().toISOString(),
+    reason: cause.trim(),
+    userId: String(authState.userId),
+    createdBy: String(authState.userId),
+    createdByName: fullName,
+    token: String(authState.token),
+    csrfToken: String(authState.antiforgeryToken),
   };
+
+  console.log("📤 Leave Payload:", payload);
+
+  try {
+    const res = await createLeave(payload);
+
+    console.log("✅ Leave created:", res);
+
+    Toast.show({
+      type: "success",
+      text1: t("leaves.applySuccess"),
+    });
+
+    resetForm();
+    fetchLeaveList(1, true);
+
+  } catch (error: any) {
+    console.error("❌ Error creating leave:", error);
+
+    Toast.show({
+      type: "error",
+      text1: error?.response?.data?.message || t("leaves.applyFailed"),
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   const resetForm = () => {
     setLeaveType("Casual");
