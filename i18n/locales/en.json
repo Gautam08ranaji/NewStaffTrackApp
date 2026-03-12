@@ -129,7 +129,8 @@
     "followUp": "Follow-up",
     "viewAllNotes": "View all",
     "quickActions": "Quick Actions",
-    "actions": {
+    "actions": 
+    {
       "updateStatus": "Update Status",
       "addAttachments": "Add Attachments",
       "addNote": "Add Note",
@@ -153,29 +154,54 @@
     "fullMap": "Full Map",
     "startNavigation": "Start Navigation",
     "noData": "No task data available"
-  }, "updateStatus": {
+  }, 
+  "updateStatus": {
     "title": "Update Task",
     "loadingTask": "Loading Task data...",
     "loadFailed": "Failed to load case data",
     "noData": "No case data found",
     "statusLoadFailed": "Failed to load status",
     "subStatusLoadFailed": "Failed to load sub status",
-    "selectTaskStatus": "Select TaskStatus",
+
+    "selectTaskStatus": "Select Task Status",
     "selectSubStatus": "Select Sub Status",
     "selectStatus": "Please select a case status",
-    "selectStatusFirst": "Please select TaskStatus first",
+    "selectStatusFirst": "Please select Task Status first",
+
+    "selectCategory": "Select Category",
+
+    "brandName": "Brand Name",
+    "enterBrandName": "Enter brand name",
+
+    "productDiscount": "Product Discount",
+    "enterDiscount": "Enter discount",
+
+    "fosFirstVisit": "FOS First Visit",
+    "fosSecondVisit": "FOS Second Visit",
+    "fosThirdVisit": "FOS Third Visit",
+
+    "visitDate": "Visit Date",
+    "visitStatus": "Visit Status",
+    "selectVisitStatus": "Select Visit Status",
+
     "comment": "Comment",
     "enterClosingRemarks": "Enter closing remarks...",
     "commentRequired": "Please enter comment for closed status",
+
     "updateSuccess": "Task Updated Successfully",
     "updateFailed": "Update Failed",
-    "statusChanged": "TaskStatus changed from",
-    "subStatusChanged": "Sub Status changed from",
+
+    "statusChanged": "Task status changed from",
+    "subStatusChanged": "Sub status changed from",
+
     "to": "to",
+
     "commentRemoved": "Comment removed",
     "commentAdded": "Comment added",
     "commentUpdated": "Comment updated from",
+
     "noChanges": "No changes were made",
+
     "task": "Task",
     "unknownLocation": "Unknown location"
   },"updateDocument": {
