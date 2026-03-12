@@ -1,22 +1,31 @@
 import { apiRequest } from "@/features/api/callApi";
 
+/* ---------- RESPONSE TYPE ---------- */
 interface AddCommonDocumentResponse {
   success: boolean;
   message: string;
   data?: any;
 }
 
-interface AddCommonDocumentPayload {
+/* ---------- PAYLOAD TYPE ---------- */
+export interface AddCommonDocumentPayload {
   relatedTo: string;
   relatedToId: number;
   documentType: string;
   documentName: string;
   documentDescription: string;
   fileName: string;
+  mimeType: string;
   fileData: string;
+  ownerId: string;
+  ownerName: string;
   createdBy: string;
+  liveType?: string;
+  liveStartTime?: string;
+  liveEndTime?: string;
 }
 
+/* ---------- API FUNCTION ---------- */
 export const addCommonDocument = (
   payload: AddCommonDocumentPayload,
   token: string,
@@ -31,6 +40,6 @@ export const addCommonDocument = (
       accept: "application/json",
       "Content-Type": "application/json-patch+json",
     },
-    data: JSON.stringify(payload), // ⭐ CRITICAL FIX
+    data: JSON.stringify(payload),
   });
 };

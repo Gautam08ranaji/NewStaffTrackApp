@@ -179,6 +179,13 @@
     "task": "Task",
     "unknownLocation": "Unknown location"
   },"updateDocument": {
+    "liveType":"Live Type",
+    "liveTypeRequired":"Live type is required",
+    "enterLiveType":"Enter Live Type",
+    "startTime":"Start Time",
+    "endTime":"End Time",
+    "duration":"Duration",
+    "video":"video",
     "screenTitle": "Upload Document",
     "description": "Description",
     "enterDescription": "Enter document description",

@@ -69,7 +69,7 @@ export default function NotificationScreen() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      console.log("Fetched interactions:", res?.data?.interactions);
+      // console.log("Fetched interactions:", res?.data?.interactions);
       // Log subStatusId values to verify
       console.log("SubStatus IDs:", res?.data?.interactions?.map((i: Interaction) => ({
         id: i.id,

@@ -101,8 +101,8 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         userId,
       };
 
-      console.log("📤 Payload sent at:", new Date().toLocaleTimeString());
-      console.log("📍 Coordinates:", latitude, longitude);
+      // console.log("📤 Payload sent at:", new Date().toLocaleTimeString());
+      // console.log("📍 Coordinates:", latitude, longitude);
 
       const res = await addAndUpdateFROLocation(
         payload,
@@ -110,7 +110,7 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         csrfToken || ""
       );
 
-      console.log("✅ Location update success at:", new Date().toLocaleTimeString());
+      // console.log("✅ Location update success at:", new Date().toLocaleTimeString());
     } catch (error) {
       console.error("❌ Location update error:", error);
     }
