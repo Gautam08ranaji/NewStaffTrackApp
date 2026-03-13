@@ -1,6 +1,8 @@
 import BodyLayout from "@/components/layout/BodyLayout";
 import { getDropdownByEndpoint, getDropdownByEndpointAndId } from "@/features/fro/dropdownApi";
+import { addInteractionActivityHistory } from "@/features/fro/interaction/ActivityHistory";
 import { updateInteraction, UpdateInteractionPayload } from "@/features/fro/interactionApi";
+import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,6 +55,7 @@ export default function UpdateTaskScreen() {
   }, [params.item]);
   
   const caseId = params.caseId ? Number(params.caseId) : null;
+  const transactionNumber = taskData?.transactionNumber || "";
 
   // State for dropdown data
   const [statusDropdown, setStatusDropdown] = useState<DropdownItem[]>([]);
@@ -166,6 +169,123 @@ export default function UpdateTaskScreen() {
   const formatDateForAPI = (date: Date | null) => {
     if (!date) return null;
     return date.toISOString();
+  };
+
+  /* ---------- SAVE ACTIVITY WITH DETAILED CHANGE TRACKING ---------- */
+  const saveActivity = async ({
+    interactionId,
+    oldData,
+    newData,
+    changes,
+  }: {
+    interactionId: number;
+    oldData: typeof taskData;
+    newData: FormData & { statusName: string | null; subStatusName: string | null };
+    changes: string[];
+  }) => {
+    try {
+      const userRes = await getUserDataById({
+        userId: String(authState?.userId),
+        token: String(authState?.token),
+        csrfToken: String(authState?.antiforgeryToken),
+      });
+
+      const firstName = userRes?.data?.firstName || "";
+      const lastName = userRes?.data?.lastName || "";
+      const activityByName = `${firstName} ${lastName}`.trim();
+
+      // Build detailed activity description
+      let activityDescription = "Task updated: ";
+      const changeDetails: string[] = [];
+
+      // Check status change
+      if (oldData.statusName !== newData.statusName) {
+        changeDetails.push(
+          `Status changed from "${oldData.statusName || 'None'}" to "${newData.statusName || 'None'}"`
+        );
+      }
+
+      // Check sub-status change
+      if (oldData.subStatusName !== newData.subStatusName) {
+        changeDetails.push(
+          `Sub-status changed from "${oldData.subStatusName || 'None'}" to "${newData.subStatusName || 'None'}"`
+        );
+      }
+
+      // Check category change
+      if (oldData.categoryName !== newData.categoryName) {
+        changeDetails.push(
+          `Category changed from "${oldData.categoryName || 'None'}" to "${newData.categoryName || 'None'}"`
+        );
+      }
+
+      // Check brand change
+      if (oldData.brandName !== newData.brandName) {
+        changeDetails.push(
+          `Brand changed from "${oldData.brandName || 'None'}" to "${newData.brandName || 'None'}"`
+        );
+      }
+
+      // Check product discount change
+      if (oldData.productDiscount !== newData.productDiscount) {
+        changeDetails.push(
+          `Product discount changed from "${oldData.productDiscount || 'None'}" to "${newData.productDiscount || 'None'}"`
+        );
+      }
+
+      // Check close remarks change
+      if (oldData.closeRemarks !== newData.closeRemarks) {
+        changeDetails.push(
+          `Close remarks updated`
+        );
+      }
+
+      // Check FOS visit date change
+      const oldDate = oldData.fosVisitDate ? new Date(oldData.fosVisitDate).toDateString() : 'None';
+      const newDate = newData.fosVisitDate ? new Date(newData.fosVisitDate).toDateString() : 'None';
+      if (oldDate !== newDate) {
+        changeDetails.push(
+          `FOS visit date changed from "${oldDate}" to "${newDate}"`
+        );
+      }
+
+      // Combine all changes
+      if (changeDetails.length > 0) {
+        activityDescription += changeDetails.join('. ');
+      } else {
+        activityDescription += 'No changes detected';
+      }
+
+      // Add summary of changed fields
+      if (changes.length > 0) {
+        activityDescription += ` (Updated fields: ${changes.join(', ')})`;
+      }
+
+      const payload = {
+        activityTime: new Date().toISOString(),
+        activityInteractionId: interactionId,
+        activityActionName: "UPDATE",
+        activityDescription,
+        activityStatus: "Completed",
+        activityById: String(authState?.userId),
+        activityByName,
+        activityRelatedTo: "CAS",
+        activityRelatedToId: interactionId,
+        activityRelatedToName: transactionNumber,
+      };
+
+      console.log("Activity payload:", JSON.stringify(payload, null, 2));
+
+      await addInteractionActivityHistory({
+        token: String(authState?.token),
+        csrfToken: String(authState?.antiforgeryToken),
+        body: payload,
+      });
+      
+      console.log("Activity saved successfully");
+    } catch (err) {
+      console.log("Activity error", err);
+    }
   };
 
   // Prepare payload for API submission
@@ -304,10 +424,25 @@ export default function UpdateTaskScreen() {
     }
 
     try {
+      // Track changes for activity
+      const changes: string[] = [];
+      
+      if (form.brandName !== taskData.brandName) changes.push("Brand");
+      if (form.productDiscount !== taskData.productDiscount) changes.push("Product Discount");
+      if (form.closeRemarks !== taskData.closeRemarks) changes.push("Close Remarks");
+      if (form.categoryName !== taskData.categoryName) changes.push("Category");
+      
+      const fosVisitDateStr = form.fosVisitDate ? form.fosVisitDate.toDateString() : null;
+      const oldFosVisitDateStr = taskData.fosVisitDate ? new Date(taskData.fosVisitDate).toDateString() : null;
+      if (fosVisitDateStr !== oldFosVisitDateStr) changes.push("FOS Visit Date");
+      
+      // Always track status and sub-status changes
+      if (taskData.statusName !== form.statusName) changes.push("Status");
+      if (taskData.subStatusName !== form.subStatusName) changes.push("Sub Status");
+
       const payload = preparePayload();
 
       console.log("Complete Payload:", JSON.stringify(payload, null, 2));
-   
 
       setLoading(true);
       
@@ -320,6 +455,18 @@ export default function UpdateTaskScreen() {
       console.log("Update response:", response);
 
       if (response?.success) {
+        // Save activity after successful update with detailed changes
+        await saveActivity({
+          interactionId: caseId,
+          oldData: taskData,
+          newData: {
+            ...form,
+            statusName: form.statusName,
+            subStatusName: form.subStatusName,
+          },
+          changes,
+        });
+
         Alert.alert("Success", "Task updated successfully", [
           { text: "OK", onPress: () => router.back() }
         ]);
@@ -337,7 +484,15 @@ export default function UpdateTaskScreen() {
   return (
     <BodyLayout type="screen" screenName="Update Task">
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-       
+        {/* Display Case/Transaction Info */}
+        {taskData && (
+          <View style={styles.infoCard}>
+            <Text style={styles.infoTitle}>Transaction #{taskData.transactionNumber}</Text>
+            <Text style={styles.infoText}>Customer: {taskData.name}</Text>
+            <Text style={styles.infoText}>Contact: {taskData.mobileNo}</Text>
+            <Text style={styles.infoText}>Assigned To: {taskData.assignToName}</Text>
+          </View>
+        )}
 
         {/* CATEGORY */}
         <Text style={styles.label}>Category</Text>
