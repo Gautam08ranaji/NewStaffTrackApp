@@ -78,6 +78,9 @@ export default function LoginScreen() {
     return valid;
   };
 
+  console.log("oc",location);
+  
+
   const handleLogin = async () => {
     if (isLoading) return;
     if (!validate()) return;
