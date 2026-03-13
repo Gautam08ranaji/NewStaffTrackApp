@@ -1,191 +1,244 @@
+import BodyLayout from "@/components/layout/BodyLayout";
+import { getDropdownByEndpoint, getDropdownByEndpointAndId } from "@/features/fro/dropdownApi";
+import { updateInteraction, UpdateInteractionPayload } from "@/features/fro/interactionApi";
+import { useAppSelector } from "@/store/hooks";
+import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
   Alert,
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
   Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
+import { Dropdown } from "react-native-element-dropdown";
 
-// Custom Hooks
-import { useLocation } from "@/hooks/LocationContext";
-import { useAppSelector } from "@/store/hooks";
-import { useTheme } from "@/theme/ThemeContext";
+// Define types for better type safety
+interface FormData {
+  statusName: string | null;
+  statusId: number | null;
+  subStatusName: string | null;
+  subStatusId: number | null;
+  closeRemarks: string;
+  fosVisitDate: Date | null;
+  brandName: string;
+  categoryName: string | null;
+  categoryId: number | null;
+  productDiscount: string;
+}
 
-// API Imports
-import {
-  getDropdownByEndpoint,
-  getDropdownByEndpointAndId,
-} from "@/features/fro/dropdownApi";
-import { addAndUpdateFROLocation } from "@/features/fro/froLocationApi";
-import { addInteractionActivityHistory } from "@/features/fro/interaction/ActivityHistory";
-import { updateInteraction } from "@/features/fro/interactionApi";
-import { getUserDataById } from "@/features/fro/profile/getProfile";
+interface DropdownItem {
+  label: string;
+  value: number;
+}
 
-// ================= TYPES =================
-type DropdownItem = {
-  id: number;
-  name: string;
-};
-
-type SelectedItem = {
-  id: number;
-  name: string;
-} | null;
-
-type InteractionItem = {
-  id: number;
-  transactionNumber?: string;
-  statusId?: number;
-  statusName?: string;
-  subStatusId?: number;
-  subStatusName?: string;
-  categoryId?: number;
-  categoryName?: string;
-  subject?: string;
-  closeRemarks?: string;
-  brandName?: string;
-  productDiscount?: number;
-  fosVisitDate?: string;
-  fosVisitStatus?: string;
-  fosSecondVisitDate?: string;
-  fosSecondVisitStatus?: string;
-  fosThirdVisitDate?: string;
-  fosThirdVisitStatus?: string;
-  // Add other fields as needed
-};
-
-type DropdownType = "CASE" | "SUB" | "CATEGORY" | "FOS_VISIT" | "FOS_SECOND_VISIT" | "FOS_THIRD_VISIT" | null;
-
-// ================= CONSTANTS =================
-const CLOSED_STATUS_ID = 4;
-const { width, height } = Dimensions.get("window");
-const scale = (size: number) => (width / 375) * size;
-const verticalScale = (size: number) => (height / 812) * size;
-const moderateScale = (size: number, factor = 0.5) =>
-  size + (scale(size) - size) * factor;
-
-// ================= UTILS =================
-const truncateText = (text: string, maxLength: number = 30): string => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + "...";
-};
-
-// ================= MAIN COMPONENT =================
-const UpdateStatusScreen = () => {
-  const { t } = useTranslation();
+export default function UpdateTaskScreen() {
   const { theme } = useTheme();
-  const { hasPermission, fetchLocation, address } = useLocation();
-  const params = useLocalSearchParams();
+  const styles = createStyles(theme);
   const authState = useAppSelector((state) => state.auth);
+  const params = useLocalSearchParams();
 
-  // Refs
-  const scrollViewRef = useRef<ScrollView>(null);
-  const notesInputRef = useRef<TextInput>(null);
-  const initializedRef = useRef(false);
+  // Use ref to track if we've already logged params
+  const hasLoggedParams = useRef(false);
 
-  // State
-  const [interactionItem, setInteractionItem] = useState<InteractionItem | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isParsing, setIsParsing] = useState(true);
-  const [isInitializing, setIsInitializing] = useState(true);
-  const [dropdownType, setDropdownType] = useState<DropdownType>(null);
-  const [showSubStatusWarning, setShowSubStatusWarning] = useState(false);
+  // Parse the item data from params
+  const taskData = React.useMemo(() => {
+    return params.item ? JSON.parse(params.item as string) : null;
+  }, [params.item]);
+  
+  const caseId = params.caseId ? Number(params.caseId) : null;
 
-  // Form State
-  const [Taskstatus, setTaskstatus] = useState<SelectedItem>(null);
-  const [subStatus, setSubStatus] = useState<SelectedItem>(null);
-  const [selectedCategory, setSelectedCategory] = useState<SelectedItem>(null);
-  const [brandName, setBrandName] = useState("");
-  const [productDiscount, setProductDiscount] = useState("");
-  const [fosVisitDate, setFosVisitDate] = useState("");
-  const [selectedFosVisitStatus, setSelectedFosVisitStatus] = useState<SelectedItem>(null);
-  const [fosSecondVisitDate, setFosSecondVisitDate] = useState("");
-  const [selectedFosSecondVisitStatus, setSelectedFosSecondVisitStatus] = useState<SelectedItem>(null);
-  const [fosThirdVisitDate, setFosThirdVisitDate] = useState("");
-  const [selectedFosThirdVisitStatus, setSelectedFosThirdVisitStatus] = useState<SelectedItem>(null);
-  const [notes, setNotes] = useState("");
-
-  // Dropdown Data
+  // State for dropdown data
   const [statusDropdown, setStatusDropdown] = useState<DropdownItem[]>([]);
   const [subStatusDropdown, setSubStatusDropdown] = useState<DropdownItem[]>([]);
   const [categoryDropdown, setCategoryDropdown] = useState<DropdownItem[]>([]);
-  const [fosVisitStatusDropdown, setFosVisitStatusDropdown] = useState<DropdownItem[]>([]);
+  const [loadingDropdowns, setLoadingDropdowns] = useState(false);
 
-  // Memoized Values
-  const caseId = useMemo(() => (params.caseId ? Number(params.caseId) : null), [params.caseId]);
-  const isClosedStatus = useMemo(() => Taskstatus?.id === CLOSED_STATUS_ID, [Taskstatus]);
-
-  // ================= EFFECTS =================
+  // Log params only once
   useEffect(() => {
-    const itemString = params.item as string;
-    if (!itemString) {
-      setIsParsing(false);
-      return;
+    if (!hasLoggedParams.current) {
+      console.log("param", params);
+      hasLoggedParams.current = true;
     }
+  }, [params]);
 
-    try {
-      const parsedItem = JSON.parse(itemString);
-      console.log("✅ Parsed item:", parsedItem);
-      setInteractionItem(parsedItem);
-    } catch (error) {
-      console.error("❌ Failed to parse item:", error);
-      Alert.alert(t("common.error"), t("updateStatus.loadFailed"));
-    } finally {
-      setIsParsing(false);
-    }
+  // Form state with only the required fields from Swagger payload
+  const [form, setForm] = useState<FormData>({
+    statusName: null,
+    statusId: null,
+    subStatusName: null,
+    subStatusId: null,
+    closeRemarks: "",
+    fosVisitDate: null,
+    brandName: "",
+    categoryName: null,
+    categoryId: null,
+    productDiscount: "",
+  });
 
-    // Fetch dropdowns
+  const [datePicker, setDatePicker] = useState({
+    visible: false,
+    field: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+
+  // Fetch initial dropdowns
+  useEffect(() => {
     fetchStatusDropdown();
     fetchCategoryDropdown(1);
-    fetchFosVisitStatusDropdown();
-  }, [params.item]);
+  }, []);
 
+  // Fetch sub-status when status changes
   useEffect(() => {
-    if (!interactionItem || initializedRef.current) {
-      setIsInitializing(false);
-      return;
+    if (form.statusId) {
+      fetchSubStatusDropdown(form.statusId);
+    } else {
+      setSubStatusDropdown([]);
+    }
+  }, [form.statusId]);
+
+  // Populate form with task data when component mounts
+  useEffect(() => {
+    if (taskData && statusDropdown.length > 0) {
+      // Parse dates if they exist
+      const fosVisitDate = taskData.fosVisitDate ? new Date(taskData.fosVisitDate) : null;
+      
+      // Find status ID from status name
+      const statusItem = statusDropdown.find(item => item.label === taskData.statusName);
+      
+      // Find category ID from category name
+      const categoryItem = categoryDropdown.find(item => item.label === taskData.categoryName);
+      
+      setForm({
+        statusName: taskData.statusName || null,
+        statusId: statusItem?.value || taskData.statusId || null,
+        subStatusName: taskData.subStatusName || null,
+        subStatusId: null, // Will be set after sub-status dropdown loads
+        closeRemarks: taskData.closeRemarks || "",
+        fosVisitDate: fosVisitDate,
+        brandName: taskData.brandName || "",
+        categoryName: taskData.categoryName || null,
+        categoryId: categoryItem?.value || taskData.categoryId || null,
+        productDiscount: taskData.productDiscount || "",
+      });
+    }
+  }, [taskData, statusDropdown, categoryDropdown]);
+
+  // Update sub-status ID when sub-status dropdown loads and name matches
+  useEffect(() => {
+    if (form.subStatusName && subStatusDropdown.length > 0) {
+      const subStatusItem = subStatusDropdown.find(item => item.label === form.subStatusName);
+      if (subStatusItem) {
+        updateField('subStatusId', subStatusItem.value);
+      }
+    }
+  }, [subStatusDropdown, form.subStatusName]);
+
+  const updateField = <K extends keyof FormData>(key: K, value: FormData[K]) => {
+    setForm(prevForm => ({ ...prevForm, [key]: value }));
+  };
+
+  const openDate = (field: string) => {
+    setDatePicker({ visible: true, field });
+  };
+
+  const handleDateChange = (_: any, selectedDate: any) => {
+    setDatePicker({ visible: false, field: "" });
+
+    if (selectedDate && datePicker.field) {
+      updateField(datePicker.field as keyof FormData, selectedDate);
+    }
+  };
+
+  const renderDate = (date: Date | null) => {
+    if (!date) return "";
+    return date.toDateString();
+  };
+
+  // Format date to ISO string for API
+  const formatDateForAPI = (date: Date | null) => {
+    if (!date) return null;
+    return date.toISOString();
+  };
+
+  // Prepare payload for API submission
+  const preparePayload = (): UpdateInteractionPayload => {
+    if (!taskData || !caseId) {
+      throw new Error("Task data or case ID is missing");
     }
 
-    initializeFormData();
-    initializedRef.current = true;
-    setIsInitializing(false);
-  }, [interactionItem]);
+    return {
+      id: caseId,
+      assignToId: taskData.assignToId || authState.userId || "",
+      assignToName: taskData.assignToName || "",
+      statusId: form.statusId || 0,
+      statusName: form.statusName || "",
+      subStatusId: form.subStatusId || 0,
+      subStatusName: form.subStatusName || "",
+      closeRemarks: form.closeRemarks,
+      fosVisitDate: formatDateForAPI(form.fosVisitDate),
+      brandName: form.brandName,
+      categoryId: form.categoryId || 0,
+      categoryName: form.categoryName || "",
+      productDiscount: form.productDiscount,
+      
+      // Include required fields from original task data
+      isSellerOutOfLocation: taskData.isSellerOutOfLocation || "",
+      isInterested: taskData.isInterested || "",
+      sellerVisitDate: taskData.sellerVisitDate || null,
+      
+      // Include follow-up fields if they exist in taskData
+      nextFollowupDate: taskData.nextFollowupDate || null,
+      isNextFollowupStatus: taskData.isNextFollowupStatus || "No",
+      secondFollowupDate: taskData.secondFollowupDate || null,
+      isSecondVisitStatus: taskData.isSecondVisitStatus || "No",
+      thirdFollowupDate: taskData.thirdFollowupDate || null,
+      isThirdVisitStatus: taskData.isThirdVisitStatus || "No",
+      
+      // Include other optional fields
+      fosSecondVisitDate: taskData.fosSecondVisitDate || null,
+      fosSecondVisitStatus: taskData.fosSecondVisitStatus || "",
+      fosThirdVisitDate: taskData.fosThirdVisitDate || null,
+      fosThirdVisitStatus: taskData.fosThirdVisitStatus || "",
+      fosVisitStatus: taskData.fosVisitStatus || "",
+      callBack: taskData.callBack || null,
+    };
+  };
 
-  // ================= API CALLS =================
   const fetchStatusDropdown = useCallback(async () => {
     try {
+      setLoadingDropdowns(true);
       const res = await getDropdownByEndpoint(
         "GetStatusMasterDropdown",
         String(authState.token),
         String(authState.antiforgeryToken)
       );
 
+      console.log("status res", res);
+      
       const mapped = (res?.data ?? []).map((item: any) => ({
-        id: item.value,
-        name: item.label,
+        label: item.label,
+        value: item.value,
       }));
 
       setStatusDropdown(mapped);
     } catch (error: any) {
-      handleApiError(error, "updateStatus.statusLoadFailed");
+      console.error("Failed to fetch statuses:", error);
+    } finally {
+      setLoadingDropdowns(false);
     }
   }, [authState]);
 
   const fetchSubStatusDropdown = useCallback(async (statusId: number) => {
     try {
+      setLoadingDropdowns(true);
       const res = await getDropdownByEndpointAndId(
         "GetSubStatusMasterById",
         statusId,
@@ -193,822 +246,354 @@ const UpdateStatusScreen = () => {
         String(authState.antiforgeryToken)
       );
 
+      console.log("Substatus res", res);
+      
       const mapped = (res?.data ?? []).map((item: any) => ({
-        id: item.value,
-        name: item.label,
+        label: item.label,
+        value: item.value,
       }));
 
       setSubStatusDropdown(mapped);
     } catch (error) {
-      handleApiError(error, "updateStatus.subStatusLoadFailed");
+      console.error("Failed to fetch sub-statuses:", error);
+    } finally {
+      setLoadingDropdowns(false);
     }
   }, [authState]);
 
   const fetchCategoryDropdown = useCallback(async (callType: number) => {
     try {
+      setLoadingDropdowns(true);
       const res = await getDropdownByEndpoint(
         `GetCategoryMastersDropdownByCallType/${callType}`,
         String(authState.token),
         String(authState.antiforgeryToken)
       );
 
+      console.log("Category res", res);
+
       const mapped = (res?.data ?? []).map((item: any) => ({
-        id: item.value,
-        name: item.label,
+        label: item.label,
+        value: item.value,
       }));
-      console.log("cat res", res);
 
       setCategoryDropdown(mapped);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
+    } finally {
+      setLoadingDropdowns(false);
     }
   }, [authState]);
 
-  const fetchFosVisitStatusDropdown = useCallback(async () => {
-    try {
-      const res = await getDropdownByEndpoint(
-        "GetFOSVisitStatusDropdown",
-        String(authState.token),
-        String(authState.antiforgeryToken)
-      );
-
-      const mapped = (res?.data ?? []).map((item: any) => ({
-        id: item.value,
-        name: item.label,
-      }));
-
-      setFosVisitStatusDropdown(mapped);
-    } catch (error) {
-      console.error("Failed to fetch FOS visit status:", error);
-    }
-  }, [authState]);
-
-  // ================= HELPERS =================
-  const handleApiError = (error: any, fallbackMessage: string) => {
-    const status = error?.response?.status;
-    if (status === 401) {
-      Alert.alert(t("common.sessionExpired"), t("common.pleaseLoginAgain"));
-      router.replace("/login");
+  // Handle form submission
+  const handleSubmit = async () => {
+    // Validate required fields
+    if (!form.statusId) {
+      Alert.alert("Validation Error", "Please select a status");
       return;
     }
-    Alert.alert(t("common.error"), t(fallbackMessage));
-  };
 
-  const initializeFormData = () => {
-    if (!interactionItem) return;
-
-    const {
-      statusId, statusName,
-      subStatusId, subStatusName,
-      categoryId, categoryName,
-      brandName: brand, productDiscount: discount,
-      fosVisitDate: visitDate, fosVisitStatus: visitStatus,
-      fosSecondVisitDate: secondDate, fosSecondVisitStatus: secondStatus,
-      fosThirdVisitDate: thirdDate, fosThirdVisitStatus: thirdStatus,
-      closeRemarks
-    } = interactionItem;
-
-    if (statusId && statusName) {
-      setTaskstatus({ id: statusId, name: statusName });
-      fetchSubStatusDropdown(statusId);
+    if (!caseId) {
+      Alert.alert("Error", "Case ID is missing");
+      return;
     }
 
-    if (subStatusId && subStatusName) {
-      setSubStatus({ id: subStatusId, name: subStatusName });
+    if (!taskData) {
+      Alert.alert("Error", "Task data is missing");
+      return;
     }
 
-    if (categoryId && categoryName) {
-      setSelectedCategory({ id: categoryId, name: categoryName });
-    }
-
-    setBrandName(brand || "");
-    setProductDiscount(discount?.toString() || "");
-    setFosVisitDate(visitDate || "");
-    setFosSecondVisitDate(secondDate || "");
-    setFosThirdVisitDate(thirdDate || "");
-
-    if (visitStatus) setSelectedFosVisitStatus({ id: 0, name: visitStatus });
-    if (secondStatus) setSelectedFosSecondVisitStatus({ id: 0, name: secondStatus });
-    if (thirdStatus) setSelectedFosThirdVisitStatus({ id: 0, name: thirdStatus });
-    if (closeRemarks) setNotes(closeRemarks);
-  };
-
-  const saveActivity = useCallback(async (
-    interactionId: number,
-    oldValues: {
-      oldTaskstatus: string;
-      oldSubStatus: string;
-      oldComment: string;
-    },
-    newValues: {
-      newTaskstatus: string;
-      newSubStatus: string;
-      newComment: string;
-    },
-    activityStatus: string,
-    transactionNumber?: string
-  ) => {
     try {
-      const userRes = await getUserDataById({
-        userId: String(authState.userId),
+      const payload = preparePayload();
+
+      console.log("Complete Payload:", JSON.stringify(payload, null, 2));
+   
+
+      setLoading(true);
+      
+      const response = await updateInteraction({
+        data: payload,
         token: String(authState.token),
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      const firstName = userRes?.data?.firstName || "";
-      const lastName = userRes?.data?.lastName || "";
-      const activityByName = `${firstName} ${lastName}`.trim();
+      console.log("Update response:", response);
 
-      const changes = [];
-      const { oldTaskstatus, oldSubStatus, oldComment } = oldValues;
-      const { newTaskstatus, newSubStatus, newComment } = newValues;
-
-      if (oldTaskstatus !== newTaskstatus) {
-        changes.push(`${t("updateStatus.statusChanged")} "${oldTaskstatus || t("common.noData")}" ${t("updateStatus.to")} "${newTaskstatus || t("common.noData")}"`);
-      }
-
-      if (oldSubStatus !== newSubStatus) {
-        changes.push(`${t("updateStatus.subStatusChanged")} "${oldSubStatus || t("common.noData")}" ${t("updateStatus.to")} "${newSubStatus || t("common.noData")}"`);
-      }
-
-      if (oldComment !== newComment) {
-        if (oldComment && !newComment) {
-          changes.push(t("updateStatus.commentRemoved"));
-        } else if (!oldComment && newComment) {
-          changes.push(`${t("updateStatus.commentAdded")}: "${truncateText(newComment, 50)}"`);
-        } else if (oldComment && newComment) {
-          changes.push(`${t("updateStatus.commentUpdated")} "${truncateText(oldComment)}" ${t("updateStatus.to")} "${truncateText(newComment)}"`);
-        }
-      }
-
-      const activityDescription = changes.length === 0
-        ? t("updateStatus.noChanges")
-        : changes.join(", ");
-
-      const payload = {
-        activityTime: new Date().toISOString(),
-        activityInteractionId: interactionId,
-        activityActionName: "UPDATE",
-        activityDescription,
-        activityStatus,
-        activityById: String(authState.userId),
-        activityByName,
-        activityRelatedTo: "CAS",
-        activityRelatedToId: interactionId,
-        activityRelatedToName: transactionNumber || `${t("updateStatus.task")}${interactionId}`,
-      };
-
-      await addInteractionActivityHistory({
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-        body: payload,
-      });
-    } catch (err) {
-      console.error("❌ Activity save error:", err);
-    }
-  }, [authState, t]);
-
-  const sendLocation = useCallback(async (id: any) => {
-    try {
-      const location = await fetchLocation();
-      if (!location) return;
-
-      const { latitude, longitude } = location.coords;
-      const payload = {
-        name: address ?? t("updateStatus.unknownLocation"),
-        latitute: latitude.toString(),
-        longititute: longitude.toString(),
-        discriptions: address ?? "",
-        elderPinLocation: "string",
-        froPinLocation: String(address),
-        userId: String(authState.userId),
-      };
-
-      await addAndUpdateFROLocation(payload);
-    } catch (error) {
-      console.error("❌ Location update error:", error);
-    }
-  }, [authState.userId, fetchLocation, address, t]);
-
-  const validateForm = useCallback((): boolean => {
-    if (!Taskstatus) {
-      Alert.alert(t("common.validationError"), t("updateStatus.selectStatus"));
-      return false;
-    }
-
-    if (isClosedStatus && !notes.trim()) {
-      Alert.alert(t("common.validationError"), t("updateStatus.commentRequired"));
-      return false;
-    }
-
-    return true;
-  }, [Taskstatus, isClosedStatus, notes, t]);
-
-  const handleUpdate = useCallback(async () => {
-    if (!validateForm() || !caseId || !interactionItem) return;
-
-    setIsLoading(true);
-
-    const oldValues = {
-      oldTaskstatus: interactionItem.statusName || "",
-      oldSubStatus: interactionItem.subStatusName || "",
-      oldComment: interactionItem.closeRemarks || "",
-    };
-
-    const newValues = {
-      newTaskstatus: Taskstatus!.name,
-      newSubStatus: subStatus?.name || "",
-      newComment: isClosedStatus ? notes.trim() : "",
-    };
-
-    try {
-      const updatePayload = {
-        id: caseId,
-        statusId: Taskstatus!.id,
-        statusName: Taskstatus!.name,
-        subStatusId: subStatus?.id ?? 0,
-        subStatusName: subStatus?.name ?? "",
-        categoryId: selectedCategory?.id ?? 0,
-        categoryName: selectedCategory?.name ?? "",
-        brandName: brandName,
-        productDiscount: productDiscount ? parseFloat(productDiscount) : 0,
-        fosVisitDate: fosVisitDate,
-        fosVisitStatus: selectedFosVisitStatus?.name || "",
-        fosSecondVisitDate: fosSecondVisitDate,
-        fosSecondVisitStatus: selectedFosSecondVisitStatus?.name || "",
-        fosThirdVisitDate: fosThirdVisitDate,
-        fosThirdVisitStatus: selectedFosThirdVisitStatus?.name || "",
-        callBack: "",
-        assignToId: String(authState.userId),
-        ...(isClosedStatus && { closeRemarks: notes.trim() }),
-      };
-
-      const res = await updateInteraction({
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-        data: updatePayload,
-      });
-
-      await saveActivity(
-        caseId,
-        oldValues,
-        newValues,
-        res?.success ? "SUCCESS" : res?.status || "FAILED",
-        interactionItem.transactionNumber
-      );
-
-      if (res?.success) {
-        Alert.alert(t("common.success"), t("updateStatus.updateSuccess"), [
-          { text: t("common.ok"), onPress: () => router.replace("/(fro)/(complaints)") }
+      if (response?.success) {
+        Alert.alert("Success", "Task updated successfully", [
+          { text: "OK", onPress: () => router.back() }
         ]);
-        sendLocation(caseId);
+      } else {
+        Alert.alert("Error", response?.errors?.[0]?.message || "Failed to update task");
       }
     } catch (error: any) {
-      console.error("❌ Update failed:", error);
-
-      await saveActivity(
-        caseId,
-        oldValues,
-        newValues,
-        "FAILED",
-        interactionItem.transactionNumber
-      );
-
-      handleApiError(error, "common.somethingWentWrong");
+      console.error("Update error:", error);
+      Alert.alert("Error", error?.message || "Failed to update task");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [
-    caseId, interactionItem, Taskstatus, subStatus, isClosedStatus, notes,
-    selectedCategory, brandName, productDiscount, fosVisitDate,
-    selectedFosVisitStatus, fosSecondVisitDate, selectedFosSecondVisitStatus,
-    fosThirdVisitDate, selectedFosThirdVisitStatus, authState, validateForm,
-    saveActivity, sendLocation, t
-  ]);
-
-  const handleSubStatusPress = useCallback(() => {
-    if (!Taskstatus) {
-      setShowSubStatusWarning(true);
-      return;
-    }
-    setDropdownType("SUB");
-  }, [Taskstatus]);
-
-  const handleDropdownSelect = useCallback((type: DropdownType, item: DropdownItem) => {
-    switch (type) {
-      case "CASE":
-        setTaskstatus(item);
-        setSubStatus(null);
-        setShowSubStatusWarning(false);
-        fetchSubStatusDropdown(item.id);
-        break;
-      case "SUB":
-        setSubStatus(item);
-        break;
-      case "CATEGORY":
-        setSelectedCategory(item);
-        break;
-      case "FOS_VISIT":
-        setSelectedFosVisitStatus(item);
-        break;
-      case "FOS_SECOND_VISIT":
-        setSelectedFosSecondVisitStatus(item);
-        break;
-      case "FOS_THIRD_VISIT":
-        setSelectedFosThirdVisitStatus(item);
-        break;
-    }
-    setDropdownType(null);
-  }, [fetchSubStatusDropdown]);
-
-  // ================= RENDER HELPERS =================
-  const renderDropdown = (type: DropdownType, data: DropdownItem[]) => (
-    <>
-      {data.map((item) => (
-        <TouchableOpacity
-          key={item.id}
-          style={[styles.sheetItem, { borderBottomColor: theme.colors.colorBorder + "30" }]}
-          onPress={() => handleDropdownSelect(type, item)}
-        >
-          <Text style={[styles.sheetItemText, { color: theme.colors.colorTextPrimary }]}>
-            {item.name}
-          </Text>
-        </TouchableOpacity>
-      ))}
-    </>
-  );
-
-  const renderFOSSection = (
-    title: string,
-    dateValue: string,
-    onDateChange: (text: string) => void,
-    statusValue: SelectedItem,
-    statusType: DropdownType
-  ) => (
-    <View style={[styles.sectionContainer, { borderColor: theme.colors.colorBorder }]}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.colorTextPrimary }]}>
-        {title}
-      </Text>
-
-      <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-        {t("updateStatus.visitDate")} ({t("common.optional")})
-      </Text>
-      <TextInput
-        style={[styles.input, {
-          backgroundColor: theme.colors.colorBgSurface,
-          borderColor: theme.colors.colorBorder,
-          color: theme.colors.colorTextPrimary,
-        }]}
-        value={dateValue}
-        onChangeText={onDateChange}
-        placeholder="YYYY-MM-DD"
-        placeholderTextColor={theme.colors.inputPlaceholder}
-      />
-
-      <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-        {t("updateStatus.visitStatus")} ({t("common.optional")})
-      </Text>
-      <TouchableOpacity
-        style={[styles.dropdown, {
-          backgroundColor: theme.colors.colorBgSurface,
-          borderColor: theme.colors.colorBorder,
-        }]}
-        onPress={() => setDropdownType(statusType)}
-      >
-        <Text style={[
-          statusValue ? styles.value : styles.placeholder,
-          { color: statusValue ? theme.colors.colorTextPrimary : theme.colors.inputPlaceholder }
-        ]}>
-          {statusValue?.name || t("updateStatus.selectVisitStatus")}
-        </Text>
-        <Ionicons name="chevron-down" size={moderateScale(20)} color={theme.colors.inputPlaceholder} />
-      </TouchableOpacity>
-    </View>
-  );
-
-  // Loading/Error States
-  if (isParsing || isInitializing) {
-    return (
-      <View style={[styles.loadingContainer, { backgroundColor: theme.colors.colorBgPage }]}>
-        <ActivityIndicator size="large" color={theme.colors.colorPrimary600} />
-        <Text style={[styles.loadingText, { color: theme.colors.colorTextSecondary }]}>
-          {t("updateStatus.loadingTask")}
-        </Text>
-      </View>
-    );
-  }
-
-  if (!interactionItem) {
-    return (
-      <View style={[styles.errorContainer, { backgroundColor: theme.colors.colorBgPage }]}>
-        <Ionicons name="alert-circle-outline" size={moderateScale(60)} color={theme.colors.colorAccent700} />
-        <Text style={[styles.errorText, { color: theme.colors.colorTextSecondary }]}>
-          {t("updateStatus.noData")}
-        </Text>
-        <TouchableOpacity
-          style={[styles.backButton, { backgroundColor: theme.colors.colorPrimary600 }]}
-          onPress={() => router.back()}
-        >
-          <Text style={[styles.backButtonText, { color: theme.colors.colorBgPage }]}>
-            {t("common.goBack")}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  };
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: theme.colors.colorBgPage }]}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.innerContainer}>
-          {/* Header */}
-          <View style={[styles.header, { backgroundColor: theme.colors.colorPrimary600 }]}>
-            <TouchableOpacity onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={moderateScale(24)} color={theme.colors.colorBgPage} />
-            </TouchableOpacity>
-            <View style={styles.headerContent}>
-              <Text style={[styles.headerTitle, { color: theme.colors.colorBgPage }]}>
-                {t("updateStatus.title")} {caseId}
-              </Text>
-              {interactionItem.subject && (
-                <Text style={[styles.headerSubtitle, { color: `${theme.colors.colorBgPage}CC` }]} numberOfLines={1}>
-                  {interactionItem.subject}
-                </Text>
-              )}
-            </View>
-          </View>
+    <BodyLayout type="screen" screenName="Update Task">
+      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+       
 
-          <ScrollView
-            ref={scrollViewRef}
-            contentContainerStyle={styles.content}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
-
-            {/* Brand Name */}
-            <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-              {t("updateStatus.brandName")} ({t("common.optional")})
-            </Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: theme.colors.colorBgSurface,
-                borderColor: theme.colors.colorBorder,
-                color: theme.colors.colorTextPrimary,
-              }]}
-              value={brandName}
-              onChangeText={setBrandName}
-              placeholder={t("updateStatus.enterBrandName")}
-              placeholderTextColor={theme.colors.inputPlaceholder}
-            />
-            {/* Category */}
-            <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-              {t("updateStatus.selectCategory")} ({t("common.optional")})
-            </Text>
-            <TouchableOpacity
-              style={[styles.dropdown, {
-                backgroundColor: theme.colors.colorBgSurface,
-                borderColor: theme.colors.colorBorder,
-              }]}
-              onPress={() => setDropdownType("CATEGORY")}
-            >
-              <Text style={[
-                selectedCategory ? styles.value : styles.placeholder,
-                { color: selectedCategory ? theme.colors.colorTextPrimary : theme.colors.inputPlaceholder }
-              ]}>
-                {selectedCategory?.name || t("updateStatus.selectCategory")}
-              </Text>
-              <Ionicons name="chevron-down" size={moderateScale(20)} color={theme.colors.inputPlaceholder} />
-            </TouchableOpacity>
-
-
-            {/* Status */}
-            <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-              {t("updateStatus.selectTaskStatus")} *
-            </Text>
-            <TouchableOpacity
-              style={[styles.dropdown, {
-                backgroundColor: theme.colors.colorBgSurface,
-                borderColor: theme.colors.colorBorder,
-              }]}
-              onPress={() => setDropdownType("CASE")}
-            >
-              <Text style={[
-                Taskstatus ? styles.value : styles.placeholder,
-                { color: Taskstatus ? theme.colors.colorTextPrimary : theme.colors.inputPlaceholder }
-              ]}>
-                {Taskstatus?.name || t("updateStatus.selectTaskStatus")}
-              </Text>
-              <Ionicons name="chevron-down" size={moderateScale(20)} color={theme.colors.inputPlaceholder} />
-            </TouchableOpacity>
-
-            {/* Sub Status */}
-            <View>
-              <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-                {t("updateStatus.selectSubStatus")} ({t("common.optional")})
-              </Text>
-
-              {showSubStatusWarning && (
-                <View style={[styles.warningContainer, {
-                  backgroundColor: theme.colors.colorAccent500 + "20",
-                  borderColor: theme.colors.colorAccent500 + "40",
-                }]}>
-                  <Ionicons name="warning-outline" size={moderateScale(16)} color={theme.colors.colorAccent700} />
-                  <Text style={[styles.warningText, { color: theme.colors.colorAccent700 }]}>
-                    {t("updateStatus.selectStatusFirst")}
-                  </Text>
-                </View>
-              )}
-
-              <TouchableOpacity
-                style={[styles.dropdown, {
-                  backgroundColor: theme.colors.colorBgSurface,
-                  borderColor: theme.colors.colorBorder,
-                }, !Taskstatus && styles.disabledDropdown]}
-                onPress={handleSubStatusPress}
-                disabled={!Taskstatus}
-              >
-                <Text style={[
-                  subStatus ? styles.value : styles.placeholder,
-                  { color: subStatus ? theme.colors.colorTextPrimary : theme.colors.inputPlaceholder }
-                ]}>
-                  {subStatus?.name || t("updateStatus.selectSubStatus")}
-                </Text>
-                <Ionicons name="chevron-down" size={moderateScale(20)} color={
-                  Taskstatus ? theme.colors.inputPlaceholder : theme.colors.colorBorder
-                } />
-              </TouchableOpacity>
-            </View>
-
-
-            {/* Product Discount */}
-            <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-              {t("updateStatus.productDiscount")} (%) ({t("common.optional")})
-            </Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: theme.colors.colorBgSurface,
-                borderColor: theme.colors.colorBorder,
-                color: theme.colors.colorTextPrimary,
-              }]}
-              value={productDiscount}
-              onChangeText={setProductDiscount}
-              placeholder={t("updateStatus.enterDiscount")}
-              placeholderTextColor={theme.colors.inputPlaceholder}
-              keyboardType="numeric"
-            />
-
-            {/* FOS Sections */}
-            {renderFOSSection(
-              t("updateStatus.fosFirstVisit"),
-              fosVisitDate,
-              setFosVisitDate,
-              selectedFosVisitStatus,
-              "FOS_VISIT"
-            )}
-
-            {renderFOSSection(
-              t("updateStatus.fosSecondVisit"),
-              fosSecondVisitDate,
-              setFosSecondVisitDate,
-              selectedFosSecondVisitStatus,
-              "FOS_SECOND_VISIT"
-            )}
-
-            {renderFOSSection(
-              t("updateStatus.fosThirdVisit"),
-              fosThirdVisitDate,
-              setFosThirdVisitDate,
-              selectedFosThirdVisitStatus,
-              "FOS_THIRD_VISIT"
-            )}
-
-            {/* Comments for Closed Status */}
-            {isClosedStatus && (
-              <>
-                <Text style={[styles.label, { color: theme.colors.colorTextSecondary }]}>
-                  {t("updateStatus.comment")} *
-                </Text>
-                <TextInput
-                  ref={notesInputRef}
-                  style={[styles.textArea, {
-                    backgroundColor: theme.colors.colorBgSurface,
-                    borderColor: theme.colors.colorBorder,
-                    color: theme.colors.colorTextPrimary,
-                  }]}
-                  value={notes}
-                  onChangeText={setNotes}
-                  multiline
-                  placeholder={t("updateStatus.enterClosingRemarks")}
-                  placeholderTextColor={theme.colors.inputPlaceholder}
-                />
-              </>
-            )}
-
-            {/* Submit Button */}
-            <TouchableOpacity
-              style={[styles.submitBtn, { backgroundColor: theme.colors.colorPrimary600 }]}
-              onPress={handleUpdate}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={theme.colors.colorBgPage} />
-              ) : (
-                <Text style={[styles.submitText, { color: theme.colors.colorBgPage }]}>
-                  {t("common.update")}
-                </Text>
-              )}
-            </TouchableOpacity>
-          </ScrollView>
-
-          {/* Bottom Sheet Modal */}
-          <Modal transparent visible={!!dropdownType} animationType="slide">
-            <TouchableOpacity
-              style={styles.bottomSheetOverlay}
-              onPress={() => {
-                setDropdownType(null);
-                setShowSubStatusWarning(false);
-              }}
-              activeOpacity={1}
-            >
-              <View style={[styles.bottomSheet, { backgroundColor: theme.colors.colorBgPage }]}>
-                {dropdownType === "CASE" && renderDropdown("CASE", statusDropdown)}
-                {dropdownType === "SUB" && renderDropdown("SUB", subStatusDropdown)}
-                {dropdownType === "CATEGORY" && renderDropdown("CATEGORY", categoryDropdown)}
-                {dropdownType === "FOS_VISIT" && renderDropdown("FOS_VISIT", fosVisitStatusDropdown)}
-                {dropdownType === "FOS_SECOND_VISIT" && renderDropdown("FOS_SECOND_VISIT", fosVisitStatusDropdown)}
-                {dropdownType === "FOS_THIRD_VISIT" && renderDropdown("FOS_THIRD_VISIT", fosVisitStatusDropdown)}
-              </View>
-            </TouchableOpacity>
-          </Modal>
+        {/* CATEGORY */}
+        <Text style={styles.label}>Category</Text>
+        <View style={styles.dropdownContainer}>
+          <Dropdown
+            style={styles.dropdown}
+            data={categoryDropdown}
+            labelField="label"
+            valueField="value"
+            placeholder="Select Category"
+            placeholderStyle={styles.placeholderText}
+            selectedTextStyle={styles.selectedText}
+            value={form.categoryId}
+            onChange={(item) => {
+              updateField("categoryId", item.value);
+              updateField("categoryName", item.label);
+            }}
+            disable={loadingDropdowns}
+          />
         </View>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+
+        {/* STATUS - Required */}
+        <Text style={styles.label}>Status *</Text>
+        <View style={styles.dropdownContainer}>
+          <Dropdown
+            style={styles.dropdown}
+            data={statusDropdown}
+            labelField="label"
+            valueField="value"
+            placeholder="Select Status"
+            placeholderStyle={styles.placeholderText}
+            selectedTextStyle={styles.selectedText}
+            value={form.statusId}
+            onChange={(item) => {
+              updateField("statusId", item.value);
+              updateField("statusName", item.label);
+              // Reset sub-status when status changes
+              updateField("subStatusId", null);
+              updateField("subStatusName", null);
+            }}
+            disable={loadingDropdowns}
+          />
+        </View>
+
+        {/* SUB STATUS - Depends on selected status */}
+        <Text style={styles.label}>Sub Status</Text>
+        <View style={styles.dropdownContainer}>
+          <Dropdown
+            style={styles.dropdown}
+            data={subStatusDropdown}
+            labelField="label"
+            valueField="value"
+            placeholder={form.statusId ? "Select Sub Status" : "Select Status first"}
+            placeholderStyle={styles.placeholderText}
+            selectedTextStyle={styles.selectedText}
+            value={form.subStatusId}
+            onChange={(item) => {
+              updateField("subStatusId", item.value);
+              updateField("subStatusName", item.label);
+            }}
+            disable={!form.statusId || loadingDropdowns}
+          />
+        </View>
+
+        {/* BRAND */}
+        <Text style={styles.label}>Brand</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Brand"
+          placeholderTextColor={theme.colors.colorTextSecondary}
+          value={form.brandName}
+          onChangeText={(t) => updateField("brandName", t)}
+        />
+
+        {/* PRODUCT DISCOUNT */}
+        <Text style={styles.label}>Product Discount</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter Discount (e.g., 10%)"
+          placeholderTextColor={theme.colors.colorTextSecondary}
+          value={form.productDiscount}
+          onChangeText={(t) => updateField("productDiscount", t)}
+        />
+
+        {/* FOS VISIT DATE */}
+        <Text style={styles.label}>FOS Visit Date</Text>
+        <TouchableOpacity
+          style={styles.dateInput}
+          onPress={() => openDate("fosVisitDate")}
+        >
+          <Text style={form.fosVisitDate ? styles.dateText : styles.placeholderText}>
+            {form.fosVisitDate
+              ? renderDate(form.fosVisitDate)
+              : "Select FOS Visit Date"}
+          </Text>
+          <Ionicons
+            name="calendar-outline"
+            size={20}
+            color={theme.colors.colorTextSecondary}
+          />
+        </TouchableOpacity>
+
+        {/* REMARKS */}
+        <Text style={styles.label}>Close Remarks</Text>
+        <TextInput
+          style={styles.textArea}
+          multiline
+          placeholder="Enter Remarks"
+          placeholderTextColor={theme.colors.colorTextSecondary}
+          value={form.closeRemarks}
+          onChangeText={(t) => updateField("closeRemarks", t)}
+        />
+
+        {/* BUTTON */}
+        <TouchableOpacity
+          style={[
+            styles.saveButton,
+            { backgroundColor: theme.colors.btnPrimaryBg },
+            (loading || loadingDropdowns) && styles.buttonDisabled,
+          ]}
+          onPress={handleSubmit}
+          disabled={loading || loadingDropdowns}
+        >
+          <Text style={[styles.saveText, { color: theme.colors.btnPrimaryText }]}>
+            {loading ? "Updating..." : "Update Task"}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+
+      {datePicker.visible && (
+        <DateTimePicker
+          value={form.fosVisitDate || new Date()}
+          mode="date"
+          display={Platform.OS === "ios" ? "spinner" : "default"}
+          onChange={handleDateChange}
+        />
+      )}
+    </BodyLayout>
   );
-};
+}
 
-export default UpdateStatusScreen;
+/* ---------- STYLES ---------- */
+const createStyles = (theme: any) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      padding: 16,
+      backgroundColor: theme.colors.background,
+    },
 
-// ================= STYLES =================
-const styles = StyleSheet.create({
-  container: { flex: 1 },
-  innerContainer: { flex: 1 },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  loadingText: {
-    marginTop: verticalScale(10),
-    fontSize: moderateScale(14),
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    marginTop: verticalScale(10),
-    fontSize: moderateScale(18),
-    marginBottom: verticalScale(20),
-  },
-  backButton: {
-    paddingHorizontal: moderateScale(24),
-    paddingVertical: verticalScale(12),
-    borderRadius: moderateScale(8),
-  },
-  backButtonText: {
-    fontSize: moderateScale(14),
-    fontWeight: "600",
-  },
-  header: {
-    paddingTop: Platform.OS === "ios" ? verticalScale(50) : verticalScale(40),
-    padding: moderateScale(16),
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  headerContent: {
-    marginLeft: moderateScale(12),
-    flex: 1,
-  },
-  headerTitle: {
-    fontSize: moderateScale(18),
-    fontWeight: "600",
-  },
-  headerSubtitle: {
-    fontSize: moderateScale(13),
-    marginTop: verticalScale(2),
-  },
-  content: {
-    padding: moderateScale(16),
-    paddingBottom: verticalScale(30),
-  },
-  sectionContainer: {
-    marginTop: verticalScale(16),
-    padding: moderateScale(12),
-    borderRadius: moderateScale(10),
-    borderWidth: 1,
-  },
-  sectionTitle: {
-    fontSize: moderateScale(16),
-    fontWeight: "600",
-    marginBottom: verticalScale(8),
-  },
-  label: {
-    marginTop: verticalScale(12),
-    marginBottom: verticalScale(6),
-    fontSize: moderateScale(14),
-    fontWeight: "500",
-  },
-  dropdown: {
-    borderWidth: 1,
-    padding: moderateScale(14),
-    borderRadius: moderateScale(10),
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: verticalScale(8),
-  },
-  disabledDropdown: {
-    opacity: 0.6,
-  },
-  warningContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: moderateScale(8),
-    borderRadius: moderateScale(6),
-    marginBottom: verticalScale(6),
-    borderWidth: 1,
-  },
-  warningText: {
-    fontSize: moderateScale(12),
-    marginLeft: moderateScale(4),
-    fontWeight: "500",
-  },
-  placeholder: {
-    fontSize: moderateScale(14),
-  },
-  value: {
-    fontSize: moderateScale(14),
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: moderateScale(10),
-    padding: moderateScale(14),
-    fontSize: moderateScale(14),
-    marginBottom: verticalScale(8),
-  },
-  textArea: {
-    borderWidth: 1,
-    borderRadius: moderateScale(10),
-    height: verticalScale(100),
-    padding: moderateScale(12),
-    textAlignVertical: "top",
-    fontSize: moderateScale(14),
-  },
-  submitBtn: {
-    marginTop: verticalScale(24),
-    padding: moderateScale(16),
-    borderRadius: moderateScale(12),
-    alignItems: "center",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
-  },
-  submitText: {
-    fontSize: moderateScale(16),
-    fontWeight: "600",
-  },
-  bottomSheetOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  bottomSheet: {
-    maxHeight: height * 0.5,
-    borderTopLeftRadius: moderateScale(20),
-    borderTopRightRadius: moderateScale(20),
-    paddingBottom: Platform.OS === "ios" ? verticalScale(30) : verticalScale(20),
-  },
-  sheetItem: {
-    padding: moderateScale(16),
-    borderBottomWidth: 1,
-  },
-  sheetItemText: {
-    fontSize: moderateScale(16),
-  },
-});
+    infoCard: {
+      backgroundColor: theme.colors.colorBgSurface,
+      borderRadius: 10,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+
+    infoTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.colors.colorHeadingH1,
+      marginBottom: 8,
+    },
+
+    infoText: {
+      fontSize: 14,
+      color: theme.colors.colorTextPrimary,
+      marginBottom: 4,
+    },
+
+    label: {
+      fontSize: 13,
+      marginBottom: 6,
+      marginTop: 12,
+      color: theme.colors.colorTextSecondary,
+    },
+
+    dropdownContainer: {
+      borderWidth: 1,
+      borderRadius: 10,
+      backgroundColor: theme.colors.colorBgSurface,
+      borderColor: theme.colors.border,
+      overflow: "hidden",
+    },
+
+    dropdown: {
+      paddingHorizontal: 14,
+      height: 50,
+    },
+
+    placeholderText: {
+      color: theme.colors.colorTextSecondary,
+      fontSize: 14,
+    },
+
+    selectedText: {
+      color: theme.colors.colorTextPrimary,
+      fontSize: 14,
+    },
+
+    input: {
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      fontSize: 14,
+      backgroundColor: theme.colors.colorBgSurface,
+      borderColor: theme.colors.border,
+      color: theme.colors.colorTextPrimary,
+    },
+
+    dateInput: {
+      borderWidth: 1,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      backgroundColor: theme.colors.colorBgSurface,
+      borderColor: theme.colors.border,
+    },
+
+    dateText: {
+      color: theme.colors.colorTextPrimary,
+      fontSize: 14,
+    },
+
+    textArea: {
+      borderWidth: 1,
+      borderRadius: 10,
+      padding: 14,
+      minHeight: 100,
+      textAlignVertical: "top",
+      fontSize: 14,
+      backgroundColor: theme.colors.colorBgSurface,
+      borderColor: theme.colors.border,
+      color: theme.colors.colorTextPrimary,
+    },
+
+    saveButton: {
+      marginTop: 30,
+      marginBottom: 40,
+      paddingVertical: 14,
+      borderRadius: 10,
+      alignItems: "center",
+    },
+
+    buttonDisabled: {
+      opacity: 0.6,
+    },
+
+    saveText: {
+      fontWeight: "600",
+      fontSize: 16,
+    },
+  });

@@ -1,5 +1,5 @@
 import BodyLayout from "@/components/layout/BodyLayout";
-import { addNotesRecord } from "@/features/fro/complaints/addNoteApi";
+import { addNotesRecord, AddNotesRecordPayload } from "@/features/fro/complaints/addNoteApi";
 import { addInteractionActivityHistory } from "@/features/fro/interaction/ActivityHistory";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 
@@ -9,7 +9,6 @@ import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { useTranslation } from "react-i18next";
 
 import {
   Alert,
@@ -26,18 +25,26 @@ import {
 /* ---------- NOTE TYPES ---------- */
 const NOTE_TYPES = ["PUBLIC", "PRIVATE"];
 
+/* ---------- FOLLOW-UP TYPES ---------- */
+const FOLLOW_UP_TYPES = [
+  { value: "FIRST", label: "First Follow-up" },
+  { value: "SECOND", label: "Second Follow-up" },
+  { value: "THIRD", label: "Third Follow-up" },
+];
+
 export default function AddNoteScreen() {
   const { theme } = useTheme();
-  const { t } = useTranslation();
   const styles = createStyles(theme);
 
   const authState = useAppSelector((state) => state.auth);
 
   const [noteType, setNoteType] = useState("PUBLIC");
+  const [followUpType, setFollowUpType] = useState("FIRST");
   const [description, setDescription] = useState("");
   const [followUpDate, setFollowUpDate] = useState<Date | null>(null);
 
-  const [showSheet, setShowSheet] = useState(false);
+  const [showNoteTypeSheet, setShowNoteTypeSheet] = useState(false);
+  const [showFollowUpTypeSheet, setShowFollowUpTypeSheet] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -53,12 +60,27 @@ export default function AddNoteScreen() {
     return date;
   };
 
+  /* ---------- GET DATE LABEL BASED ON FOLLOW-UP TYPE ---------- */
+  const getDateLabel = () => {
+    switch (followUpType) {
+      case "FIRST":
+        return "First Follow-up Date";
+      case "SECOND":
+        return "Second Follow-up Date";
+      case "THIRD":
+        return "Third Follow-up Date";
+      default:
+        return "Follow-up Date";
+    }
+  };
+
   /* ---------- SAVE ACTIVITY ---------- */
   const saveActivity = async ({
     interactionId,
     noteType,
     noteDescription,
     followUpDate,
+    followUpType,
     activityStatus,
     transactionNumber,
   }: any) => {
@@ -74,8 +96,9 @@ export default function AddNoteScreen() {
       const activityByName = `${firstName} ${lastName}`.trim();
 
       const formattedDate = followUpDate.toLocaleDateString();
+      const followUpTypeLabel = FOLLOW_UP_TYPES.find(t => t.value === followUpType)?.label || followUpType;
 
-      const activityDescription = `${noteType} note added: "${noteDescription}" with follow-up date: ${formattedDate}`;
+      const activityDescription = `${noteType} note added: "${noteDescription}" with ${followUpTypeLabel} date: ${formattedDate}`;
 
       const payload = {
         activityTime: new Date().toISOString(),
@@ -103,76 +126,151 @@ export default function AddNoteScreen() {
   /* ---------- SUBMIT ---------- */
   const submitNote = async () => {
     if (!description.trim()) {
-      Alert.alert(
-        t("common.validation"),
-        t("notes.enterDescription")
-      );
+      Alert.alert("Validation", "Please enter a description");
       return;
     }
 
     if (!followUpDate) {
-      Alert.alert(
-        t("common.validation"),
-        t("notes.selectFollowUpDate")
-      );
+      Alert.alert("Validation", "Please select a follow-up date");
       return;
     }
 
     if (!caseId) {
-      Alert.alert(t("common.error"), t("notes.caseNotFound"));
+      Alert.alert("Error", "Case not found");
       return;
     }
 
     setLoading(true);
 
     try {
-      const payload = {
+      // Prepare payload based on selected follow-up type
+      const basePayload: AddNotesRecordPayload = {
         relatedTo: "CAS",
         relatedToId: caseId,
         relatedToName: transactionNumber,
         noteType: noteType.toLowerCase(),
         noteDesc: description,
         createdBy: String(authState.userId),
-        nextFollowUpDate: followUpDate.toISOString(),
+        nextFollowupDate: null,
+        isNextFollowupStatus: "No",
+        secondFollowupDate: null,
+        isSecondVisitStatus: "No",
+        thirdFollowupDate: null,
+        isThirdVisitStatus: "No",
       };
 
-      await addNotesRecord({
-        payload,
+      // Set dates and status based on follow-up type
+      switch (followUpType) {
+        case "FIRST":
+          basePayload.nextFollowupDate = followUpDate.toISOString();
+          basePayload.isNextFollowupStatus = "Yes";
+          break;
+        case "SECOND":
+          basePayload.secondFollowupDate = followUpDate.toISOString();
+          basePayload.isSecondVisitStatus = "Yes";
+          break;
+        case "THIRD":
+          basePayload.thirdFollowupDate = followUpDate.toISOString();
+          basePayload.isThirdVisitStatus = "Yes";
+          break;
+      }
+
+      // Log the final payload
+      console.log("========== FINAL PAYLOAD ==========");
+  
+      console.log("Complete Payload:", JSON.stringify(basePayload, null, 2));
+      console.log("===================================");
+
+    const res =  await addNotesRecord({
+        payload: basePayload,
         auth: {
           bearerToken: String(authState.token),
           antiForgeryToken: String(authState.antiforgeryToken),
         },
       });
 
+      console.log("res",res);
+      
+
       await saveActivity({
         interactionId: caseId,
         noteType,
         noteDescription: description,
         followUpDate,
+        followUpType,
         activityStatus: "Busy",
         transactionNumber,
       });
 
-      Alert.alert(t("common.success"), t("notes.noteAdded"));
+      Alert.alert("Success", "Note added successfully");
       router.back();
     } catch (error: any) {
       const message =
         error?.response?.data?.message ||
         error?.message ||
-        t("common.somethingWentWrong");
+        "Something went wrong";
 
-      Alert.alert(t("common.error"), message);
+      Alert.alert("Error", message);
     } finally {
       setLoading(false);
     }
   };
 
+  const getFollowUpTypeLabel = (type: string) => {
+    switch (type) {
+      case "FIRST":
+        return "First Follow-up";
+      case "SECOND":
+        return "Second Follow-up";
+      case "THIRD":
+        return "Third Follow-up";
+      default:
+        return type;
+    }
+  };
+
   return (
-    <BodyLayout type="screen" screenName={t("notes.addNote") || "Add Note"}>
+    <BodyLayout type="screen" screenName="Add Note">
       <View style={styles.container}>
-        {/* FOLLOW UP DATE */}
-        <Text style={styles.label}>
-          {t("notes.followUpDate") || "Next Follow-up Date"}
+        {/* NOTE TYPE */}
+        <Text style={styles.label}>Note Type</Text>
+
+        <TouchableOpacity
+          style={styles.dropdown}
+          onPress={() => setShowNoteTypeSheet(true)}
+        >
+          <Text style={styles.textPrimary}>
+            {noteType === "PUBLIC" ? "Public Note" : "Private Note"}
+          </Text>
+
+          <Ionicons
+            name="chevron-down"
+            size={18}
+            color={theme.colors.colorTextSecondary}
+          />
+        </TouchableOpacity>
+
+        {/* FOLLOW-UP TYPE */}
+        <Text style={[styles.label, { marginTop: 16 }]}>Follow-up Type</Text>
+
+        <TouchableOpacity
+          style={styles.dropdown}
+          onPress={() => setShowFollowUpTypeSheet(true)}
+        >
+          <Text style={styles.textPrimary}>
+            {getFollowUpTypeLabel(followUpType)}
+          </Text>
+
+          <Ionicons
+            name="chevron-down"
+            size={18}
+            color={theme.colors.colorTextSecondary}
+          />
+        </TouchableOpacity>
+
+        {/* DYNAMIC DATE LABEL BASED ON FOLLOW-UP TYPE */}
+        <Text style={[styles.label, { marginTop: 16 }]}>
+          {getDateLabel()}
         </Text>
 
         <TouchableOpacity
@@ -184,7 +282,7 @@ export default function AddNoteScreen() {
           >
             {followUpDate
               ? followUpDate.toDateString()
-              : t("notes.selectDate")}
+              : "Select Date"}
           </Text>
 
           <Ionicons
@@ -194,38 +292,14 @@ export default function AddNoteScreen() {
           />
         </TouchableOpacity>
 
-        {/* NOTE TYPE */}
-        <Text style={[styles.label, { marginTop: 16 }]}>
-          {t("notes.noteType")}
-        </Text>
-
-        <TouchableOpacity
-          style={styles.dropdown}
-          onPress={() => setShowSheet(true)}
-        >
-          <Text style={styles.textPrimary}>
-            {noteType === "PUBLIC"
-              ? t("notes.publicNote")
-              : t("notes.privateNote")}
-          </Text>
-
-          <Ionicons
-            name="chevron-down"
-            size={18}
-            color={theme.colors.colorTextSecondary}
-          />
-        </TouchableOpacity>
-
         {/* DESCRIPTION */}
-        <Text style={[styles.label, { marginTop: 20 }]}>
-          {t("notes.description")}
-        </Text>
+        <Text style={[styles.label, { marginTop: 20 }]}>Description</Text>
 
         <TextInput
           multiline
           value={description}
           onChangeText={setDescription}
-          placeholder={t("notes.descriptionPlaceholder")}
+          placeholder="Enter description..."
           placeholderTextColor={theme.colors.colorTextSecondary}
           style={styles.textArea}
         />
@@ -237,6 +311,7 @@ export default function AddNoteScreen() {
             { backgroundColor: theme.colors.btnPrimaryBg },
           ]}
           onPress={submitNote}
+          disabled={loading}
         >
           <Text
             style={[
@@ -244,7 +319,7 @@ export default function AddNoteScreen() {
               { color: theme.colors.btnPrimaryText },
             ]}
           >
-            {loading ? t("notes.addingNote") : t("notes.saveNote")}
+            {loading ? "Adding..." : "Save Note"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -264,13 +339,11 @@ export default function AddNoteScreen() {
       )}
 
       {/* NOTE TYPE SHEET */}
-      <Modal transparent visible={showSheet} animationType="slide">
-        <Pressable style={styles.overlay} onPress={() => setShowSheet(false)} />
+      <Modal transparent visible={showNoteTypeSheet} animationType="slide">
+        <Pressable style={styles.overlay} onPress={() => setShowNoteTypeSheet(false)} />
 
         <View style={styles.sheet}>
-          <Text style={styles.sheetTitle}>
-            {t("notes.selectNoteType")}
-          </Text>
+          <Text style={styles.sheetTitle}>Select Note Type</Text>
 
           {NOTE_TYPES.map((type) => (
             <TouchableOpacity
@@ -278,13 +351,35 @@ export default function AddNoteScreen() {
               style={styles.sheetItem}
               onPress={() => {
                 setNoteType(type);
-                setShowSheet(false);
+                setShowNoteTypeSheet(false);
               }}
             >
               <Text style={styles.textPrimary}>
-                {type === "PUBLIC"
-                  ? t("notes.publicNote")
-                  : t("notes.privateNote")}
+                {type === "PUBLIC" ? "Public Note" : "Private Note"}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modal>
+
+      {/* FOLLOW-UP TYPE SHEET */}
+      <Modal transparent visible={showFollowUpTypeSheet} animationType="slide">
+        <Pressable style={styles.overlay} onPress={() => setShowFollowUpTypeSheet(false)} />
+
+        <View style={styles.sheet}>
+          <Text style={styles.sheetTitle}>Select Follow-up Type</Text>
+
+          {FOLLOW_UP_TYPES.map((type) => (
+            <TouchableOpacity
+              key={type.value}
+              style={styles.sheetItem}
+              onPress={() => {
+                setFollowUpType(type.value);
+                setShowFollowUpTypeSheet(false);
+              }}
+            >
+              <Text style={styles.textPrimary}>
+                {type.label}
               </Text>
             </TouchableOpacity>
           ))}

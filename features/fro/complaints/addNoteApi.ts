@@ -9,7 +9,12 @@ export interface AddNotesRecordPayload {
   noteType: string;
   noteDesc: string;
   createdBy: string;
-  nextFollowUpDate: string; // ISO string
+  nextFollowupDate?: string | null; // Make optional with ?
+  isNextFollowupStatus: string;
+  secondFollowupDate?: string | null; // Make optional with ?
+  isSecondVisitStatus: string;
+  thirdFollowupDate?: string | null; // Make optional with ?
+  isThirdVisitStatus: string;
 }
 
 export interface ApiAuthContext {

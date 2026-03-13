@@ -35,6 +35,9 @@ export default function CaseDetailScreen() {
   const item = params.item ? JSON.parse(params.item as string) : null;
   const authState = useAppSelector((state) => state.auth);
 
+  console.log("item",item);
+  
+
   const { theme } = useTheme();
   const [documents, setDocuments] = useState<any[]>([]);
   const [notes, setNotes] = useState<Note[]>([]);
