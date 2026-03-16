@@ -1,5 +1,4 @@
 // app/_layout.tsx
-
 import "@/i18n";
 
 import { Stack } from "expo-router";
@@ -18,12 +17,10 @@ import { useThemedToastConfig } from "@/components/reusables/ThemedToast";
 
 import { AudioRecorderProvider } from "@/hooks/AudioRecorderProvider";
 import { CameraPermissionProvider } from "@/hooks/CameraPermissionProvider";
-import { LocationProvider } from "@/hooks/LocationContext";
+import { LocationProvider, useLocation } from "@/hooks/LocationContext";
 
 import { persistor, store } from "@/store";
 import { ThemeProvider, useTheme } from "@/theme/ThemeContext";
-
-import { startBackgroundTracking } from "@/services/backgroundLocation"; // ⭐ add this
 
 SplashScreen.preventAutoHideAsync();
 
@@ -45,7 +42,6 @@ export default function RootLayout() {
                     <>
                       <ThemedStack />
                       <GlobalLoader />
-
                       <Toast
                         config={toastConfig}
                         position="bottom"
@@ -65,9 +61,9 @@ export default function RootLayout() {
 
 function ThemedStack() {
   const { theme, isDarkMode } = useTheme();
+  const { hasPermission, hasBackgroundPermission } = useLocation();
 
   /* ---------------- STATUS BAR ---------------- */
-
   useEffect(() => {
     if (Platform.OS === "android") {
       RNStatusBar.setBackgroundColor(theme.colors.btnPrimaryBg);
@@ -75,11 +71,7 @@ function ThemedStack() {
     }
   }, [theme, isDarkMode]);
 
-  /* ---------------- START BACKGROUND TRACKING ---------------- */
-
-  useEffect(() => {
-    startBackgroundTracking();
-  }, []);
+  /* ---------------- BACKGROUND TRACKING IS NOW HANDLED IN LOCATION CONTEXT ---------------- */
 
   return (
     <>

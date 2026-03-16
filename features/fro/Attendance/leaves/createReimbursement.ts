@@ -2,12 +2,31 @@
 
 import { apiRequest } from "@/features/api/callApi";
 
+export type AttachmentPayload = {
+  fileName: string;
+  filePath: string;
+  fileSize: number;
+  contentType: string;
+  documentType: string;
+  documentName: string;
+  mimeType: string;
+  fileData: string; // base64
+};
+
+export type ExpenseTypePayload = {
+  expenseType: string;
+  amount: number;
+  expenseDate: string;
+  remarks: string;
+  attachment?: AttachmentPayload;
+};
+
 type CreateReimbursementParams = {
   taskNumber: string;
   amount: number;
   remarks: string;
   userId: string;
-  attachment: any;
+  expenseTypes: ExpenseTypePayload[];
   token: string;
   csrfToken?: string;
 };
@@ -17,33 +36,26 @@ export const createReimbursement = async ({
   amount,
   remarks,
   userId,
-  attachment,
+  expenseTypes,
   token,
   csrfToken,
 }: CreateReimbursementParams) => {
-  const formData = new FormData();
-
-  formData.append("TaskNumber", taskNumber);
-  formData.append("Amount", amount.toString());
-  formData.append("Remarks", remarks);
-  formData.append("UserId", userId);
-
-  if (attachment) {
-    formData.append("Attachments", {
-      uri: attachment.uri,
-      name: attachment.name || "bill.jpg",
-      type: attachment.type || "image/jpeg",
-    } as any);
-  }
+  const payload = {
+    taskNumber,
+    amount,
+    remarks,
+    userId,
+    expenseTypes,
+  };
 
   return apiRequest({
     method: "POST",
     url: `/Reimbursement/createReimbursement`,
-    data: formData,
+    data: payload,
     headers: {
       Accept: "application/json",
       Authorization: `Bearer ${token}`,
-      "Content-Type": "multipart/form-data",
+      "Content-Type": "application/json-patch+json",
       ...(csrfToken && { "X-CSRF-TOKEN": csrfToken }),
     },
   });

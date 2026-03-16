@@ -15,14 +15,16 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
   }
 
   try {
-    const { locations } = data;
-    const location = locations[0];
-
+    // Check if we have location data
+    if (!data || !data.locations || data.locations.length === 0) {
+      console.log("Background task: No location data received");
+      return;
+    }
+    
+    const location = data.locations[0];
     if (!location) return;
 
     const { latitude, longitude } = location.coords;
-
-    // console.log("📍 Background location:", latitude, longitude);
 
     // Get stored user data from AsyncStorage
     const userId = await AsyncStorage.getItem("userId");
@@ -31,7 +33,7 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
     const fullName = await AsyncStorage.getItem("fullName");
 
     if (!userId || !token) {
-      console.log("❌ Background: Missing auth data");
+      console.log("Background: Missing auth data");
       return;
     }
 
@@ -49,7 +51,7 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
           .join(", ");
       }
     } catch (geocodeError) {
-      console.log("⚠️ Background: Geocode error");
+      console.log("Background: Geocode error");
     }
 
     // Prepare payload
@@ -61,7 +63,6 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
       froPinLocation: address,
       userId,
     };
-console.log("add",address);
 
     // Send to server
     await addAndUpdateFROLocation(
@@ -70,40 +71,64 @@ console.log("add",address);
       csrfToken || ""
     );
 
-          // console.log("payload background",payload);
-
-
-    // console.log("✅ Background location update success");
   } catch (error) {
-    console.error("❌ Background location update error:", error);
+    console.error("Background location update error:", error);
   }
 });
 
-// Start background tracking
+// Start background tracking (only if permissions granted)
 export const startBackgroundTracking = async (): Promise<boolean> => {
   try {
-    // First check if we have background permission
-    const { status: backgroundStatus } = await Location.getBackgroundPermissionsAsync();
+    console.log("Attempting to start background tracking...");
     
+    // Check if background location is available on device
+    const isAvailable = await Location.isBackgroundLocationAvailableAsync();
+    if (!isAvailable) {
+      console.log("Background location is not available on this device");
+      return false;
+    }
+
+    // Check foreground permission
+    const { status: foregroundStatus, canAskAgain: canAskForeground } = 
+      await Location.getForegroundPermissionsAsync();
+    
+    // Check background permission
+    const { status: backgroundStatus, canAskAgain: canAskBackground } = 
+      await Location.getBackgroundPermissionsAsync();
+    
+    console.log("Permission status:", { 
+      foreground: foregroundStatus, 
+      background: backgroundStatus,
+      canAskForeground,
+      canAskBackground
+    });
+
+    // Don't start if permissions aren't granted
+    if (foregroundStatus !== 'granted') {
+      console.log("Cannot start background tracking: foreground permission not granted");
+      return false;
+    }
+
     if (backgroundStatus !== 'granted') {
-      console.log("❌ No background permission");
+      console.log("Cannot start background tracking: background permission not granted");
       return false;
     }
 
     // Check if already running
     const isRunning = await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
     if (isRunning) {
-      console.log("✅ Background tracking already running");
+      console.log("Background tracking already running");
       return true;
     }
 
-    // For Android, we need to ensure we have the right configuration
+    // Configure options
     const options: Location.LocationTaskOptions = {
       accuracy: Location.Accuracy.Balanced,
-      timeInterval: 1200000, // 1 minute
+      timeInterval: 60000, // 1 minute
       distanceInterval: 50, // 50 meters
       showsBackgroundLocationIndicator: true,
       pausesUpdatesAutomatically: false,
+      activityType: Location.ActivityType.OtherNavigation,
     };
 
     // Add foreground service config for Android
@@ -117,8 +142,7 @@ export const startBackgroundTracking = async (): Promise<boolean> => {
 
     // Start location updates
     await Location.startLocationUpdatesAsync(LOCATION_TASK, options);
-
-    console.log("✅ Background location tracking started");
+    console.log("✅ Background location tracking started successfully");
     return true;
   } catch (err) {
     console.log("❌ Failed to start background tracking:", err);
@@ -142,4 +166,28 @@ export const stopBackgroundTracking = async () => {
 // Check if background tracking is running
 export const isBackgroundTrackingRunning = async () => {
   return await Location.hasStartedLocationUpdatesAsync(LOCATION_TASK);
+};
+
+// Get background tracking status with details
+export const getBackgroundTrackingStatus = async () => {
+  try {
+    const [isRunning, foregroundPerm, backgroundPerm, isAvailable] = await Promise.all([
+      Location.hasStartedLocationUpdatesAsync(LOCATION_TASK),
+      Location.getForegroundPermissionsAsync(),
+      Location.getBackgroundPermissionsAsync(),
+      Location.isBackgroundLocationAvailableAsync()
+    ]);
+
+    return {
+      isRunning,
+      foregroundPermission: foregroundPerm.status,
+      backgroundPermission: backgroundPerm.status,
+      isAvailable,
+      canAskForeground: foregroundPerm.canAskAgain,
+      canAskBackground: backgroundPerm.canAskAgain
+    };
+  } catch (error) {
+    console.error("Error getting background tracking status:", error);
+    return null;
+  }
 };

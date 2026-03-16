@@ -169,7 +169,6 @@ export default function PunchInCard() {
   const punchAttendance = async () => {
   if (loading || dutyEnded) return;
 
-  // setLoading(true);
   dispatch(showLoader()); // ✅ GLOBAL LOADER START
 
   try {
@@ -185,6 +184,9 @@ export default function PunchInCard() {
       userId: String(authState.userId),
     };
 
+    // ✅ LOG PAYLOAD
+    console.log("Attendance Payload:", payload);
+
     const location = await fetchLocation();
     if (!location) return;
 
@@ -199,7 +201,7 @@ export default function PunchInCard() {
       userId: String(authState?.userId),
     });
 
-    console.log("punch res", res);
+    console.log("Attendance API Response:", res);
 
     if (action === "start") {
       setPunchInTime(now);
@@ -224,13 +226,14 @@ export default function PunchInCard() {
     }
 
   } catch (error) {
+    console.log("Attendance Error:", error);
+
     Toast.show({
       type: "error",
       text1: t("attendanceCard.failed") || "Attendance Failed",
       text2: t("attendanceCard.tryAgain") || "Please try again",
     });
   } finally {
-    // setLoading(false);
     dispatch(hideLoader()); // ✅ GLOBAL LOADER STOP
   }
 };

@@ -1,4 +1,5 @@
 import BodyLayout from "@/components/layout/BodyLayout";
+import { addClient, AddClientPayload } from "@/features/api/callApi";
 import { getDropdownByEndpoint } from "@/features/fro/dropdownApi";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
@@ -23,17 +24,23 @@ interface SellerFormData {
   firstName: string;
   lastName: string;
   email: string;
-  dateOfBirth: Date | null;
-  state: string;
+  dateOfBirth: Date | null;          // for UI only, not sent to API
+  stateId: number | null;
+  stateName: string;
   city: string;
   address: string;
   contactNo: string;
-  gender: string | null;
+  gender: string | null;              // will store the value (e.g., "1", "2")
+  alternateNo: string;
+  pinCode: string;
+  districtId: number | null;
+  districtName: string;
+  pinLocation: string;
 }
 
 interface DropdownItem {
   label: string;
-  value: number | string;
+  value: number;
 }
 
 export default function SellerOnboardingScreen() {
@@ -41,9 +48,19 @@ export default function SellerOnboardingScreen() {
   const styles = createStyles(theme);
   const authState = useAppSelector((state) => state.auth);
 
-  // State for dropdown data
+  // Log auth state on mount (for debugging)
+  useEffect(() => {
+    console.log("Auth State:", {
+      userId: authState?.userId,
+      token: authState?.token ? "Present" : "Missing",
+      antiforgeryToken: authState?.antiforgeryToken ? "Present" : "Missing",
+    });
+  }, []);
+
+  // Dropdown data states
   const [stateDropdown, setStateDropdown] = useState<DropdownItem[]>([]);
   const [genderDropdown, setGenderDropdown] = useState<DropdownItem[]>([]);
+  const [districtDropdown, setDistrictDropdown] = useState<DropdownItem[]>([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(false);
 
   // Form state
@@ -52,11 +69,17 @@ export default function SellerOnboardingScreen() {
     lastName: "",
     email: "",
     dateOfBirth: null,
-    state: "",
+    stateId: null,
+    stateName: "",
     city: "",
     address: "",
     contactNo: "",
     gender: null,
+    alternateNo: "",
+    pinCode: "",
+    districtId: null,
+    districtName: "",
+    pinLocation: "",
   });
 
   const [datePicker, setDatePicker] = useState({
@@ -66,84 +89,109 @@ export default function SellerOnboardingScreen() {
 
   const [loading, setLoading] = useState(false);
 
-  // Fetch dropdowns on component mount
+  // Fetch initial dropdowns
   useEffect(() => {
     fetchStateDropdown();
     fetchGenderDropdown();
   }, []);
 
-  // Fetch states from API
+  // Fetch districts when state changes
+  useEffect(() => {
+    if (form.stateId) {
+      fetchDistrictDropdown(form.stateId);
+    } else {
+      setDistrictDropdown([]);
+    }
+  }, [form.stateId]);
+
+  // --- API Fetch Functions ---
   const fetchStateDropdown = useCallback(async () => {
     try {
       setLoadingDropdowns(true);
+      console.log("Fetching states...");
       const res = await getDropdownByEndpoint(
-        "GetStateMasterDropdown", // Adjust endpoint name as per your API
+        "GetStateMasterDropdown",
         String(authState.token),
         String(authState.antiforgeryToken)
       );
-
-      console.log("State dropdown res", res);
-      
+      console.log("State dropdown response:", JSON.stringify(res, null, 2));
       const mapped = (res?.data ?? []).map((item: any) => ({
         label: item.label,
         value: item.value,
       }));
-
       setStateDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch states:", error);
-      // Fallback to empty array
+      Alert.alert("Error", "Failed to load states");
       setStateDropdown([]);
     } finally {
       setLoadingDropdowns(false);
     }
   }, [authState]);
 
-  // Fetch genders from API
-  const fetchGenderDropdown = useCallback(async () => {
+  const fetchDistrictDropdown = useCallback(async (stateId: number) => {
     try {
       setLoadingDropdowns(true);
+      console.log(`Fetching districts for state ID: ${stateId}`);
       const res = await getDropdownByEndpoint(
-        "GetGenderMasterDropdown", // Adjust endpoint name as per your API
+        `GetDistrictMasterByStateId/${stateId}`,
         String(authState.token),
         String(authState.antiforgeryToken)
       );
-
-      console.log("Gender dropdown res", res);
-      
+      console.log("District dropdown response:", JSON.stringify(res, null, 2));
       const mapped = (res?.data ?? []).map((item: any) => ({
         label: item.label,
         value: item.value,
       }));
+      setDistrictDropdown(mapped);
+    } catch (error: any) {
+      console.error("Failed to fetch districts:", error);
+      Alert.alert("Error", "Failed to load districts");
+      setDistrictDropdown([]);
+    } finally {
+      setLoadingDropdowns(false);
+    }
+  }, [authState]);
 
+  const fetchGenderDropdown = useCallback(async () => {
+    try {
+      setLoadingDropdowns(true);
+      console.log("Fetching genders...");
+      const res = await getDropdownByEndpoint(
+        "GetGenderMasterDropdown",
+        String(authState.token),
+        String(authState.antiforgeryToken)
+      );
+      console.log("Gender dropdown response:", JSON.stringify(res, null, 2));
+      const mapped = (res?.data ?? []).map((item: any) => ({
+        label: item.label,
+        value: item.value,
+      }));
       setGenderDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch genders:", error);
-      // Fallback data in case API fails
+      // Fallback data
       setGenderDropdown([
-        { label: "Male", value: "MALE" },
-        { label: "Female", value: "FEMALE" },
-        { label: "Other", value: "OTHER" },
-        { label: "Prefer not to say", value: "UNSPECIFIED" },
+        { label: "Male", value: 1 },
+        { label: "Female", value: 2 },
+        { label: "Other", value: 3 },
       ]);
     } finally {
       setLoadingDropdowns(false);
     }
   }, [authState]);
 
-  // Update form field
+  // --- Form Helpers ---
   const updateField = <K extends keyof SellerFormData>(key: K, value: SellerFormData[K]) => {
-    setForm(prevForm => ({ ...prevForm, [key]: value }));
+    setForm(prev => ({ ...prev, [key]: value }));
   };
 
-  // Date picker handlers
   const openDatePicker = (field: string) => {
     setDatePicker({ visible: true, field });
   };
 
   const handleDateChange = (_: any, selectedDate: any) => {
     setDatePicker({ visible: false, field: "" });
-
     if (selectedDate && datePicker.field) {
       updateField(datePicker.field as keyof SellerFormData, selectedDate);
     }
@@ -152,19 +200,17 @@ export default function SellerOnboardingScreen() {
   const formatDate = (date: Date | null) => {
     if (!date) return "";
     return date.toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+      day: '2-digit', month: '2-digit', year: 'numeric'
     });
   };
 
-  // Format date to ISO string for API
+  // Not used in API but kept for UI
   const formatDateForAPI = (date: Date | null) => {
-    if (!date) return null;
+    if (!date) return "";
     return date.toISOString();
   };
 
-  // Validation
+  // --- Validation ---
   const validateForm = () => {
     if (!form.firstName.trim()) {
       Alert.alert("Validation Error", "Please enter first name");
@@ -191,10 +237,6 @@ export default function SellerOnboardingScreen() {
       Alert.alert("Validation Error", "Please enter valid 10-digit contact number");
       return false;
     }
-    if (!form.dateOfBirth) {
-      Alert.alert("Validation Error", "Please select date of birth");
-      return false;
-    }
     if (!form.gender) {
       Alert.alert("Validation Error", "Please select gender");
       return false;
@@ -207,61 +249,91 @@ export default function SellerOnboardingScreen() {
       Alert.alert("Validation Error", "Please enter city");
       return false;
     }
-    if (!form.state) {
+    if (!form.stateId) {
       Alert.alert("Validation Error", "Please select state");
+      return false;
+    }
+    if (!form.districtId) {
+      Alert.alert("Validation Error", "Please select district");
+      return false;
+    }
+    if (!form.pinCode.trim()) {
+      Alert.alert("Validation Error", "Please enter pincode");
+      return false;
+    }
+    if (form.pinCode.length !== 6) {
+      Alert.alert("Validation Error", "Please enter valid 6-digit pincode");
+      return false;
+    }
+    if (!form.pinLocation.trim()) {
+      Alert.alert("Validation Error", "Please enter pin location");
       return false;
     }
     return true;
   };
 
-  // Prepare payload for API submission
-  const preparePayload = () => {
+  // --- Prepare Payload for API ---
+  const preparePayload = (): AddClientPayload => {
+    const fullName = `${form.firstName} ${form.lastName}`.trim();
     return {
-      firstName: form.firstName,
-      lastName: form.lastName,
-      email: form.email,
-      contactNo: form.contactNo,
-      dateOfBirth: formatDateForAPI(form.dateOfBirth),
-      gender: form.gender,
+      name: fullName,
+      pinCode: form.pinCode,
+      gender: String(form.gender),           // ensure string
+      stateId: form.stateId || 0,
+      stateName: form.stateName,
+      districtId: form.districtId || 0,
+      districtName: form.districtName,
+      pinLocation: form.pinLocation,
+      mobileNo: form.contactNo,
+      emailId: form.email,
+      alternateNo: form.alternateNo,
       address: form.address,
-      city: form.city,
-      state: form.state,
-      // Add any additional required fields
-      createdBy: authState?.userId,
-      createdDate: new Date().toISOString(),
+      userId: String(authState?.userId || ""),
+      latitude: "0",
+      longitude: "0",
     };
   };
 
-  // Submit handler
+  // --- Submit Handler ---
   const handleSubmit = async () => {
-    if (!validateForm()) return;
+    console.log("=== HANDLE SUBMIT STARTED ===");
+    if (!validateForm()) {
+      console.log("Form validation failed");
+      return;
+    }
 
     setLoading(true);
     try {
       const payload = preparePayload();
-      console.log("Submitting seller data:", payload);
-      
-      // API call to submit seller data
-      // Replace with your actual API endpoint
-      // const response = await addSeller({
-      //   data: payload,
-      //   token: String(authState.token),
-      //   csrfToken: String(authState.antiforgeryToken),
-      // });
+      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
-      // Simulate API call for now
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      Alert.alert(
-        "Success", 
-        "Seller onboarded successfully", 
-        [{ text: "OK", onPress: () => router.back() }]
-      );
-    } catch (error) {
-      console.error("Submission error:", error);
-      Alert.alert("Error", "Failed to onboard seller");
+      const response = await addClient({
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken),
+        body: payload,
+      });
+
+      console.log("API Response:", JSON.stringify(response, null, 2));
+
+      if (!response) {
+        Alert.alert("Error", "No response from server");
+        return;
+      }
+
+      if (response.success === true) {
+        Alert.alert("Success", "Seller onboarded successfully", [
+          { text: "OK", onPress: () => router.back() }
+        ]);
+      } else {
+        const errorMsg = response.errors?.[0]?.message || "Failed to onboard seller";
+        Alert.alert("Error", errorMsg);
+      }
+    } catch (error: any) {
+      console.error("Submit error:", error);
+      Alert.alert("Error", error?.message || "Network error. Please try again.");
     } finally {
       setLoading(false);
+      console.log("=== HANDLE SUBMIT END ===");
     }
   };
 
@@ -322,8 +394,20 @@ export default function SellerOnboardingScreen() {
             maxLength={10}
           />
 
-          {/* Date of Birth */}
-          <Text style={styles.label}>Date of Birth <Text style={styles.requiredStar}>*</Text></Text>
+          {/* Alternate Number */}
+          <Text style={styles.label}>Alternate Number</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter alternate number (optional)"
+            placeholderTextColor={theme.colors.colorTextSecondary}
+            value={form.alternateNo}
+            onChangeText={(t) => updateField("alternateNo", t.replace(/[^0-9]/g, ''))}
+            keyboardType="phone-pad"
+            maxLength={10}
+          />
+
+          {/* Date of Birth (UI only) */}
+          <Text style={styles.label}>Date of Birth</Text>
           <TouchableOpacity
             style={styles.dateInput}
             onPress={() => openDatePicker("dateOfBirth")}
@@ -331,11 +415,7 @@ export default function SellerOnboardingScreen() {
             <Text style={form.dateOfBirth ? styles.dateText : styles.placeholderText}>
               {form.dateOfBirth ? formatDate(form.dateOfBirth) : "Select Date of Birth"}
             </Text>
-            <Ionicons
-              name="calendar-outline"
-              size={20}
-              color={theme.colors.colorTextSecondary}
-            />
+            <Ionicons name="calendar-outline" size={20} color={theme.colors.colorTextSecondary} />
           </TouchableOpacity>
 
           {/* Gender */}
@@ -349,9 +429,10 @@ export default function SellerOnboardingScreen() {
               placeholder="Select Gender"
               placeholderStyle={styles.placeholderText}
               selectedTextStyle={styles.selectedText}
-              value={form.gender}
+              value={form.gender ? Number(form.gender) : null}
               onChange={(item) => updateField("gender", String(item.value))}
               disable={loadingDropdowns}
+              dropdownPosition="bottom"
             />
           </View>
 
@@ -388,11 +469,61 @@ export default function SellerOnboardingScreen() {
               placeholder="Select State"
               placeholderStyle={styles.placeholderText}
               selectedTextStyle={styles.selectedText}
-              value={form.state}
-              onChange={(item) => updateField("state", String(item.value))}
+              value={form.stateId}
+              onChange={(item) => {
+                updateField("stateId", item.value);
+                updateField("stateName", item.label);
+                // Reset district when state changes
+                updateField("districtId", null);
+                updateField("districtName", "");
+              }}
               disable={loadingDropdowns}
+              dropdownPosition="bottom"
             />
           </View>
+
+          {/* District */}
+          <Text style={styles.label}>District <Text style={styles.requiredStar}>*</Text></Text>
+          <View style={styles.dropdownContainer}>
+            <Dropdown
+              style={styles.dropdown}
+              data={districtDropdown}
+              labelField="label"
+              valueField="value"
+              placeholder={form.stateId ? "Select District" : "Select State first"}
+              placeholderStyle={styles.placeholderText}
+              selectedTextStyle={styles.selectedText}
+              value={form.districtId}
+              onChange={(item) => {
+                updateField("districtId", item.value);
+                updateField("districtName", item.label);
+              }}
+              disable={!form.stateId || loadingDropdowns}
+              dropdownPosition="bottom"
+            />
+          </View>
+
+          {/* Pincode */}
+          <Text style={styles.label}>Pincode <Text style={styles.requiredStar}>*</Text></Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter 6-digit pincode"
+            placeholderTextColor={theme.colors.colorTextSecondary}
+            value={form.pinCode}
+            onChangeText={(t) => updateField("pinCode", t.replace(/[^0-9]/g, ''))}
+            keyboardType="numeric"
+            maxLength={6}
+          />
+
+          {/* Pin Location */}
+          <Text style={styles.label}>Pin Location <Text style={styles.requiredStar}>*</Text></Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter pin location"
+            placeholderTextColor={theme.colors.colorTextSecondary}
+            value={form.pinLocation}
+            onChangeText={(t) => updateField("pinLocation", t)}
+          />
         </View>
 
         {/* Submit Button */}
@@ -435,30 +566,25 @@ const createStyles = (theme: any) =>
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    
     header: {
       padding: 20,
       backgroundColor: theme.colors.colorBgSurface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
     },
-    
     headerTitle: {
       fontSize: 24,
       fontWeight: "bold",
       color: theme.colors.colorHeadingH1,
       marginBottom: 4,
     },
-    
     headerSubtitle: {
       fontSize: 14,
       color: theme.colors.colorTextSecondary,
     },
-    
     formContainer: {
       padding: 20,
     },
-    
     label: {
       fontSize: 14,
       marginBottom: 8,
@@ -466,11 +592,9 @@ const createStyles = (theme: any) =>
       color: theme.colors.colorTextSecondary,
       fontWeight: "500",
     },
-    
     requiredStar: {
       color: "#FF3B30",
     },
-    
     input: {
       borderWidth: 1,
       borderRadius: 10,
@@ -481,7 +605,6 @@ const createStyles = (theme: any) =>
       borderColor: theme.colors.border,
       color: theme.colors.colorTextPrimary,
     },
-    
     dropdownContainer: {
       borderWidth: 1,
       borderRadius: 10,
@@ -489,22 +612,18 @@ const createStyles = (theme: any) =>
       borderColor: theme.colors.border,
       overflow: "hidden",
     },
-    
     dropdown: {
       paddingHorizontal: 14,
       height: 50,
     },
-    
     placeholderText: {
       color: theme.colors.colorTextSecondary,
       fontSize: 14,
     },
-    
     selectedText: {
       color: theme.colors.colorTextPrimary,
       fontSize: 14,
     },
-    
     dateInput: {
       borderWidth: 1,
       borderRadius: 10,
@@ -516,12 +635,10 @@ const createStyles = (theme: any) =>
       backgroundColor: theme.colors.colorBgSurface,
       borderColor: theme.colors.border,
     },
-    
     dateText: {
       color: theme.colors.colorTextPrimary,
       fontSize: 14,
     },
-    
     textArea: {
       borderWidth: 1,
       borderRadius: 10,
@@ -533,12 +650,10 @@ const createStyles = (theme: any) =>
       borderColor: theme.colors.border,
       color: theme.colors.colorTextPrimary,
     },
-    
     buttonContainer: {
       padding: 20,
       paddingTop: 10,
     },
-    
     submitButton: {
       flexDirection: "row",
       alignItems: "center",
@@ -547,12 +662,10 @@ const createStyles = (theme: any) =>
       borderRadius: 10,
       gap: 8,
     },
-    
     submitText: {
       fontSize: 16,
       fontWeight: "600",
     },
-    
     buttonDisabled: {
       opacity: 0.6,
     },

@@ -474,6 +474,13 @@ export default function ProfileScreen() {
           theme.colors.colorWarning400,
         )}
 
+            {renderItem(
+          "Seller Onboarding",
+          "User-line",
+          () => router.push("/(fro)/(profile)/SellerOnboardingScreen"),
+          theme.colors.colorError600,
+        )}
+
         {renderItem(
           t("profile.menuLanguage"),
           "translate-2",
@@ -494,6 +501,8 @@ export default function ProfileScreen() {
           () => router.push("/changePassword"),
           theme.colors.colorError600,
         )}
+
+      
 
         {/* ===== Logout ===== */}
         <TouchableOpacity

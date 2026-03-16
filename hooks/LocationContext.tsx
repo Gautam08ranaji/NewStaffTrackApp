@@ -1,7 +1,9 @@
-// LocationContext.tsx
+// hooks/LocationProvider.tsx (rename from LocationContext.tsx)
+import { startBackgroundTracking } from "@/services/backgroundLocation";
+import { useTheme } from "@/theme/ThemeContext";
 import * as Location from "expo-location";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { Alert, Linking, Platform } from "react-native";
+import { ActivityIndicator, Alert, Linking, Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 /* ================= TYPES ================= */
 
@@ -16,6 +18,8 @@ type LocationContextType = {
   fetchLocation: () => Promise<Location.LocationObject | null>;
   checkBackgroundPermission: () => Promise<boolean>;
   openSettings: () => void;
+  isBackgroundTrackingRunning: boolean;
+  startBackgroundTrackingManually: () => Promise<boolean>;
 };
 
 /* ================= CONTEXT ================= */
@@ -31,40 +35,80 @@ const LocationContext = createContext<LocationContextType>({
   fetchLocation: async () => null,
   checkBackgroundPermission: async () => false,
   openSettings: () => {},
+  isBackgroundTrackingRunning: false,
+  startBackgroundTrackingManually: async () => false,
 });
 
-/* ================= PROVIDER ================= */
+/* ================= PROVIDER WITH UI ================= */
 
 export const LocationProvider = ({
   children,
 }: {
   children: React.ReactNode;
 }) => {
+  const { theme } = useTheme();
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
   const [hasBackgroundPermission, setHasBackgroundPermission] = useState(false);
+  const [isBackgroundTrackingRunning, setIsBackgroundTrackingRunning] = useState(false);
+  
+  // UI State
+  const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [permissionStep, setPermissionStep] = useState<'initial' | 'background'>('initial');
 
   /* ---------- CHECK PERMISSIONS ON MOUNT ---------- */
   useEffect(() => {
     checkPermissions();
   }, []);
 
-  const checkPermissions = async () => {
-    // Check foreground permission
-    const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
-    const foreground = foregroundStatus === "granted";
-    setHasPermission(foreground);
+  /* ---------- CHECK BACKGROUND TRACKING STATUS ---------- */
+  useEffect(() => {
+    const checkTrackingStatus = async () => {
+      if (hasPermission && hasBackgroundPermission) {
+        const isRunning = await Location.hasStartedLocationUpdatesAsync("fro-background-location");
+        setIsBackgroundTrackingRunning(isRunning);
+      }
+    };
+    
+    checkTrackingStatus();
+  }, [hasPermission, hasBackgroundPermission]);
 
-    // Check background permission
-    if (foreground) {
+  /* ---------- SHOW/HIDE MODAL BASED ON PERMISSIONS ---------- */
+  useEffect(() => {
+    if (!hasPermission) {
+      setShowPermissionModal(true);
+      setPermissionStep('initial');
+    } else if (hasPermission && !hasBackgroundPermission) {
+      setShowPermissionModal(true);
+      setPermissionStep('background');
+    } else {
+      setShowPermissionModal(false);
+    }
+  }, [hasPermission, hasBackgroundPermission]);
+
+  const checkPermissions = async () => {
+    try {
+      const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
+      const foreground = foregroundStatus === "granted";
+      setHasPermission(foreground);
+
       const { status: backgroundStatus } = await Location.getBackgroundPermissionsAsync();
-      setHasBackgroundPermission(backgroundStatus === "granted");
-      console.log("Background permission status:", backgroundStatus);
+      const background = backgroundStatus === "granted";
+      setHasBackgroundPermission(background);
+      
+      console.log("Permission check:", { foreground, background });
+
+      if (foreground && background) {
+        const started = await startBackgroundTracking();
+        setIsBackgroundTrackingRunning(started);
+      }
+    } catch (error) {
+      console.error("Error checking permissions:", error);
     }
   };
 
-  /* ---------- REQUEST FOREGROUND PERMISSION ---------- */
   const requestPermission = async (): Promise<boolean> => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
@@ -76,8 +120,6 @@ export const LocationProvider = ({
 
       setHasPermission(true);
       await fetchLocation();
-      
-      // After getting foreground, check background
       await checkPermissions();
       
       return true;
@@ -87,10 +129,8 @@ export const LocationProvider = ({
     }
   };
 
-  /* ---------- REQUEST BACKGROUND PERMISSION ---------- */
   const requestBackgroundPermission = async (): Promise<boolean> => {
     try {
-      // Ensure we have foreground permission first
       if (!hasPermission) {
         const granted = await requestPermission();
         if (!granted) {
@@ -102,9 +142,7 @@ export const LocationProvider = ({
         }
       }
 
-      // On Android, background permission is handled differently
       if (Platform.OS === 'android') {
-        // Show explanation dialog
         return new Promise((resolve) => {
           Alert.alert(
             "Background Location Permission",
@@ -119,8 +157,10 @@ export const LocationProvider = ({
                     const granted = status === "granted";
                     setHasBackgroundPermission(granted);
                     
-                    if (!granted) {
-                      // If denied, offer to open settings
+                    if (granted) {
+                      const started = await startBackgroundTracking();
+                      setIsBackgroundTrackingRunning(started);
+                    } else {
                       Alert.alert(
                         "Permission Denied",
                         "Background location permission is required for tracking when app is closed. You can enable it in settings.",
@@ -141,10 +181,15 @@ export const LocationProvider = ({
           );
         });
       } else {
-        // iOS
         const { status } = await Location.requestBackgroundPermissionsAsync();
         const granted = status === "granted";
         setHasBackgroundPermission(granted);
+        
+        if (granted) {
+          const started = await startBackgroundTracking();
+          setIsBackgroundTrackingRunning(started);
+        }
+        
         return granted;
       }
     } catch (error) {
@@ -153,20 +198,33 @@ export const LocationProvider = ({
     }
   };
 
-  /* ---------- CHECK BACKGROUND PERMISSION ---------- */
+  const startBackgroundTrackingManually = async (): Promise<boolean> => {
+    if (!hasPermission || !hasBackgroundPermission) {
+      console.log("Cannot start: missing permissions");
+      return false;
+    }
+
+    const started = await startBackgroundTracking();
+    setIsBackgroundTrackingRunning(started);
+    return started;
+  };
+
   const checkBackgroundPermission = async (): Promise<boolean> => {
     const { status } = await Location.getBackgroundPermissionsAsync();
     return status === "granted";
   };
 
-  /* ---------- OPEN SETTINGS ---------- */
   const openSettings = () => {
     Linking.openSettings();
   };
 
-  /* ---------- FETCH LOCATION ---------- */
   const fetchLocation = async () => {
     try {
+      if (!hasPermission) {
+        console.log("Cannot fetch location: no permission");
+        return null;
+      }
+
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
@@ -195,13 +253,82 @@ export const LocationProvider = ({
     }
   };
 
-  /* ---------- REVOKE (APP LEVEL) ---------- */
   const revokePermission = () => {
     setHasPermission(false);
     setHasBackgroundPermission(false);
     setLocation(null);
     setAddress(null);
+    setIsBackgroundTrackingRunning(false);
   };
+
+  /* ---------- UI RENDERING ---------- */
+  const renderInitialPermission = () => (
+    <>
+      <View style={styles.iconContainer}>
+        <Text style={styles.icon}>📍</Text>
+      </View>
+      <Text style={styles.title}>Location Access Required</Text>
+      <Text style={styles.message}>
+        FIELD TRACK needs access to your location to track your field activities and report your position to supervisors.
+      </Text>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: theme.colors.btnPrimaryBg }]}
+        onPress={async () => {
+          setIsRequesting(true);
+          await requestPermission();
+          setIsRequesting(false);
+        }}
+        disabled={isRequesting}
+      >
+        {isRequesting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={[styles.buttonText, { color: theme.colors.btnPrimaryText }]}>
+            Grant Location Access
+          </Text>
+        )}
+      </TouchableOpacity>
+    </>
+  );
+
+  const renderBackgroundPermission = () => (
+    <>
+      <View style={styles.iconContainer}>
+        <Text style={styles.icon}>🔄</Text>
+      </View>
+      <Text style={styles.title}>Background Tracking</Text>
+      <Text style={styles.message}>
+        To track your location even when the app is closed, please enable background location permission.
+        {'\n\n'}
+        On the next screen, select "Allow all the time" for continuous tracking.
+      </Text>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: theme.colors.btnPrimaryBg }]}
+        onPress={async () => {
+          setIsRequesting(true);
+          await requestBackgroundPermission();
+          setIsRequesting(false);
+        }}
+        disabled={isRequesting}
+      >
+        {isRequesting ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={[styles.buttonText, { color: theme.colors.btnPrimaryText }]}>
+            Enable Background Tracking
+          </Text>
+        )}
+      </TouchableOpacity>
+      <TouchableOpacity
+        style={[styles.secondaryButton]}
+        onPress={() => setShowPermissionModal(false)}
+      >
+        <Text style={[styles.secondaryButtonText, { color: theme.colors.text }]}>
+          Maybe Later
+        </Text>
+      </TouchableOpacity>
+    </>
+  );
 
   return (
     <LocationContext.Provider
@@ -216,13 +343,92 @@ export const LocationProvider = ({
         fetchLocation,
         checkBackgroundPermission,
         openSettings,
+        isBackgroundTrackingRunning,
+        startBackgroundTrackingManually,
       }}
     >
       {children}
+      
+      {/* Permission Modal */}
+      <Modal
+        visible={showPermissionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={styles.overlay}>
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
+            {permissionStep === 'initial' && renderInitialPermission()}
+            {permissionStep === 'background' && renderBackgroundPermission()}
+          </View>
+        </View>
+      </Modal>
     </LocationContext.Provider>
   );
 };
 
-/* ================= HOOK ================= */
+/* ================= STYLES ================= */
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: '85%',
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+  },
+  iconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  icon: {
+    fontSize: 40,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  message: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+    color: '#666',
+  },
+  button: {
+    width: '100%',
+    padding: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    padding: 12,
+  },
+  secondaryButtonText: {
+    fontSize: 14,
+  },
+});
 
+/* ================= HOOK ================= */
 export const useLocation = () => useContext(LocationContext);

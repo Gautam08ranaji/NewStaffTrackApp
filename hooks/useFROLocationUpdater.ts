@@ -77,7 +77,7 @@ export const useFROLocationUpdater = (userId?: string | null) => {
 
     try {
       intervalCounter.current += 1;
-      console.log(`📍 Foreground update #${intervalCounter.current} at ${new Date().toLocaleTimeString()}`);
+      // console.log(`📍 Foreground update #${intervalCounter.current} at ${new Date().toLocaleTimeString()}`);
       
       const location = await fetchLocation();
       if (!location) return;
@@ -110,7 +110,8 @@ export const useFROLocationUpdater = (userId?: string | null) => {
         csrfToken || ""
       );
 
-      console.log("✅ Location update success at:", new Date().toLocaleTimeString());
+      // console.log("✅ Location update success at:", new Date().toLocaleTimeString());
+        // console.log("✅ Location update res:", payload);
     } catch (error) {
       console.error("❌ Location update error:", error);
     }
@@ -160,16 +161,16 @@ export const useFROLocationUpdater = (userId?: string | null) => {
       isIntervalSet.current = false;
     }
 
-    // Send initial location
+    // Send initial locationß
     console.log("Sending initial location");
     sendLocation();
     
     // Set up foreground interval (20 minutes = 1200000 ms)
-    const INTERVAL_TIME = 120000; // 20 minutes
+    const INTERVAL_TIME = 12000; // 20 minutes
     console.log(`Setting up foreground interval for ${INTERVAL_TIME/60000} minutes`);
     
     intervalRef.current = setInterval(() => {
-      console.log(`⏰ Interval triggered at ${new Date().toLocaleTimeString()}`);
+      // console.log(`⏰ Interval triggered at ${new Date().toLocaleTimeString()}`);
       sendLocation();
     }, INTERVAL_TIME);
     
