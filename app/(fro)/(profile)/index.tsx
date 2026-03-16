@@ -477,7 +477,7 @@ export default function ProfileScreen() {
             {renderItem(
           "Seller Onboarding",
           "User-line",
-          () => router.push("/(fro)/(profile)/SellerOnboardingScreen"),
+          () => router.push("/(fro)/(profile)/SellerList"),
           theme.colors.colorError600,
         )}
 

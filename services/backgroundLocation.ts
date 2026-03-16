@@ -20,7 +20,7 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
       console.log("Background task: No location data received");
       return;
     }
-    
+
     const location = data.locations[0];
     if (!location) return;
 
@@ -40,19 +40,19 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
     // Get address from location
     let address = "Unknown location";
     try {
-  const places = await Location.reverseGeocodeAsync({
-    latitude,
-    longitude,
-  });
+      const places = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
 
-  if (places && places.length > 0) {
+      if (places && places.length > 0) {
         const p = places[0];
         address = [p.name, p.street, p.city, p.region, p.country]
           .filter(Boolean)
           .join(", ");
       }
     } catch (geocodeError) {
-      console.log("Background: Geocode error");
+      console.log("Background reverse geocode failed:", geocodeError);
     }
 
     // Prepare payload
@@ -81,7 +81,7 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
 export const startBackgroundTracking = async (): Promise<boolean> => {
   try {
     console.log("Attempting to start background tracking...");
-    
+
     // Check if background location is available on device
     const isAvailable = await Location.isBackgroundLocationAvailableAsync();
     if (!isAvailable) {
@@ -90,15 +90,15 @@ export const startBackgroundTracking = async (): Promise<boolean> => {
     }
 
     // Check foreground permission
-    const { status: foregroundStatus, canAskAgain: canAskForeground } = 
+    const { status: foregroundStatus, canAskAgain: canAskForeground } =
       await Location.getForegroundPermissionsAsync();
-    
+
     // Check background permission
-    const { status: backgroundStatus, canAskAgain: canAskBackground } = 
+    const { status: backgroundStatus, canAskAgain: canAskBackground } =
       await Location.getBackgroundPermissionsAsync();
-    
-    console.log("Permission status:", { 
-      foreground: foregroundStatus, 
+
+    console.log("Permission status:", {
+      foreground: foregroundStatus,
       background: backgroundStatus,
       canAskForeground,
       canAskBackground

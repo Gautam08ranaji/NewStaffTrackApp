@@ -7,13 +7,14 @@ import { getFROCasePerformanceDayWise } from "@/features/fro/dashboard/dayWisePe
 import { getFROMonthCasePerformanceDayWise } from "@/features/fro/dashboard/monthWisePerformance";
 import { getDashCount } from "@/features/fro/interaction/countApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
+import { getClientDataById } from "@/features/fro/profile/sellerContactByIdApi";
 import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
 import { useFROLocationUpdater } from "@/hooks/useFROLocationUpdater";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect } from "expo-router";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
@@ -200,6 +201,25 @@ export default function HomeScreen() {
     dispatch(hideLoader());
   }
   };
+
+
+  useEffect(() => {
+  const fetchClient = async () => {
+    try {
+      const res = await getClientDataById({
+        id: 348,
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken),
+      });
+
+      console.log("Client Data:", res);
+    } catch (error) {
+      console.error("Client fetch error:", error);
+    }
+  };
+
+  fetchClient();
+}, []);
 
   const fetchCountData = async () => {
     try {
