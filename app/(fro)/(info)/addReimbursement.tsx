@@ -72,6 +72,8 @@ interface ExpenseItem {
     expenseType?: string;
     amount?: string;
     expenseDate?: string;
+    attachment?: string; 
+    remarks?: string;
   };
 }
 
@@ -396,53 +398,67 @@ export default function AddReimbursementScreen() {
   };
 
   // Update expense field with error clearing
-  const updateExpenseField = <K extends keyof ExpenseItem>(
-    index: number,
-    field: K,
-    value: ExpenseItem[K]
-  ) => {
-    const updated = [...expenses];
-    updated[index] = { 
-      ...updated[index], 
-      [field]: value,
-      errors: {
-        ...updated[index].errors,
-        [field]: undefined, // Clear error for this field
-      }
-    };
-    setExpenses(updated);
+ const updateExpenseField = <K extends keyof ExpenseItem>(
+  index: number,
+  field: K,
+  value: ExpenseItem[K]
+) => {
+  const updated = [...expenses];
+
+  updated[index] = {
+    ...updated[index],
+    [field]: value,
+    errors: {
+      ...updated[index].errors,
+      [field]: undefined,
+      ...(field === "attachment" ? { attachment: undefined } : {}),
+      ...(field === "remarks" ? { remarks: undefined } : {}),
+    }
   };
+
+  setExpenses(updated);
+};
 
   // Validate a single expense
-  const validateExpense = (expense: ExpenseItem, index: number): boolean => {
-    const errors: { [key: string]: string } = {};
-    let isValid = true;
+ const validateExpense = (expense: ExpenseItem, index: number): boolean => {
+  const errors: { [key: string]: string } = {};
+  let isValid = true;
 
-    if (!expense.expenseType) {
-      errors.expenseType = "Expense type is required";
-      isValid = false;
-    }
+  if (!expense.expenseType) {
+    errors.expenseType = "Expense type is required";
+    isValid = false;
+  }
 
-    if (!expense.amount) {
-      errors.amount = "Amount is required";
-      isValid = false;
-    } else if (isNaN(Number(expense.amount)) || Number(expense.amount) <= 0) {
-      errors.amount = "Please enter a valid amount";
-      isValid = false;
-    }
+  if (!expense.amount) {
+    errors.amount = "Amount is required";
+    isValid = false;
+  } else if (isNaN(Number(expense.amount)) || Number(expense.amount) <= 0) {
+    errors.amount = "Please enter a valid amount";
+    isValid = false;
+  }
 
-    if (!expense.expenseDate) {
-      errors.expenseDate = "Expense date is required";
-      isValid = false;
-    }
+  if (!expense.expenseDate) {
+    errors.expenseDate = "Expense date is required";
+    isValid = false;
+  }
 
-    // Update errors in state
-    const updated = [...expenses];
-    updated[index] = { ...expense, errors };
-    setExpenses(updated);
+  if (!expense.attachment) {
+    errors.attachment = "Attachment is required";
+    isValid = false;
+  }
 
-    return isValid;
-  };
+  // ✅ NEW VALIDATION
+  if (!expense.remarks || expense.remarks.trim().length === 0) {
+    errors.remarks = "Remarks is required";
+    isValid = false;
+  }
+
+  const updated = [...expenses];
+  updated[index] = { ...expense, errors };
+  setExpenses(updated);
+
+  return isValid;
+};
 
   // Validate entire form
   const validateForm = useCallback((): boolean => {
@@ -1094,6 +1110,12 @@ export default function AddReimbursementScreen() {
             {item.attachment ? "Change Attachment" : "Add Attachment"}
           </Text>
         </TouchableOpacity>
+
+        {item.errors?.attachment && (
+  <Text style={[styles.errorText, { color: theme.colors.colorError600 }]}>
+    {item.errors.attachment}
+  </Text>
+)}
       </View>
 
       {/* Remarks Field */}
@@ -1120,6 +1142,11 @@ export default function AddReimbursementScreen() {
           editable={!isSubmitting}
         />
       </View>
+      {item.errors?.remarks && (
+  <Text style={[styles.errorText, { color: theme.colors.colorError600 }]}>
+    {item.errors.remarks}
+  </Text>
+)}
     </Card>
   );
 

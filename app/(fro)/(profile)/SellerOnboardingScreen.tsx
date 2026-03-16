@@ -1,15 +1,14 @@
 import BodyLayout from "@/components/layout/BodyLayout";
-import { addClient, AddClientPayload } from "@/features/api/callApi";
 import { getDropdownByEndpoint } from "@/features/fro/dropdownApi";
+import { addClient, AddClientPayload } from "@/features/fro/profile/addClient";
+import { useLocation } from "@/hooks/LocationContext";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
-import DateTimePicker from "@react-native-community/datetimepicker";
-import { router } from "expo-router";
+import * as Location from "expo-location";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -19,12 +18,11 @@ import {
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 
+
 // Define types for form data
 interface SellerFormData {
-  firstName: string;
-  lastName: string;
+  name: string;
   email: string;
-  dateOfBirth: Date | null;          // for UI only, not sent to API
   stateId: number | null;
   stateName: string;
   city: string;
@@ -36,6 +34,7 @@ interface SellerFormData {
   districtId: number | null;
   districtName: string;
   pinLocation: string;
+  productName: string;                 // new field
 }
 
 interface DropdownItem {
@@ -47,6 +46,9 @@ export default function SellerOnboardingScreen() {
   const { theme } = useTheme();
   const styles = createStyles(theme);
   const authState = useAppSelector((state) => state.auth);
+  const { fetchLocation, address } = useLocation();
+
+  console.log(address, "addewss");
 
   // Log auth state on mount (for debugging)
   useEffect(() => {
@@ -62,13 +64,28 @@ export default function SellerOnboardingScreen() {
   const [genderDropdown, setGenderDropdown] = useState<DropdownItem[]>([]);
   const [districtDropdown, setDistrictDropdown] = useState<DropdownItem[]>([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(false);
+  const [userLocation, setUserLocation] =
+    useState<Location.LocationObjectCoords | null>(null);
+
+  useEffect(() => {
+    const loadLocation = async () => {
+      try {
+        const loc = await fetchLocation();
+        console.log(loc, "loc");
+
+        if (loc?.coords) setUserLocation(loc.coords);
+      } catch (err) {
+        console.log("Location fetch error:", err);
+      }
+    };
+
+    loadLocation();
+  }, []);
 
   // Form state
   const [form, setForm] = useState<SellerFormData>({
-    firstName: "",
-    lastName: "",
+    name: "",
     email: "",
-    dateOfBirth: null,
     stateId: null,
     stateName: "",
     city: "",
@@ -80,11 +97,7 @@ export default function SellerOnboardingScreen() {
     districtId: null,
     districtName: "",
     pinLocation: "",
-  });
-
-  const [datePicker, setDatePicker] = useState({
-    visible: false,
-    field: "",
+    productName: "",                   // new field
   });
 
   const [loading, setLoading] = useState(false);
@@ -110,15 +123,17 @@ export default function SellerOnboardingScreen() {
       setLoadingDropdowns(true);
       console.log("Fetching states...");
       const res = await getDropdownByEndpoint(
-        "GetStateMasterDropdown",
+        "GetStateDropdown",
         String(authState.token),
         String(authState.antiforgeryToken)
       );
-      console.log("State dropdown response:", JSON.stringify(res, null, 2));
+
+      // console.log("State dropdown response:", JSON.stringify(res, null, 2));
       const mapped = (res?.data ?? []).map((item: any) => ({
         label: item.label,
         value: item.value,
       }));
+
       setStateDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch states:", error);
@@ -134,7 +149,7 @@ export default function SellerOnboardingScreen() {
       setLoadingDropdowns(true);
       console.log(`Fetching districts for state ID: ${stateId}`);
       const res = await getDropdownByEndpoint(
-        `GetDistrictMasterByStateId/${stateId}`,
+        `GetDistrictDropdownByStateId/${stateId}`,
         String(authState.token),
         String(authState.antiforgeryToken)
       );
@@ -153,29 +168,32 @@ export default function SellerOnboardingScreen() {
     }
   }, [authState]);
 
+  // Add fetchGenderDropdown function
   const fetchGenderDropdown = useCallback(async () => {
+
+
     try {
+
+
       setLoadingDropdowns(true);
       console.log("Fetching genders...");
       const res = await getDropdownByEndpoint(
-        "GetGenderMasterDropdown",
+        "GetGenderDropdown",
         String(authState.token),
         String(authState.antiforgeryToken)
       );
+
       console.log("Gender dropdown response:", JSON.stringify(res, null, 2));
       const mapped = (res?.data ?? []).map((item: any) => ({
         label: item.label,
         value: item.value,
       }));
+
       setGenderDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch genders:", error);
-      // Fallback data
-      setGenderDropdown([
-        { label: "Male", value: 1 },
-        { label: "Female", value: 2 },
-        { label: "Other", value: 3 },
-      ]);
+      Alert.alert("Error", "Failed to load genders");
+      setGenderDropdown([]);
     } finally {
       setLoadingDropdowns(false);
     }
@@ -186,38 +204,10 @@ export default function SellerOnboardingScreen() {
     setForm(prev => ({ ...prev, [key]: value }));
   };
 
-  const openDatePicker = (field: string) => {
-    setDatePicker({ visible: true, field });
-  };
-
-  const handleDateChange = (_: any, selectedDate: any) => {
-    setDatePicker({ visible: false, field: "" });
-    if (selectedDate && datePicker.field) {
-      updateField(datePicker.field as keyof SellerFormData, selectedDate);
-    }
-  };
-
-  const formatDate = (date: Date | null) => {
-    if (!date) return "";
-    return date.toLocaleDateString('en-US', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-    });
-  };
-
-  // Not used in API but kept for UI
-  const formatDateForAPI = (date: Date | null) => {
-    if (!date) return "";
-    return date.toISOString();
-  };
-
   // --- Validation ---
   const validateForm = () => {
-    if (!form.firstName.trim()) {
-      Alert.alert("Validation Error", "Please enter first name");
-      return false;
-    }
-    if (!form.lastName.trim()) {
-      Alert.alert("Validation Error", "Please enter last name");
+    if (!form.name.trim()) {
+      Alert.alert("Validation Error", "Please enter full name");
       return false;
     }
     if (!form.email.trim()) {
@@ -245,10 +235,7 @@ export default function SellerOnboardingScreen() {
       Alert.alert("Validation Error", "Please enter address");
       return false;
     }
-    if (!form.city.trim()) {
-      Alert.alert("Validation Error", "Please enter city");
-      return false;
-    }
+
     if (!form.stateId) {
       Alert.alert("Validation Error", "Please select state");
       return false;
@@ -265,34 +252,40 @@ export default function SellerOnboardingScreen() {
       Alert.alert("Validation Error", "Please enter valid 6-digit pincode");
       return false;
     }
-    if (!form.pinLocation.trim()) {
-      Alert.alert("Validation Error", "Please enter pin location");
+    if (!form.productName.trim()) {
+      Alert.alert("Validation Error", "Please enter product name");
       return false;
     }
     return true;
   };
 
   // --- Prepare Payload for API ---
-  const preparePayload = (): AddClientPayload => {
-    const fullName = `${form.firstName} ${form.lastName}`.trim();
+  const preparePayload = (
+    latitude: number,
+    longitude: number
+  ): AddClientPayload => {
     return {
-      name: fullName,
+      name: form.name,
       pinCode: form.pinCode,
-      gender: String(form.gender),           // ensure string
+      gender:String(form.gender),
       stateId: form.stateId || 0,
       stateName: form.stateName,
       districtId: form.districtId || 0,
       districtName: form.districtName,
-      pinLocation: form.pinLocation,
+      pinLocation: String(address),
       mobileNo: form.contactNo,
       emailId: form.email,
       alternateNo: form.alternateNo,
       address: form.address,
       userId: String(authState?.userId || ""),
-      latitude: "0",
-      longitude: "0",
+      latitude: String(latitude),
+      longitude: String(longitude),
+      isMobileApp: "true",
+      productName: form.productName,
     };
   };
+
+
 
   // --- Submit Handler ---
   const handleSubmit = async () => {
@@ -304,7 +297,16 @@ export default function SellerOnboardingScreen() {
 
     setLoading(true);
     try {
-      const payload = preparePayload();
+
+      const location = await fetchLocation();
+      if (!location) {
+        Alert.alert("Location Error", "Unable to fetch location");
+        return;
+      }
+
+      const { latitude, longitude } = location.coords;
+
+      const payload = preparePayload(latitude, longitude);
       console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
       const response = await addClient({
@@ -321,9 +323,8 @@ export default function SellerOnboardingScreen() {
       }
 
       if (response.success === true) {
-        Alert.alert("Success", "Seller onboarded successfully", [
-          { text: "OK", onPress: () => router.back() }
-        ]);
+        console.log("API Response:", JSON.stringify(response, null, 2));
+
       } else {
         const errorMsg = response.errors?.[0]?.message || "Failed to onboard seller";
         Alert.alert("Error", errorMsg);
@@ -350,24 +351,14 @@ export default function SellerOnboardingScreen() {
 
         {/* Form Fields */}
         <View style={styles.formContainer}>
-          {/* First Name */}
-          <Text style={styles.label}>First Name <Text style={styles.requiredStar}>*</Text></Text>
+          {/* Full Name */}
+          <Text style={styles.label}>Full Name <Text style={styles.requiredStar}>*</Text></Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter first name"
+            placeholder="Enter full name"
             placeholderTextColor={theme.colors.colorTextSecondary}
-            value={form.firstName}
-            onChangeText={(t) => updateField("firstName", t)}
-          />
-
-          {/* Last Name */}
-          <Text style={styles.label}>Last Name <Text style={styles.requiredStar}>*</Text></Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter last name"
-            placeholderTextColor={theme.colors.colorTextSecondary}
-            value={form.lastName}
-            onChangeText={(t) => updateField("lastName", t)}
+            value={form.name}
+            onChangeText={(t) => updateField("name", t)}
           />
 
           {/* Email */}
@@ -406,18 +397,6 @@ export default function SellerOnboardingScreen() {
             maxLength={10}
           />
 
-          {/* Date of Birth (UI only) */}
-          <Text style={styles.label}>Date of Birth</Text>
-          <TouchableOpacity
-            style={styles.dateInput}
-            onPress={() => openDatePicker("dateOfBirth")}
-          >
-            <Text style={form.dateOfBirth ? styles.dateText : styles.placeholderText}>
-              {form.dateOfBirth ? formatDate(form.dateOfBirth) : "Select Date of Birth"}
-            </Text>
-            <Ionicons name="calendar-outline" size={20} color={theme.colors.colorTextSecondary} />
-          </TouchableOpacity>
-
           {/* Gender */}
           <Text style={styles.label}>Gender <Text style={styles.requiredStar}>*</Text></Text>
           <View style={styles.dropdownContainer}>
@@ -430,7 +409,7 @@ export default function SellerOnboardingScreen() {
               placeholderStyle={styles.placeholderText}
               selectedTextStyle={styles.selectedText}
               value={form.gender ? Number(form.gender) : null}
-              onChange={(item) => updateField("gender", String(item.value))}
+              onChange={(item) => updateField("gender", item.label)}
               disable={loadingDropdowns}
               dropdownPosition="bottom"
             />
@@ -448,15 +427,7 @@ export default function SellerOnboardingScreen() {
             numberOfLines={3}
           />
 
-          {/* City */}
-          <Text style={styles.label}>City <Text style={styles.requiredStar}>*</Text></Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter city"
-            placeholderTextColor={theme.colors.colorTextSecondary}
-            value={form.city}
-            onChangeText={(t) => updateField("city", t)}
-          />
+
 
           {/* State */}
           <Text style={styles.label}>State <Text style={styles.requiredStar}>*</Text></Text>
@@ -515,14 +486,15 @@ export default function SellerOnboardingScreen() {
             maxLength={6}
           />
 
-          {/* Pin Location */}
-          <Text style={styles.label}>Pin Location <Text style={styles.requiredStar}>*</Text></Text>
+         
+          {/* Product Name */}
+          <Text style={styles.label}>Product Name <Text style={styles.requiredStar}>*</Text></Text>
           <TextInput
             style={styles.input}
-            placeholder="Enter pin location"
+            placeholder="Enter product name"
             placeholderTextColor={theme.colors.colorTextSecondary}
-            value={form.pinLocation}
-            onChangeText={(t) => updateField("pinLocation", t)}
+            value={form.productName}
+            onChangeText={(t) => updateField("productName", t)}
           />
         </View>
 
@@ -544,17 +516,6 @@ export default function SellerOnboardingScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Date Picker */}
-      {datePicker.visible && (
-        <DateTimePicker
-          value={form.dateOfBirth || new Date(2000, 0, 1)}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={handleDateChange}
-          maximumDate={new Date()}
-        />
-      )}
     </BodyLayout>
   );
 }

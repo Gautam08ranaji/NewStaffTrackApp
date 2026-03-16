@@ -16,6 +16,8 @@ export interface AddClientPayload {
   userId: string;
   latitude: string;
   longitude: string;
+  isMobileApp:string;
+  productName:string;
 }
 
 interface AddClientParams {
