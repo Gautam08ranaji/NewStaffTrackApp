@@ -36,49 +36,35 @@
       ]
     ],
 
-    "android": {
-      "backgroundColor": "#ffffff",
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.gautam1008.fieldtrack",
+   "android": {
+  "backgroundColor": "#ffffff",
+  "predictiveBackGestureEnabled": false,
+  "package": "com.gautam1008.fieldtrack",
+  "permissions": [
+    "RECORD_AUDIO",
+    "ACCESS_FINE_LOCATION",
+    "ACCESS_COARSE_LOCATION",
+    "ACCESS_BACKGROUND_LOCATION",
+    "FOREGROUND_SERVICE",
+    "WAKE_LOCK"
+  ],
+  "adaptiveIcon": {
+    "foregroundImage": "./assets/images/staffTrackLogo.png",
+    "backgroundColor": "#ffffff"
+  }
+},
 
-      "permissions": [
-        "RECORD_AUDIO",
-        "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION",
-        "FOREGROUND_SERVICE",
-        "WAKE_LOCK"
-      ],
-
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/staffTrackLogo.png",
-        "backgroundColor": "#ffffff"
-      },
-
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyDVl4s2zlYODWTIpEfzYePa_hj5nrWksuE"
-        }
-      }
-    },
-
-    "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.gautam1008.fieldtrack",
-
-      "config": {
-        "googleMapsApiKey": "AIzaSyDVl4s2zlYODWTIpEfzYePa_hj5nrWksuE"
-      },
-
-      "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": ["location", "fetch"],
-        "NSLocationWhenInUseUsageDescription": "This app needs your location to track field staff.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app tracks location in background for field monitoring.",
-        "NSLocationAlwaysUsageDescription": "Location is used to monitor field activity."
-      }
-    },
+   "ios": {
+  "supportsTablet": true,
+  "bundleIdentifier": "com.gautam1008.fieldtrack",
+  "infoPlist": {
+    "ITSAppUsesNonExemptEncryption": false,
+    "UIBackgroundModes": ["location", "fetch"],
+    "NSLocationWhenInUseUsageDescription": "This app needs your location to track field staff.",
+    "NSLocationAlwaysAndWhenInUseUsageDescription": "This app tracks location in background for field monitoring.",
+    "NSLocationAlwaysUsageDescription": "Location is used to monitor field activity."
+  }
+},
 
     "web": {
       "output": "static",

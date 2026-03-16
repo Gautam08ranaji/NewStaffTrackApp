@@ -5,7 +5,7 @@ import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
 import React, { useEffect } from "react";
-import { Platform, StatusBar as RNStatusBar } from "react-native";
+import { Platform, StatusBar as RNStatusBar, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
@@ -40,13 +40,17 @@ export default function RootLayout() {
                 <ThemeProvider>
                   <AudioRecorderProvider>
                     <>
-                      <ThemedStack />
-                      <GlobalLoader />
-                      <Toast
-                        config={toastConfig}
-                        position="bottom"
-                        bottomOffset={70}
-                      />
+
+                      <View style={{ flex: 1 }}>
+                        <ThemedStack />
+                        <GlobalLoader />
+                        <Toast
+                          config={toastConfig}
+                          position="bottom"
+                          bottomOffset={70}
+                        />
+                      </View>
+                      
                     </>
                   </AudioRecorderProvider>
                 </ThemeProvider>

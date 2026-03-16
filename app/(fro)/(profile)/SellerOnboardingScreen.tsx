@@ -289,55 +289,62 @@ export default function SellerOnboardingScreen() {
 
   // --- Submit Handler ---
   const handleSubmit = async () => {
-    console.log("=== HANDLE SUBMIT STARTED ===");
-    if (!validateForm()) {
-      console.log("Form validation failed");
+  console.log("=== HANDLE SUBMIT STARTED ===");
+
+  if (!validateForm()) {
+    console.log("Form validation failed");
+    return;
+  }
+
+  setLoading(true);
+
+  try {
+    const location = await fetchLocation();
+
+    if (!location) {
+      Alert.alert("Location Error", "Unable to fetch location");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    try {
+    const { latitude, longitude } = location.coords;
 
-      const location = await fetchLocation();
-      if (!location) {
-        Alert.alert("Location Error", "Unable to fetch location");
-        return;
-      }
+    const payload = preparePayload(latitude, longitude);
 
-      const { latitude, longitude } = location.coords;
+    console.log("Submitting payload:", JSON.stringify(payload, null, 2));
 
-      const payload = preparePayload(latitude, longitude);
-      console.log("Submitting payload:", JSON.stringify(payload, null, 2));
+    const response = await addClient({
+      token: String(authState.token),
+      csrfToken: String(authState.antiforgeryToken),
+      createdBy: String(authState?.userId),
+      body: payload,
+    });
 
-      const response = await addClient({
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-        body: payload,
-      });
+    console.log("API Response:", JSON.stringify(response, null, 2));
 
-      console.log("API Response:", JSON.stringify(response, null, 2));
-
-      if (!response) {
-        Alert.alert("Error", "No response from server");
-        return;
-      }
-
-      if (response.success === true) {
-        console.log("API Response:", JSON.stringify(response, null, 2));
-
-      } else {
-        const errorMsg = response.errors?.[0]?.message || "Failed to onboard seller";
-        Alert.alert("Error", errorMsg);
-      }
-    } catch (error: any) {
-      console.error("Submit error:", error);
-      Alert.alert("Error", error?.message || "Network error. Please try again.");
-    } finally {
-      setLoading(false);
-      console.log("=== HANDLE SUBMIT END ===");
+    if (!response) {
+      Alert.alert("Error", "No response from server");
+      return;
     }
-  };
 
+    if (response?.success === true) {
+      Alert.alert("Success", "Client added successfully");
+    } else {
+      const errorMsg =
+        response?.errors?.[0]?.message || "Failed to onboard seller";
+      Alert.alert("Error", errorMsg);
+    }
+  } catch (error: any) {
+    console.error("Submit error:", error);
+    Alert.alert("Error", error?.message || "Network error. Please try again.");
+  } finally {
+    setLoading(false);
+    console.log("=== HANDLE SUBMIT END ===");
+  }
+};
+
+
+  
   return (
     <BodyLayout type="screen" screenName="Seller Onboarding">
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
