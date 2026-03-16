@@ -40,11 +40,12 @@ TaskManager.defineTask(LOCATION_TASK, async ({ data, error }: any) => {
     // Get address from location
     let address = "Unknown location";
     try {
-      const places = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
-      if (places.length > 0) {
+  const places = await Location.reverseGeocodeAsync({
+    latitude,
+    longitude,
+  });
+
+  if (places && places.length > 0) {
         const p = places[0];
         address = [p.name, p.street, p.city, p.region, p.country]
           .filter(Boolean)

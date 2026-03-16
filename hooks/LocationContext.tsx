@@ -231,20 +231,33 @@ export const LocationProvider = ({
 
       setLocation(currentLocation);
 
-      const { latitude, longitude } = currentLocation.coords;
-      const places = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
+     const { latitude, longitude } = currentLocation.coords;
 
-      if (places.length > 0) {
-        const p = places[0];
-        const readableAddress = [p.name, p.street, p.city, p.region, p.country]
-          .filter(Boolean)
-          .join(", ");
+try {
+  const places = await Location.reverseGeocodeAsync({
+    latitude,
+    longitude,
+  });
 
-        setAddress(readableAddress);
-      }
+  if (places && places.length > 0) {
+    const p = places[0];
+
+    const readableAddress = [
+      p.name,
+      p.street,
+      p.city,
+      p.region,
+      p.country,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    setAddress(readableAddress);
+  }
+} catch (err) {
+  console.log("Reverse geocode failed:", err);
+  setAddress("Unknown location");
+}
 
       return currentLocation;
     } catch (error) {
