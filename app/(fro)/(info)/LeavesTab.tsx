@@ -1,5 +1,6 @@
 import Card from "@/components/reusables/Card";
 import { createLeave } from "@/features/fro/Attendance/leaves/applyLeave";
+import { deleteLeave } from "@/features/fro/Attendance/leaves/deleteLeave";
 import { getLeaveList } from "@/features/fro/Attendance/leaves/getLeaveList";
 import { getLookupMasters } from "@/features/fro/getLookupMasters";
 import { useAppSelector } from "@/store/hooks";
@@ -184,6 +185,46 @@ export default function LeavesTab() {
     }
 
     return true;
+  };
+
+
+
+  const handleDelete = async (item: LeaveListItem) => {
+    console.log("id", item.id);
+    try {
+      const fullName = `${authState?.firstName ?? ""} ${authState?.lastName ?? ""}`.trim();
+
+
+      const payload = {
+        id: item.id, // ✅ correct id
+        deletedBy: String(authState.userId),
+        deletedByName: fullName, // ✅ correct name
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken),
+      };
+
+      console.log("🗑 Delete Payload:", payload);
+
+      const res = await deleteLeave(payload);
+
+      console.log("✅ Leave Deleted:", res);
+
+      Toast.show({
+        type: "success",
+        text1: "Leave deleted successfully",
+      });
+
+      // refresh list instead of router.back()
+      fetchLeaveList(1, true);
+
+    } catch (error: any) {
+      console.error("❌ Delete Error:", error);
+
+      Toast.show({
+        type: "error",
+        text1: error?.response?.data?.message || "Failed to delete leave",
+      });
+    }
   };
 
   const submitLeave = async () => {
@@ -637,7 +678,9 @@ export default function LeavesTab() {
                       <Ionicons name="create-outline" size={22} color={theme.colors.colorPrimary500} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity onPress={() => { }}>
+                    <TouchableOpacity onPress={() => {
+                      handleDelete(item)
+                    }}>
                       <Ionicons name="trash-outline" size={22} color={theme.colors.validationErrorText} />
                     </TouchableOpacity>
                   </View>
