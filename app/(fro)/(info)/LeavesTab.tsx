@@ -1,13 +1,13 @@
 import Card from "@/components/reusables/Card";
 import { createLeave } from "@/features/fro/Attendance/leaves/applyLeave";
 import { getLeaveList } from "@/features/fro/Attendance/leaves/getLeaveList";
+import { getLookupMasters } from "@/features/fro/getLookupMasters";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useFocusEffect } from "expo-router";
-import React, { useCallback, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -22,15 +22,7 @@ import {
 import Toast from "react-native-toast-message";
 
 /* ---------- CONSTANTS ---------- */
-const LEAVE_TYPES = ["Casual", "Sick", "Earned"];
 const FILTER_OPTIONS = ["All", "Awaiting", "Approved", "Declined"];
-
-/* ---------- LEAVE BALANCE ---------- */
-const LEAVE_BALANCE = [
-  { id: "1", title: "Sick", days: "5 Days" },
-  { id: "2", title: "Earned Leaves", days: "8 Days" },
-  { id: "3", title: "Casual Leaves", days: "3 Days" },
-];
 
 type StatusType = "All" | "Awaiting" | "Approved" | "Declined";
 
@@ -44,9 +36,19 @@ type LeaveListItem = {
   status: string;
 };
 
+// Define leave type from API
+type LeaveType = {
+  id: number;
+  isEnabled: boolean;
+  lookupType: string;
+  name: string;
+  value: string;
+  valueInt: number;
+};
+
 // Status mapping
 const getStatusDisplay = (status: string): string => {
-  switch(status) {
+  switch (status) {
     case "P":
       return "Awaiting";
     case "A":
@@ -58,10 +60,10 @@ const getStatusDisplay = (status: string): string => {
   }
 };
 
-// Format date for display with locale support
-const formatDate = (dateString: string, locale: string = 'en-US'): string => {
+// Format date for display
+const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return date.toLocaleDateString(locale, {
+  return date.toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'short',
@@ -78,24 +80,23 @@ const getDaysDifference = (fromDate: string, toDate: string): number => {
   return diffDays + 1; // Including both start and end dates
 };
 
-// Get title based on days with i18n
-const getLeaveTitle = (fromDate: string, toDate: string, t: any): string => {
+// Get title based on days
+const getLeaveTitle = (fromDate: string, toDate: string): string => {
   const days = getDaysDifference(fromDate, toDate);
-  if (days === 0.5) return t("leaves.halfDay");
-  if (days === 1) return t("leaves.oneDay");
-  return t("leaves.multiDay", { days });
+  if (days === 0.5) return "Half Day";
+  if (days === 1) return "One Day";
+  return `${days} Days`;
 };
 
 export default function LeavesTab() {
   const { theme } = useTheme();
-  const { t, i18n } = useTranslation();
 
   /* ---------- FILTER ---------- */
   const [filterStatus, setFilterStatus] = useState<StatusType>("All");
   const [showFilter, setShowFilter] = useState(false);
 
   /* ---------- APPLY LEAVE ---------- */
-  const [leaveType, setLeaveType] = useState("Casual");
+  const [leaveType, setLeaveType] = useState("");
   const [showTypeSheet, setShowTypeSheet] = useState(false);
   const [cause, setCause] = useState("");
 
@@ -105,7 +106,39 @@ export default function LeavesTab() {
   const [showFromPicker, setShowFromPicker] = useState(false);
   const [showToPicker, setShowToPicker] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
+  const [loadingLeaveTypes, setLoadingLeaveTypes] = useState(false);
+
+  const fetchLeaveTypes = async () => {
+    setLoadingLeaveTypes(true);
+    try {
+      const res = await getLookupMasters({
+        lookupType: "LeaveType",
+        token: String(authState.token),
+        csrfToken: String(authState.antiforgeryToken),
+      });
+
+      // console.log("LeaveType response:", res);
+
+      if (res && Array.isArray(res)) {
+        setLeaveTypes(res);
+        // Set default leave type if available
+        if (res.length > 0 && !leaveType) {
+          setLeaveType(res[0].name);
+        }
+      }
+
+    } catch (error) {
+      console.error("❌ Failed to fetch Leave Types:", error);
+      Toast.show({
+        type: "error",
+        text1: "Failed to fetch leave types",
+      });
+    } finally {
+      setLoadingLeaveTypes(false);
+    }
+  };
+
   /* ---------- LEAVE LIST ---------- */
   const [leaveList, setLeaveList] = useState<LeaveListItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -114,98 +147,93 @@ export default function LeavesTab() {
   const [pageNumber, setPageNumber] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  
-  const authState = useAppSelector((state) => state.auth);
 
-  // Get user name from auth state or use a default
-  const getUserName = () => {
-    return authState?.userName || t("common.user") || "User";
-  };
+  const authState = useAppSelector((state) => state.auth);
 
   const validateForm = () => {
     if (!leaveType) {
       Toast.show({
         type: "error",
-        text1: t("leaves.selectLeaveType"),
+        text1: "Please select leave type",
       });
       return false;
     }
-    
+
     if (!cause.trim()) {
       Toast.show({
         type: "error",
-        text1: t("leaves.enterReason"),
+        text1: "Please enter reason",
       });
       return false;
     }
-    
+
     if (!fromDate) {
       Toast.show({
         type: "error",
-        text1: t("leaves.selectFromDate"),
+        text1: "Please select from date",
       });
       return false;
     }
-    
+
     if (!toDate) {
       Toast.show({
         type: "error",
-        text1: t("leaves.selectToDate"),
+        text1: "Please select to date",
       });
       return false;
     }
-    
+
     return true;
   };
 
   const submitLeave = async () => {
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  setIsSubmitting(true);
+    setIsSubmitting(true);
 
-  const fullName = `${authState?.firstName ?? ""} ${authState?.lastName ?? ""}`.trim();
+    const fullName = `${authState?.firstName ?? ""} ${authState?.lastName ?? ""}`.trim();
 
-  const payload = {
-    leaveType: leaveType,
-    fromDate: fromDate?.toISOString() || new Date().toISOString(),
-    toDate: toDate?.toISOString() || new Date().toISOString(),
-    reason: cause.trim(),
-    userId: String(authState.userId),
-    createdBy: String(authState.userId),
-    createdByName: fullName,
-    token: String(authState.token),
-    csrfToken: String(authState.antiforgeryToken),
+    const payload = {
+      leaveType: leaveType,
+      fromDate: fromDate?.toISOString() || new Date().toISOString(),
+      toDate: toDate?.toISOString() || new Date().toISOString(),
+      reason: cause.trim(),
+      userId: String(authState.userId),
+      createdBy: String(authState.userId),
+      createdByName: fullName,
+      token: String(authState.token),
+      csrfToken: String(authState.antiforgeryToken),
+    };
+
+    console.log("📤 Leave Payload:", payload);
+
+    try {
+      const res = await createLeave(payload);
+
+      console.log("✅ Leave created:", res);
+
+      Toast.show({
+        type: "success",
+        text1: "Leave applied successfully",
+      });
+
+      resetForm();
+      fetchLeaveList(1, true);
+
+    } catch (error: any) {
+      console.error("❌ Error creating leave:", error);
+
+      Toast.show({
+        type: "error",
+        text1: error?.response?.data?.message || "Failed to apply leave",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  console.log("📤 Leave Payload:", payload);
-
-  try {
-    const res = await createLeave(payload);
-
-    console.log("✅ Leave created:", res);
-
-    Toast.show({
-      type: "success",
-      text1: t("leaves.applySuccess"),
-    });
-
-    resetForm();
-    fetchLeaveList(1, true);
-
-  } catch (error: any) {
-    console.error("❌ Error creating leave:", error);
-
-    Toast.show({
-      type: "error",
-      text1: error?.response?.data?.message || t("leaves.applyFailed"),
-    });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-
   const resetForm = () => {
-    setLeaveType("Casual");
+    setLeaveType(leaveTypes.length > 0 ? leaveTypes[0].name : "");
     setCause("");
     setFromDate(null);
     setToDate(null);
@@ -215,7 +243,7 @@ export default function LeavesTab() {
     if (reset) {
       setLoading(true);
     }
-    
+
     try {
       const res = await getLeaveList({
         PageNumber: 1,
@@ -225,24 +253,24 @@ export default function LeavesTab() {
         csrfToken: String(authState.antiforgeryToken)
       });
 
-      console.log("Leave List:", res?.data);
-      
+      // console.log("Leave List:", res?.data);
+
       if (res?.data?.leaveList) {
         if (reset || page === 1) {
           setLeaveList(res.data.leaveList);
         } else {
           setLeaveList(prev => [...prev, ...res.data.leaveList]);
         }
-        
+
         setTotalRecords(res.data.totalRecords || 0);
         setHasMore(res.data.leaveList.length === 10);
       }
-      
+
     } catch (error) {
       console.log("Error fetching leave list:", error);
       Toast.show({
         type: "error",
-        text1: t("leaves.fetchFailed"),
+        text1: "Failed to fetch leave list",
       });
     } finally {
       setLoading(false);
@@ -254,6 +282,7 @@ export default function LeavesTab() {
   useFocusEffect(
     useCallback(() => {
       fetchLeaveList(1, true);
+      fetchLeaveTypes();
     }, []),
   );
 
@@ -261,6 +290,7 @@ export default function LeavesTab() {
     setRefreshing(true);
     setPageNumber(1);
     fetchLeaveList(1, true);
+    fetchLeaveTypes();
   }, []);
 
   const loadMore = () => {
@@ -277,11 +307,11 @@ export default function LeavesTab() {
     if (filterStatus === "All") {
       return leaveList;
     }
-    
-    const statusCode = filterStatus === "Awaiting" ? "P" 
-      : filterStatus === "Approved" ? "A" 
-      : "R";
-    
+
+    const statusCode = filterStatus === "Awaiting" ? "P"
+      : filterStatus === "Approved" ? "A"
+        : "R";
+
     return leaveList.filter(item => item.status === statusCode);
   };
 
@@ -293,51 +323,29 @@ export default function LeavesTab() {
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={theme.colors.colorPrimary500} />
         <Text style={[styles.footerText, { color: theme.colors.colorTextSecondary }]}>
-          {t("common.loadingMore")}
+          Loading more...
         </Text>
       </View>
     );
   };
 
+  // Get leave type names for bottom sheet
+  const getLeaveTypeNames = (): string[] => {
+    return leaveTypes.map(type => type.name);
+  };
+
+  // Debug effect
+  useEffect(() => {
+    // console.log("Current leaveTypes state:", leaveTypes);
+    console.log("Available options:", getLeaveTypeNames());
+  }, [leaveTypes]);
+
   return (
     <Card
-      title={t("leaves.applyLeave")}
+      title="Apply Leave"
       backgroundColor={theme.colors.colorBgPage}
       titleColor={theme.colors.colorPrimary600}
     >
-      {/* ---------- LEAVE BALANCE ---------- */}
-      <View style={styles.balanceRow}>
-        {LEAVE_BALANCE.map((item) => (
-          <View
-            key={item.id}
-            style={[
-              styles.balanceCard,
-              { 
-                backgroundColor: theme.colors.colorBgSurface,
-                shadowColor: theme.colors.colorShadow,
-              },
-            ]}
-          >
-            <Text
-              style={[
-                styles.balanceTitle,
-                { color: theme.colors.colorTextTertiary },
-              ]}
-            >
-              {t(`leaves.balance.${item.title.toLowerCase().replace(' ', '')}`) || item.title}
-            </Text>
-            <Text
-              style={[
-                styles.balanceDays,
-                { color: theme.colors.colorTextPrimary },
-              ]}
-            >
-              {item.days}
-            </Text>
-          </View>
-        ))}
-      </View>
-
       {/* ---------- APPLY LEAVE FORM ---------- */}
       <View style={styles.formCard}>
         {/* TYPE */}
@@ -347,6 +355,7 @@ export default function LeavesTab() {
             { borderBottomColor: theme.colors.border },
           ]}
           onPress={() => setShowTypeSheet(true)}
+          disabled={loadingLeaveTypes}
         >
           <Ionicons
             name="grid-outline"
@@ -360,16 +369,20 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextSecondary },
               ]}
             >
-              {t("leaves.type")}
+              Leave Type
             </Text>
-            <Text
-              style={[
-                styles.formValue,
-                { color: theme.colors.colorTextPrimary },
-              ]}
-            >
-              {t(`leaves.types.${leaveType.toLowerCase()}`) || leaveType}
-            </Text>
+            {loadingLeaveTypes ? (
+              <ActivityIndicator size="small" color={theme.colors.colorPrimary500} />
+            ) : (
+              <Text
+                style={[
+                  styles.formValue,
+                  { color: theme.colors.colorTextPrimary },
+                ]}
+              >
+                {leaveType || "Select leave type"}
+              </Text>
+            )}
           </View>
           <Ionicons
             name="chevron-down"
@@ -397,16 +410,16 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextSecondary },
               ]}
             >
-              {t("leaves.cause")}
+              Reason
             </Text>
             <TextInput
-              placeholder={t("leaves.enterReasonPlaceholder")}
+              placeholder="Enter reason for leave"
               placeholderTextColor={theme.colors.inputPlaceholder}
               value={cause}
               onChangeText={setCause}
               style={[
                 styles.textInput,
-                { 
+                {
                   color: theme.colors.inputText,
                 },
               ]}
@@ -436,7 +449,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextSecondary },
               ]}
             >
-              {t("leaves.from")}
+              From Date
             </Text>
             <Text
               style={[
@@ -444,7 +457,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {fromDate ? fromDate.toDateString() : t("leaves.selectDate")}
+              {fromDate ? fromDate.toDateString() : "Select date"}
             </Text>
           </View>
           <Ionicons
@@ -474,7 +487,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextSecondary },
               ]}
             >
-              {t("leaves.to")}
+              To Date
             </Text>
             <Text
               style={[
@@ -482,7 +495,7 @@ export default function LeavesTab() {
                 { color: theme.colors.colorTextPrimary },
               ]}
             >
-              {toDate ? toDate.toDateString() : t("leaves.selectDate")}
+              {toDate ? toDate.toDateString() : "Select date"}
             </Text>
           </View>
           <Ionicons
@@ -495,27 +508,27 @@ export default function LeavesTab() {
         <TouchableOpacity
           style={[
             styles.applyBtn,
-            { 
-              backgroundColor: isSubmitting 
-                ? theme.colors.btnDisabledBg 
+            {
+              backgroundColor: isSubmitting
+                ? theme.colors.btnDisabledBg
                 : theme.colors.btnPrimaryBg,
               shadowColor: theme.colors.colorShadow,
             },
           ]}
           onPress={submitLeave}
-          disabled={isSubmitting}
+          disabled={isSubmitting || loadingLeaveTypes}
         >
           <Text
             style={[
               styles.applyBtnText,
-              { 
-                color: isSubmitting 
-                  ? theme.colors.btnDisabledText 
+              {
+                color: isSubmitting
+                  ? theme.colors.btnDisabledText
                   : theme.colors.btnPrimaryText,
               },
             ]}
           >
-            {isSubmitting ? t("common.applying") : t("leaves.applyButton")}
+            {isSubmitting ? "Applying..." : "Apply Leave"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -525,7 +538,7 @@ export default function LeavesTab() {
         <Text
           style={[styles.sectionTitle, { color: theme.colors.colorPrimary600 }]}
         >
-          {t("leaves.history")} {totalRecords > 0 && `(${totalRecords})`}
+          Leave History {totalRecords > 0 && `(${totalRecords})`}
         </Text>
         <TouchableOpacity onPress={() => setShowFilter(true)}>
           <Ionicons
@@ -540,7 +553,7 @@ export default function LeavesTab() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.colorPrimary500} />
           <Text style={[styles.loadingText, { color: theme.colors.colorTextSecondary }]}>
-            {t("common.loading")}
+            Loading...
           </Text>
         </View>
       ) : (
@@ -558,13 +571,13 @@ export default function LeavesTab() {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Ionicons 
-                name="calendar-outline" 
-                size={48} 
-                color={theme.colors.colorTextTertiary} 
+              <Ionicons
+                name="calendar-outline"
+                size={48}
+                color={theme.colors.colorTextTertiary}
               />
               <Text style={[styles.emptyText, { color: theme.colors.colorTextSecondary }]}>
-                {t("leaves.noHistory")}
+                No leave history found
               </Text>
             </View>
           }
@@ -575,7 +588,7 @@ export default function LeavesTab() {
             <View
               style={[
                 styles.historyCard,
-                { 
+                {
                   backgroundColor: theme.colors.colorBgSurface,
                   shadowColor: theme.colors.colorShadow,
                 },
@@ -588,7 +601,7 @@ export default function LeavesTab() {
                     { color: theme.colors.colorTextPrimary },
                   ]}
                 >
-                  {getLeaveTitle(item.fromDate, item.toDate, t)}
+                  {getLeaveTitle(item.fromDate, item.toDate)}
                 </Text>
                 <Text
                   style={[
@@ -596,7 +609,7 @@ export default function LeavesTab() {
                     { color: theme.colors.colorTextSecondary },
                   ]}
                 >
-                  {formatDate(item.fromDate, i18n.language)} - {formatDate(item.toDate, i18n.language)}
+                  {formatDate(item.fromDate)} - {formatDate(item.toDate)}
                 </Text>
                 <Text
                   style={[
@@ -604,11 +617,32 @@ export default function LeavesTab() {
                     { color: theme.colors.colorPrimary500 },
                   ]}
                 >
-                  {t(`leaves.types.${item.leaveType.toLowerCase()}`) || item.leaveType} • {item.reason}
+                  {item.leaveType} • {item.reason}
                 </Text>
               </View>
 
-              <StatusBadge status={getStatusDisplay(item.status)} />
+              <View style={{ alignItems: "flex-end", gap: 6 }}>
+                <StatusBadge status={getStatusDisplay(item.status)} />
+
+                {item.status === "P" && (
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <TouchableOpacity onPress={() => {
+                      router.push({
+                        pathname: "/(fro)/(info)/EditLeave",
+                        params: {
+                          leave: JSON.stringify(item),
+                        },
+                      });
+                    }}>
+                      <Ionicons name="create-outline" size={22} color={theme.colors.colorPrimary500} />
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={() => { }}>
+                      <Ionicons name="trash-outline" size={22} color={theme.colors.validationErrorText} />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
             </View>
           )}
         />
@@ -618,14 +652,10 @@ export default function LeavesTab() {
       <BottomSheet
         visible={showFilter}
         onClose={() => setShowFilter(false)}
-        options={FILTER_OPTIONS.map(opt => t(`leaves.filters.${opt.toLowerCase()}`) || opt)}
-        selectedOption={t(`leaves.filters.${filterStatus.toLowerCase()}`) || filterStatus}
+        options={FILTER_OPTIONS}
+        selectedOption={filterStatus}
         onSelect={(v: any) => {
-          // Map back to original filter values
-          const originalOpt = FILTER_OPTIONS.find(
-            opt => (t(`leaves.filters.${opt.toLowerCase()}`) || opt) === v
-          ) || v;
-          setFilterStatus(originalOpt as StatusType);
+          setFilterStatus(v as StatusType);
           setShowFilter(false);
         }}
       />
@@ -634,14 +664,10 @@ export default function LeavesTab() {
       <BottomSheet
         visible={showTypeSheet}
         onClose={() => setShowTypeSheet(false)}
-        options={LEAVE_TYPES.map(type => t(`leaves.types.${type.toLowerCase()}`) || type)}
-        selectedOption={t(`leaves.types.${leaveType.toLowerCase()}`) || leaveType}
+        options={getLeaveTypeNames()}
+        selectedOption={leaveType}
         onSelect={(v: any) => {
-          // Map back to original leave type
-          const originalType = LEAVE_TYPES.find(
-            type => (t(`leaves.types.${type.toLowerCase()}`) || type) === v
-          ) || v;
-          setLeaveType(originalType);
+          setLeaveType(v);
           setShowTypeSheet(false);
         }}
       />
@@ -697,8 +723,8 @@ const BottomSheet = ({ visible, onClose, options, selectedOption, onSelect }: an
             key={opt}
             style={[
               styles.sheetItem,
-              opt === selectedOption && { 
-                backgroundColor: theme.colors.colorPrimary100 
+              opt === selectedOption && {
+                backgroundColor: theme.colors.colorPrimary100
               }
             ]}
             onPress={() => onSelect(opt)}
@@ -707,7 +733,7 @@ const BottomSheet = ({ visible, onClose, options, selectedOption, onSelect }: an
               style={[
                 styles.sheetText,
                 { color: theme.colors.colorTextPrimary },
-                opt === selectedOption && { 
+                opt === selectedOption && {
                   color: theme.colors.colorPrimary500,
                   fontFamily: 'Poppins-SemiBold'
                 }
@@ -716,10 +742,10 @@ const BottomSheet = ({ visible, onClose, options, selectedOption, onSelect }: an
               {opt}
             </Text>
             {opt === selectedOption && (
-              <Ionicons 
-                name="checkmark" 
-                size={20} 
-                color={theme.colors.colorPrimary500} 
+              <Ionicons
+                name="checkmark"
+                size={20}
+                color={theme.colors.colorPrimary500}
               />
             )}
           </TouchableOpacity>
@@ -731,7 +757,6 @@ const BottomSheet = ({ visible, onClose, options, selectedOption, onSelect }: an
 
 const StatusBadge = ({ status }: { status: string }) => {
   const { theme } = useTheme();
-  const { t } = useTranslation();
 
   const bg =
     status === "Approved"
@@ -750,7 +775,7 @@ const StatusBadge = ({ status }: { status: string }) => {
   return (
     <View style={[styles.statusBadge, { backgroundColor: bg }]}>
       <Text style={{ color, fontSize: 12, fontFamily: 'Poppins-Medium' }}>
-        {t(`leaves.status.${status.toLowerCase()}`) || status}
+        {status}
       </Text>
     </View>
   );
@@ -759,30 +784,6 @@ const StatusBadge = ({ status }: { status: string }) => {
 /* ---------- STYLES ---------- */
 
 const styles = StyleSheet.create({
-  balanceRow: {
-    flexDirection: "row",
-    marginBottom: 16,
-    gap: 8,
-  },
-  balanceCard: {
-    flex: 1,
-    padding: 12,
-    borderRadius: 12,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-  },
-  balanceTitle: {
-    fontSize: 12,
-    marginBottom: 4,
-    fontFamily: 'Poppins-Regular',
-  },
-  balanceDays: {
-    fontSize: 16,
-    fontWeight: "600",
-    fontFamily: 'Poppins-SemiBold',
-  },
   formCard: {
     borderRadius: 14,
     padding: 14,
@@ -887,7 +888,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     position: "absolute",
-    bottom: 0,
+    bottom: 45,
     left: 0,
     right: 0,
     shadowOffset: { width: 0, height: -2 },

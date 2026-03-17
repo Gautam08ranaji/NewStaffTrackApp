@@ -6,6 +6,7 @@ import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import { router } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
@@ -329,6 +330,7 @@ export default function SellerOnboardingScreen() {
 
     if (response?.success === true) {
       Alert.alert("Success", "Client added successfully");
+      router.push("/(fro)/(profile)/SellerList")
     } else {
       const errorMsg =
         response?.errors?.[0]?.message || "Failed to onboard seller";
