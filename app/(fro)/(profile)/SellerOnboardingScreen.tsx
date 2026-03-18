@@ -281,7 +281,7 @@ export default function SellerOnboardingScreen() {
       userId: String(authState?.userId || ""),
       latitude: String(latitude),
       longitude: String(longitude),
-      isMobileApp: "true",
+      isMobileApp: "Yes",
       productName: form.productName,
     };
   };

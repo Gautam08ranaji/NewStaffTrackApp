@@ -1,9 +1,32 @@
-// hooks/LocationProvider.tsx (rename from LocationContext.tsx)
-import { startBackgroundTracking } from "@/services/backgroundLocation";
+// hooks/LocationProvider.tsx
+import {
+  checkAutoRevokeStatus,
+  getAutoRevokeGuideStatus,
+  openAutoRevokeSettings as openAutoRevoke,
+  resetAutoRevokeGuide,
+  shouldShowAutoRevokeGuide,
+  showAutoRevokeGuide
+} from "@/services/autoRevokePermission";
+import {
+  checkBackgroundTrackingHealth,
+  isBackgroundTrackingRunning as checkIsBackgroundTrackingRunning,
+  getBackgroundTrackingStatus,
+  getInProgressTickets,
+  hasInProgressTickets,
+  refreshInProgressTickets,
+  registerBackgroundTask,
+  startBackgroundTracking,
+  stopBackgroundTracking
+} from "@/services/backgroundLocation";
+import {
+  requestDisableBatteryOptimizations,
+  shouldShowBatteryGuide,
+  showBatteryOptimizationGuide
+} from "@/services/batteryOptimization";
 import { useTheme } from "@/theme/ThemeContext";
 import * as Location from "expo-location";
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, AppState, AppStateStatus, Linking, Modal, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 /* ================= TYPES ================= */
 
@@ -20,6 +43,19 @@ type LocationContextType = {
   openSettings: () => void;
   isBackgroundTrackingRunning: boolean;
   startBackgroundTrackingManually: () => Promise<boolean>;
+  stopBackgroundTrackingManually: () => Promise<boolean>;
+  inProgressTicketsCount: number;
+  refreshTickets: () => Promise<void>;
+  checkTrackingHealth: () => Promise<any>;
+  getTrackingStatus: () => Promise<any>;
+  debugBackgroundTracking: () => Promise<any>;
+  showBatteryOptimizationGuide: () => void;
+  // Auto-revoke functions
+  checkAutoRevoke: () => Promise<void>;
+  openAutoRevokeSettings: () => Promise<void>;
+  resetAutoRevokeGuide: () => Promise<void>;
+  getAutoRevokeStatus: () => Promise<any>;
+  autoRevokeEnabled: boolean;
 };
 
 /* ================= CONTEXT ================= */
@@ -37,6 +73,19 @@ const LocationContext = createContext<LocationContextType>({
   openSettings: () => {},
   isBackgroundTrackingRunning: false,
   startBackgroundTrackingManually: async () => false,
+  stopBackgroundTrackingManually: async () => false,
+  inProgressTicketsCount: 0,
+  refreshTickets: async () => {},
+  checkTrackingHealth: async () => null,
+  getTrackingStatus: async () => null,
+  debugBackgroundTracking: async () => null,
+  showBatteryOptimizationGuide: () => {},
+  // Auto-revoke defaults
+  checkAutoRevoke: async () => {},
+  openAutoRevokeSettings: async () => {},
+  resetAutoRevokeGuide: async () => {},
+  getAutoRevokeStatus: async () => ({}),
+  autoRevokeEnabled: false,
 });
 
 /* ================= PROVIDER WITH UI ================= */
@@ -51,24 +100,36 @@ export const LocationProvider = ({
   const [address, setAddress] = useState<string | null>(null);
   const [hasPermission, setHasPermission] = useState(false);
   const [hasBackgroundPermission, setHasBackgroundPermission] = useState(false);
-  const [isBackgroundTrackingRunning, setIsBackgroundTrackingRunning] = useState(false);
+  const [isBackgroundTrackingRunningState, setIsBackgroundTrackingRunningState] = useState(false);
+  const [inProgressTicketsCount, setInProgressTicketsCount] = useState(0);
+  const [autoRevokeEnabled, setAutoRevokeEnabled] = useState(false);
   
   // UI State
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
   const [permissionStep, setPermissionStep] = useState<'initial' | 'background'>('initial');
+  
+  // Refs for intervals
+  const healthInterval = useRef<NodeJS.Timeout | null>(null);
+  const ticketRefreshInterval = useRef<NodeJS.Timeout | null>(null);
+  const appState = useRef(AppState.currentState);
 
   /* ---------- CHECK PERMISSIONS ON MOUNT ---------- */
   useEffect(() => {
     checkPermissions();
+    registerBackgroundTask();
   }, []);
 
   /* ---------- CHECK BACKGROUND TRACKING STATUS ---------- */
   useEffect(() => {
     const checkTrackingStatus = async () => {
       if (hasPermission && hasBackgroundPermission) {
-        const isRunning = await Location.hasStartedLocationUpdatesAsync("fro-background-location");
-        setIsBackgroundTrackingRunning(isRunning);
+        const isRunning = await checkIsBackgroundTrackingRunning();
+        setIsBackgroundTrackingRunningState(isRunning);
+        
+        // Get initial ticket count
+        const tickets = getInProgressTickets();
+        setInProgressTicketsCount(tickets.length);
       }
     };
     
@@ -88,6 +149,78 @@ export const LocationProvider = ({
     }
   }, [hasPermission, hasBackgroundPermission]);
 
+  /* ---------- SETUP BACKGROUND MONITORING WHEN TRACKING IS ACTIVE ---------- */
+  useEffect(() => {
+    if (isBackgroundTrackingRunningState) {
+      // Set up health check every 5 minutes
+      healthInterval.current = setInterval(async () => {
+        const health = await checkBackgroundTrackingHealth();
+        console.log("Background tracking health:", health);
+        
+        // Update ticket count
+        const tickets = getInProgressTickets();
+        setInProgressTicketsCount(tickets.length);
+      }, 300000); // 5 minutes
+
+      // Set up ticket refresh every 5 minutes
+      ticketRefreshInterval.current = setInterval(async () => {
+        await refreshInProgressTickets();
+        const tickets = getInProgressTickets();
+        setInProgressTicketsCount(tickets.length);
+        console.log(`📊 Updated ticket count: ${tickets.length}`);
+      }, 300000); // 5 minutes
+
+      // Monitor app state changes
+      const subscription = AppState.addEventListener('change', handleAppStateChange);
+      
+      return () => {
+        subscription.remove();
+        if (healthInterval.current) {
+          clearInterval(healthInterval.current);
+          healthInterval.current = null;
+        }
+        if (ticketRefreshInterval.current) {
+          clearInterval(ticketRefreshInterval.current);
+          ticketRefreshInterval.current = null;
+        }
+      };
+    }
+  }, [isBackgroundTrackingRunningState]);
+
+  const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+    if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+      // App came to foreground
+      console.log("📱 App came to foreground - checking tracking health");
+      await checkTrackingHealth();
+      await refreshTickets();
+    } else if (nextAppState === 'background') {
+      // App went to background
+      console.log("📱 App went to background - tracking continues");
+      
+      // Log current status
+      const status = await getTrackingStatus();
+      console.log("Background tracking status:", status);
+    }
+    
+    appState.current = nextAppState;
+  };
+
+  /* ---------- AUTO-REVOKE FUNCTIONS ---------- */
+  // Fixed: Now returns Promise<void> to match type
+  const checkAutoRevoke = async (): Promise<void> => {
+    const status = await checkAutoRevokeStatus();
+    setAutoRevokeEnabled(status.isEnabled);
+  };
+
+  // Fixed: Now returns Promise<void> to match type
+  const openAutoRevokeSettings = async (): Promise<void> => {
+    await openAutoRevoke();
+  };
+
+  const getAutoRevokeStatus = async () => {
+    return await getAutoRevokeGuideStatus();
+  };
+
   const checkPermissions = async () => {
     try {
       const { status: foregroundStatus } = await Location.getForegroundPermissionsAsync();
@@ -102,7 +235,32 @@ export const LocationProvider = ({
 
       if (foreground && background) {
         const started = await startBackgroundTracking();
-        setIsBackgroundTrackingRunning(started);
+        setIsBackgroundTrackingRunningState(started);
+        
+        // Initial ticket fetch
+        await refreshInProgressTickets();
+        const tickets = getInProgressTickets();
+        setInProgressTicketsCount(tickets.length);
+        
+        // Check battery optimization and auto-revoke on Android
+        if (Platform.OS === 'android') {
+          // First check battery optimization
+          const shouldShowBattery = await shouldShowBatteryGuide();
+          if (shouldShowBattery) {
+            setTimeout(() => {
+              requestDisableBatteryOptimizations();
+            }, 2000);
+          } else {
+            // Then check auto-revoke after a delay
+            setTimeout(async () => {
+              const shouldShowAutoRevoke = await shouldShowAutoRevokeGuide();
+              if (shouldShowAutoRevoke) {
+                await checkAutoRevoke();
+                showAutoRevokeGuide();
+              }
+            }, 4000);
+          }
+        }
       }
     } catch (error) {
       console.error("Error checking permissions:", error);
@@ -158,8 +316,28 @@ export const LocationProvider = ({
                     setHasBackgroundPermission(granted);
                     
                     if (granted) {
+                      // Show battery optimization guide after a short delay
+                      setTimeout(async () => {
+                        const shouldShowBattery = await shouldShowBatteryGuide();
+                        if (shouldShowBattery) {
+                          await requestDisableBatteryOptimizations();
+                        } else {
+                          // If battery guide already shown, check auto-revoke
+                          const shouldShowAutoRevoke = await shouldShowAutoRevokeGuide();
+                          if (shouldShowAutoRevoke) {
+                            await checkAutoRevoke();
+                            showAutoRevokeGuide();
+                          }
+                        }
+                      }, 2000);
+                      
                       const started = await startBackgroundTracking();
-                      setIsBackgroundTrackingRunning(started);
+                      setIsBackgroundTrackingRunningState(started);
+                      
+                      // Initial ticket fetch
+                      await refreshInProgressTickets();
+                      const tickets = getInProgressTickets();
+                      setInProgressTicketsCount(tickets.length);
                     } else {
                       Alert.alert(
                         "Permission Denied",
@@ -187,7 +365,12 @@ export const LocationProvider = ({
         
         if (granted) {
           const started = await startBackgroundTracking();
-          setIsBackgroundTrackingRunning(started);
+          setIsBackgroundTrackingRunningState(started);
+          
+          // Initial ticket fetch
+          await refreshInProgressTickets();
+          const tickets = getInProgressTickets();
+          setInProgressTicketsCount(tickets.length);
         }
         
         return granted;
@@ -205,8 +388,45 @@ export const LocationProvider = ({
     }
 
     const started = await startBackgroundTracking();
-    setIsBackgroundTrackingRunning(started);
+    setIsBackgroundTrackingRunningState(started);
+    
+    if (started) {
+      await refreshInProgressTickets();
+      const tickets = getInProgressTickets();
+      setInProgressTicketsCount(tickets.length);
+    }
+    
     return started;
+  };
+
+  const stopBackgroundTrackingManually = async (): Promise<boolean> => {
+    try {
+      await stopBackgroundTracking();
+      setIsBackgroundTrackingRunningState(false);
+      setInProgressTicketsCount(0);
+      return true;
+    } catch (error) {
+      console.error("Error stopping background tracking:", error);
+      return false;
+    }
+  };
+
+  const refreshTickets = async () => {
+    await refreshInProgressTickets();
+    const tickets = getInProgressTickets();
+    setInProgressTicketsCount(tickets.length);
+    console.log(`✅ Tickets refreshed: ${tickets.length} in-progress`);
+  };
+
+  const checkTrackingHealth = async () => {
+    const health = await checkBackgroundTrackingHealth();
+    const tickets = getInProgressTickets();
+    setInProgressTicketsCount(tickets.length);
+    return health;
+  };
+
+  const getTrackingStatus = async () => {
+    return await getBackgroundTrackingStatus();
   };
 
   const checkBackgroundPermission = async (): Promise<boolean> => {
@@ -231,33 +451,33 @@ export const LocationProvider = ({
 
       setLocation(currentLocation);
 
-     const { latitude, longitude } = currentLocation.coords;
+      const { latitude, longitude } = currentLocation.coords;
 
-try {
-  const places = await Location.reverseGeocodeAsync({
-    latitude,
-    longitude,
-  });
+      try {
+        const places = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
 
-  if (places && places.length > 0) {
-    const p = places[0];
+        if (places && places.length > 0) {
+          const p = places[0];
 
-    const readableAddress = [
-      p.name,
-      p.street,
-      p.city,
-      p.region,
-      p.country,
-    ]
-      .filter(Boolean)
-      .join(", ");
+          const readableAddress = [
+            p.name,
+            p.street,
+            p.city,
+            p.region,
+            p.country,
+          ]
+            .filter(Boolean)
+            .join(", ");
 
-    setAddress(readableAddress);
-  }
-} catch (err) {
-  console.log("Reverse geocode failed:", err);
-  setAddress("Unknown location");
-}
+          setAddress(readableAddress);
+        }
+      } catch (err) {
+        console.log("Reverse geocode failed:", err);
+        setAddress("Unknown location");
+      }
 
       return currentLocation;
     } catch (error) {
@@ -271,7 +491,45 @@ try {
     setHasBackgroundPermission(false);
     setLocation(null);
     setAddress(null);
-    setIsBackgroundTrackingRunning(false);
+    setIsBackgroundTrackingRunningState(false);
+    setInProgressTicketsCount(0);
+    stopBackgroundTrackingManually();
+  };
+
+  /* ---------- DEBUG FUNCTION ---------- */
+  const debugBackgroundTracking = async () => {
+    console.log("🔍 Debug Background Tracking:");
+    console.log("=================================");
+    
+    const isRunning = await checkIsBackgroundTrackingRunning();
+    console.log("✅ Is task running:", isRunning);
+    
+    const status = await getBackgroundTrackingStatus();
+    console.log("📊 Full status:", JSON.stringify(status, null, 2));
+    
+    const hasTickets = hasInProgressTickets();
+    console.log("🎫 Has in-progress tickets:", hasTickets);
+    
+    const tickets = getInProgressTickets();
+    console.log("📋 In-progress tickets:", tickets.map(t => ({
+      id: t.id,
+      transactionNumber: t.transactionNumber,
+      status: t.statusName,
+      subject: t.subject
+    })));
+    
+    console.log("=================================");
+    
+    return { 
+      isRunning, 
+      status, 
+      hasTickets, 
+      tickets: tickets.map(t => ({
+        id: t.id,
+        transactionNumber: t.transactionNumber,
+        status: t.statusName
+      }))
+    };
   };
 
   /* ---------- UI RENDERING ---------- */
@@ -356,8 +614,21 @@ try {
         fetchLocation,
         checkBackgroundPermission,
         openSettings,
-        isBackgroundTrackingRunning,
+        isBackgroundTrackingRunning: isBackgroundTrackingRunningState,
         startBackgroundTrackingManually,
+        stopBackgroundTrackingManually,
+        inProgressTicketsCount,
+        refreshTickets,
+        checkTrackingHealth,
+        getTrackingStatus,
+        debugBackgroundTracking,
+        showBatteryOptimizationGuide,
+        // Auto-revoke values - now properly typed
+        checkAutoRevoke,
+        openAutoRevokeSettings,
+        resetAutoRevokeGuide,
+        getAutoRevokeStatus,
+        autoRevokeEnabled,
       }}
     >
       {children}
