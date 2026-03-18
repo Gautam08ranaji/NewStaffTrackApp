@@ -4,6 +4,7 @@ import { addClient, AddClientPayload } from "@/features/fro/profile/addClient";
 import { useLocation } from "@/hooks/LocationContext";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
 import { router } from "expo-router";
@@ -338,7 +339,7 @@ export default function SellerOnboardingScreen() {
     }
   } catch (error: any) {
     console.error("Submit error:", error);
-    Alert.alert("Error", error?.message || "Network error. Please try again.");
+    showApiError(error)
   } finally {
     setLoading(false);
     console.log("=== HANDLE SUBMIT END ===");

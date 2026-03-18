@@ -5,6 +5,7 @@ import { logoutUser } from "@/features/auth/logoutApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -153,6 +154,7 @@ export default function ProfileScreen() {
       // console.log("response", response);
     } catch (error) {
       console.error("Failed to fetch user data", error);
+      showApiError(error)
     } finally {
     }
   };

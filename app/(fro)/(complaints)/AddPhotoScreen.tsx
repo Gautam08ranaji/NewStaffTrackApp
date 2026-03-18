@@ -5,6 +5,7 @@ import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { useAppSelector } from "@/store/hooks";
 import type { Theme } from "@/theme/ThemeContext";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -119,6 +120,7 @@ export default function UpdateDocumentScreen() {
       console.log("✅ Document Activity Response:", response);
     } catch (err) {
       console.error("❌ Document Activity save error:", err);
+      showApiError(err)
     }
   };
 
@@ -388,10 +390,7 @@ export default function UpdateDocumentScreen() {
       videoStartTimeRef.current = null;
     } catch (error) {
       console.log("UPLOAD ERROR:", error);
-      Alert.alert(
-        t("common.error") || "Error",
-        t("updateDocument.uploadFailed") || "Upload failed"
-      );
+     showApiError(error)
     } finally {
       setLoading(false);
     }

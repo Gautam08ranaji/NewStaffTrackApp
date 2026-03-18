@@ -5,6 +5,7 @@ import { updateInteraction, UpdateInteractionPayload } from "@/features/fro/inte
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
@@ -285,6 +286,7 @@ export default function UpdateTaskScreen() {
       console.log("Activity saved successfully");
     } catch (err) {
       console.log("Activity error", err);
+      showApiError(err)
     }
   };
 
@@ -351,6 +353,7 @@ export default function UpdateTaskScreen() {
       setStatusDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch statuses:", error);
+      showApiError(error)
     } finally {
       setLoadingDropdowns(false);
     }
@@ -376,6 +379,7 @@ export default function UpdateTaskScreen() {
       setSubStatusDropdown(mapped);
     } catch (error) {
       console.error("Failed to fetch sub-statuses:", error);
+      showApiError(error)
     } finally {
       setLoadingDropdowns(false);
     }
@@ -400,6 +404,7 @@ export default function UpdateTaskScreen() {
       setCategoryDropdown(mapped);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
+      showApiError(error)
     } finally {
       setLoadingDropdowns(false);
     }

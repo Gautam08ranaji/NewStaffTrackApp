@@ -2,11 +2,11 @@ import { getReimbursementList } from "@/features/fro/Attendance/leaves/getReimbu
 import { getLookupMasters } from "@/features/fro/getLookupMasters";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { router, useFocusEffect, useNavigation } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  Alert,
   FlatList,
   Modal,
   RefreshControl,
@@ -14,7 +14,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import RemixIcon from "react-native-remix-icon";
 
@@ -148,6 +148,7 @@ export default function ReimbursementHistoryScreen() {
     console.log("res exp",res);
   } catch (err) {
     console.error(err);
+    showApiError(err)
   }
 };
 
@@ -182,10 +183,7 @@ export default function ReimbursementHistoryScreen() {
       }
     } catch (error) {
       console.log("Reimbursement API Error", error);
-      Alert.alert(
-        t("common.error") || "Error",
-        t("reimbursement.listLoadFailed") || "Failed to load reimbursement list"
-      );
+     showApiError(error)
     } finally {
       setIsLoading(false);
       setRefreshing(false);

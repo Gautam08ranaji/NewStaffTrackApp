@@ -4,18 +4,19 @@ import { getClientDataById, updateClient } from "@/features/fro/profile/updateSe
 import { useLocation } from "@/hooks/LocationContext";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useCallback, useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import { Dropdown } from "react-native-element-dropdown";
 
@@ -59,7 +60,7 @@ export default function UpdateSellerScreen() {
   const [districtDropdown, setDistrictDropdown] = useState<DropdownItem[]>([]);
   const [loadingDropdowns, setLoadingDropdowns] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
-  
+
   // Form state
   const [form, setForm] = useState<SellerFormData>({
     id: 0,
@@ -109,7 +110,7 @@ export default function UpdateSellerScreen() {
     try {
       setLoadingData(true);
       console.log(`Fetching seller data for ID: ${id}`);
-      
+
       const response = await getClientDataById({
         id: id,
         token: String(authState.token),
@@ -144,7 +145,7 @@ export default function UpdateSellerScreen() {
       }
     } catch (error: any) {
       console.error("Failed to fetch seller data:", error);
-      Alert.alert("Error", "Failed to load seller data");
+     showApiError(error)
       router.back();
     } finally {
       setLoadingData(false);
@@ -169,7 +170,7 @@ export default function UpdateSellerScreen() {
       setStateDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch states:", error);
-      Alert.alert("Error", "Failed to load states");
+     showApiError(error)
       setStateDropdown([]);
     } finally {
       setLoadingDropdowns(false);
@@ -185,7 +186,7 @@ export default function UpdateSellerScreen() {
         String(authState.token),
         String(authState.antiforgeryToken)
       );
-      
+
       const mapped = (res?.data ?? []).map((item: any) => ({
         label: item.label,
         value: item.value,
@@ -193,7 +194,7 @@ export default function UpdateSellerScreen() {
       setDistrictDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch districts:", error);
-      Alert.alert("Error", "Failed to load districts");
+     showApiError(error)
       setDistrictDropdown([]);
     } finally {
       setLoadingDropdowns(false);
@@ -218,7 +219,7 @@ export default function UpdateSellerScreen() {
       setGenderDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch genders:", error);
-      Alert.alert("Error", "Failed to load genders");
+      showApiError(error)
       setGenderDropdown([]);
     } finally {
       setLoadingDropdowns(false);
@@ -317,9 +318,9 @@ export default function UpdateSellerScreen() {
     try {
       // Fetch current location
       const location = await fetchLocation();
-      
+
       const payload = preparePayload();
-      
+
       // Update location if available
       if (location?.coords) {
         payload.latitude = String(location.coords.latitude);
@@ -338,7 +339,7 @@ export default function UpdateSellerScreen() {
 
       if (response?.success === true) {
         Alert.alert(
-          "Success", 
+          "Success",
           "Seller updated successfully",
           [
             {
@@ -355,7 +356,7 @@ export default function UpdateSellerScreen() {
       }
     } catch (error: any) {
       console.error("Update error:", error);
-      Alert.alert("Error", error?.message || "Network error. Please try again.");
+      showApiError(error)
     } finally {
       setLoading(false);
       console.log("=== HANDLE UPDATE END ===");

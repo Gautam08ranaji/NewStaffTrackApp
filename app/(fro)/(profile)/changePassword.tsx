@@ -2,6 +2,7 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import { changePassword } from "@/features/fro/password/changePassword ";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { useNavigation } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -115,10 +116,7 @@ export default function ChangePasswordScreen() {
       }
     } catch (error) {
       console.error("Change password failed", error);
-      Alert.alert(
-        t("common.error") || "Error",
-        t("changePassword.errorMessage") || "Failed to change password. Please try again."
-      );
+     showApiError(error)
     } finally {
       setLoading(false);
     }

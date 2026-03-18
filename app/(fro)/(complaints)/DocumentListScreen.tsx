@@ -2,6 +2,7 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import { getCommonDocumentList } from "@/features/fro/complaints/getCommonDocumentList";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useState } from "react";
@@ -92,43 +93,8 @@ export default function CommonDocumentListScreen() {
     } catch (error: any) {
       console.error("Failed to load documents:", error);
       
-      // Handle different types of errors
-      let errorMessage = t("documents.loadError") || "Failed to load documents";
       
-      if (error.message) {
-        if (error.message.includes("Network error") || error.isNetworkError) {
-          errorMessage = t("documents.networkError") || "Network error. Please check your internet connection.";
-        } else if (error.message.includes("timeout")) {
-          errorMessage = t("documents.timeoutError") || "Request timeout. Please try again.";
-        } else if (error.response?.status === 401) {
-          errorMessage = t("documents.unauthorized") || "Unauthorized. Please login again.";
-        } else if (error.response?.status === 404) {
-          errorMessage = t("documents.notFound") || "Documents not found.";
-        } else {
-          errorMessage = error.message;
-        }
-      }
-      
-      setError(errorMessage);
-      
-      // Show alert for critical errors
-      if (error.isNetworkError || error.response?.status === 401) {
-        Alert.alert(
-          t("common.error") || "Error",
-          errorMessage,
-          [
-            { 
-              text: t("common.ok") || "OK",
-              onPress: () => {
-                if (error.response?.status === 401) {
-                  // Navigate to login if unauthorized
-                  router.replace("/(auth)/login");
-                }
-              }
-            }
-          ]
-        );
-      }
+      showApiError(error)
     } finally {
       setLoading(false);
       setRefreshing(false);

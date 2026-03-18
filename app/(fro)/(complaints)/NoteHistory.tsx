@@ -2,18 +2,18 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import { getNotesRecordList } from "@/features/fro/complaints/noteListApi";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 /* ================= TYPES ================= */
@@ -67,27 +67,7 @@ export default function NotesHistoryScreen() {
 
       setNotes(list);
     } catch (error: any) {
-      const status = error?.response?.status;
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("common.somethingWentWrong") || "Something went wrong. Please try again.";
-
-      if (status === 401) {
-        Alert.alert(
-          t("common.sessionExpired") || "Session Expired",
-          t("common.pleaseLoginAgain") || "Your session has expired. Please login again.",
-          [
-            {
-              text: t("common.ok") || "OK",
-              onPress: () => router.replace("/(onboarding)/login"),
-            },
-          ],
-        );
-        return;
-      }
-
-      Alert.alert(t("common.error") || "Error", message);
+   showApiError(error)
     } finally {
       setLoading(false);
     }

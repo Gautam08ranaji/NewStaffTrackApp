@@ -5,6 +5,7 @@ import { getUserDataById } from "@/features/fro/profile/getProfile";
 
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
@@ -120,6 +121,7 @@ export default function AddNoteScreen() {
       });
     } catch (err) {
       console.log("Activity error", err);
+      showApiError(err)
     }
   };
 
@@ -205,12 +207,7 @@ export default function AddNoteScreen() {
       Alert.alert("Success", "Note added successfully");
       router.back();
     } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Something went wrong";
-
-      Alert.alert("Error", message);
+   showApiError(error)
     } finally {
       setLoading(false);
     }

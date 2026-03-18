@@ -4,6 +4,7 @@ import { getLookupMasters } from "@/features/fro/getLookupMasters";
 import { getInteractionsListByAssignToId } from "@/features/fro/interactionApi";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as DocumentPicker from "expo-document-picker";
 import * as FileSystem from "expo-file-system/legacy";
@@ -13,21 +14,21 @@ import { useRouter } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
-    ActivityIndicator,
-    Alert,
-    Animated,
-    Dimensions,
-    FlatList,
-    Keyboard,
-    Modal,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View,
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Dimensions,
+  FlatList,
+  Keyboard,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
 } from "react-native";
 import RemixIcon, { IconName } from "react-native-remix-icon";
 
@@ -317,10 +318,7 @@ export default function AddReimbursementScreen() {
       }
     } catch (error) {
       console.error("❌ Failed to fetch Tasks:", error);
-      Alert.alert(
-        "Error",
-        "Failed to load tasks. Please try again."
-      );
+      showApiError(error)
     } finally {
       setIsLoadingTasks(false);
     }
@@ -350,12 +348,7 @@ export default function AddReimbursementScreen() {
     } catch (error) {
       console.error("❌ Failed to fetch Expense Types:", error);
       // Set fallback options
-      setExpenseTypeOptions([
-        { id: 1, name: "Travel", value: "Travel", isEnabled: true },
-        { id: 2, name: "Food", value: "Food", isEnabled: true },
-        { id: 3, name: "Accommodation", value: "Accommodation", isEnabled: true },
-        { id: 4, name: "Other", value: "Other", isEnabled: true },
-      ]);
+     showApiError(error)
     } finally {
       setIsLoadingExpenseTypes(false);
     }
@@ -538,10 +531,7 @@ export default function AddReimbursementScreen() {
       }
     } catch (error) {
       console.log("Error picking file:", error);
-      Alert.alert(
-        "Error",
-        "Failed to pick file. Please try again."
-      );
+      showApiError(error)
     }
   };
 
@@ -735,10 +725,7 @@ export default function AddReimbursementScreen() {
       );
     } catch (error) {
       console.log("Reimbursement Error:", error);
-      Alert.alert(
-        "Error",
-        "Failed to submit reimbursement. Please try again."
-      );
+      showApiError(error)
     } finally {
       setIsSubmitting(false);
     }

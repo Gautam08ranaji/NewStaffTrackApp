@@ -13,12 +13,12 @@ import { useFROLocationUpdater } from "@/hooks/useFROLocationUpdater";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Dimensions, ScrollView, StyleSheet, Text, View } from "react-native";
 import { LineChart } from "react-native-chart-kit";
-import Toast from "react-native-toast-message";
 
 /* ================= TYPES ================= */
 
@@ -67,7 +67,7 @@ export default function HomeScreen() {
   const authState = useAppSelector((state) => state.auth);
   const { Popup } = useInteractionPopupPoller();
   const scrollViewRef = useRef<ScrollView>(null);
-   const dispatch = useAppDispatch(); 
+  const dispatch = useAppDispatch();
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -78,9 +78,9 @@ export default function HomeScreen() {
     tickets: 0,
   });
 
- 
 
-  
+
+
 
   const [dayPerformanceData, setDayPerformanceData] = useState<DayCasePerformanceResponse | null>(null);
   const [monthPerformanceData, setMonthPerformanceData] = useState<MonthPerformanceResponse | null>(null);
@@ -182,44 +182,40 @@ export default function HomeScreen() {
       });
 
       dispatch(
-  setUserProfile({
-    firstName: response?.data?.firstName || "User",
-    lastName: response?.data?.lastName || "",
-  })
-);
+        setUserProfile({
+          firstName: response?.data?.firstName || "User",
+          lastName: response?.data?.lastName || "",
+        })
+      );
 
       setFirstName(response?.data?.firstName || t("common.user") || "User");
       setLastName(response?.data?.lastName || "");
     } catch (error) {
       console.error("User fetch error:", error);
-      Toast.show({
-        type: "error",
-        text1: t("dashboard.errors.userFetchFailed") || "Failed to fetch user data",
-        text2: error instanceof Error ? error?.message : t("common.unknownError") || "Unknown error",
-      });
+      showApiError(error)
     } finally {
-    dispatch(hideLoader());
-  }
+      dispatch(hideLoader());
+    }
   };
 
 
   useEffect(() => {
-  const fetchClient = async () => {
-    try {
-      const res = await getClientDataById({
-        id: 348,
-        token: String(authState.token),
-        csrfToken: String(authState.antiforgeryToken),
-      });
+    const fetchClient = async () => {
+      try {
+        const res = await getClientDataById({
+          id: 348,
+          token: String(authState.token),
+          csrfToken: String(authState.antiforgeryToken),
+        });
 
-      console.log("Client Data:", res);
-    } catch (error) {
-      console.error("Client fetch error:", error);
-    }
-  };
+        console.log("Client Data:", res);
+      } catch (error) {
+        console.error("Client fetch error:", error);
+      }
+    };
 
-  fetchClient();
-}, []);
+    fetchClient();
+  }, []);
 
   const fetchCountData = async () => {
     try {
@@ -236,10 +232,8 @@ export default function HomeScreen() {
       }
     } catch (error) {
       console.error("Count fetch error:", error);
-      Toast.show({
-        type: "error",
-        text1: t("dashboard.errors.countFetchFailed") || "Failed to fetch dashboard counts",
-      });
+
+      showApiError(error)
     }
   };
 
@@ -272,10 +266,7 @@ export default function HomeScreen() {
 
     } catch (error) {
       console.error("Error fetching day performance:", error);
-      Toast.show({
-        type: "error",
-        text1: t("dashboard.errors.dayPerformanceFailed") || "Failed to fetch day performance",
-      });
+      showApiError(error)
     } finally {
       setLoading(false);
     }
@@ -297,10 +288,7 @@ export default function HomeScreen() {
 
     } catch (error: any) {
       console.error("Error fetching month performance:", error);
-      Toast.show({
-        type: "error",
-        text1: error?.response?.data?.message || t("dashboard.errors.monthPerformanceFailed") || "Failed to fetch month performance",
-      });
+      showApiError(error)
     }
   };
 
@@ -363,7 +351,7 @@ export default function HomeScreen() {
       labels,
       datasets: [
         { data: openData, color: () => theme.colors.colorSuccess600, strokeWidth: 2 },
-        { data: inProgressData, color: () => theme.colors.colorWarning600, strokeWidth: 2 },      
+        { data: inProgressData, color: () => theme.colors.colorWarning600, strokeWidth: 2 },
         { data: closedData, color: () => theme.colors.colorTextTertiary, strokeWidth: 2 }
       ]
     });
@@ -398,20 +386,20 @@ export default function HomeScreen() {
     setMonthChartData({
       labels,
       datasets: [
-        { 
-          data: openData, 
-          color: () => theme.colors.colorSuccess600, 
-          strokeWidth: 2 
+        {
+          data: openData,
+          color: () => theme.colors.colorSuccess600,
+          strokeWidth: 2
         },
-        { 
-          data: inProgressData, 
-          color: () => theme.colors.colorWarning600, 
-          strokeWidth: 2 
+        {
+          data: inProgressData,
+          color: () => theme.colors.colorWarning600,
+          strokeWidth: 2
         },
-        { 
-          data: closedData, 
-          color: () => theme.colors.colorTextTertiary, 
-          strokeWidth: 2 
+        {
+          data: closedData,
+          color: () => theme.colors.colorTextTertiary,
+          strokeWidth: 2
         }
       ]
     });
@@ -500,9 +488,9 @@ export default function HomeScreen() {
         type="dashboard"
         userName={`${firstName} ${lastName}`}
         userId=""
-        // todaysDutyCount={count.tickets}
-        // totalCases={count.tickets}
-        // notificationCount={3}
+      // todaysDutyCount={count.tickets}
+      // totalCases={count.tickets}
+      // notificationCount={3}
       >
         <ScrollView
           ref={scrollViewRef}
@@ -610,9 +598,9 @@ export default function HomeScreen() {
           </View>
 
           {/* Daily Performance Chart */}
-          <View style={[styles.chartContainer, { 
+          <View style={[styles.chartContainer, {
             backgroundColor: theme.colors.colorBgSurface,
-            borderColor: theme.colors.border 
+            borderColor: theme.colors.border
           }]}>
             <Text style={[theme.typography.fontH6, { color: theme.colors.colorPrimary600 }]}>
               {t("dashboard.charts.daily.title") || "Daily Performance"} - {new Date().toLocaleString(t('common.locale') || 'default', { month: 'long' })} {new Date().getFullYear()}
@@ -692,7 +680,7 @@ export default function HomeScreen() {
                     />
                   </View>
                 </ScrollView>
-                
+
                 {dayChartWidth > screenWidth && (
                   <Text style={[styles.scrollHint, theme.typography.fontBodySmall, { color: theme.colors.colorTextTertiary }]}>
                     {t("common.swipeToSeeMore") || "← Swipe to see more →"}
@@ -709,9 +697,9 @@ export default function HomeScreen() {
           </View>
 
           {/* Monthly Performance Chart - THREE SEPARATE LINES */}
-          <View style={[styles.chartContainer, { 
+          <View style={[styles.chartContainer, {
             backgroundColor: theme.colors.colorBgSurface,
-            borderColor: theme.colors.border 
+            borderColor: theme.colors.border
           }]}>
             <Text style={[theme.typography.fontH6, { color: theme.colors.colorPrimary600 }]}>
               {t("dashboard.charts.monthly.title") || "Monthly Performance"} - {monthPerformanceData?.year || new Date().getFullYear()}
@@ -785,7 +773,7 @@ export default function HomeScreen() {
                     />
                   </View>
                 </ScrollView>
-                
+
                 {monthChartWidth > screenWidth && (
                   <Text style={[styles.scrollHint, theme.typography.fontBodySmall, { color: theme.colors.colorTextTertiary }]}>
                     {t("common.swipeToSeeMore") || "← Swipe to see more →"}

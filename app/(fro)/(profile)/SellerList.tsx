@@ -4,6 +4,7 @@ import { deleteClient } from "@/features/fro/profile/DeleteSeller";
 import { getClientList } from "@/features/fro/profile/GetClientList";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
@@ -82,7 +83,7 @@ export default function ClientListScreen() {
                 Alert.alert("Error", res?.message || "Delete failed");
             }
         } catch (error) {
-            Alert.alert("Error", "Something went wrong");
+            showApiError(error)
         } finally {
             setDeleteAlert({ visible: false, client: null });
         }
@@ -115,7 +116,7 @@ export default function ClientListScreen() {
             }
         } catch (error) {
             console.error("Error fetching clients:", error);
-            Alert.alert("Error", "Failed to fetch clients");
+            showApiError(error)
         } finally {
             setLoading(false);
             setRefreshing(false);

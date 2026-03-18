@@ -5,19 +5,20 @@ import { updateLeave } from "@/features/fro/Attendance/leaves/updateLeave";
 import { getLookupMasters } from "@/features/fro/getLookupMasters";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View
+  ActivityIndicator,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from "react-native";
 import Toast from "react-native-toast-message";
 
@@ -126,10 +127,7 @@ export default function UpdateLeave() {
 
     } catch (error) {
       console.error("❌ Failed to fetch Leave Types:", error);
-      Toast.show({
-        type: "error",
-        text1: "Failed to fetch leave types",
-      });
+      showApiError(error)
     } finally {
       setLoadingLeaveTypes(false);
     }
@@ -209,10 +207,7 @@ export default function UpdateLeave() {
     } catch (error: any) {
       console.error("❌ Error updating leave:", error);
 
-      Toast.show({
-        type: "error",
-        text1: error?.response?.data?.message || "Failed to update leave",
-      });
+      showApiError(error)
     } finally {
       setIsSubmitting(false);
     }

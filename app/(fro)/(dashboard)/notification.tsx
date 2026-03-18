@@ -2,6 +2,7 @@ import BodyLayout from "@/components/layout/BodyLayout";
 import { getInteractionsListByAssignToId } from "@/features/fro/interactionApi";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -69,17 +70,10 @@ export default function NotificationScreen() {
         csrfToken: String(authState.antiforgeryToken),
       });
 
-      // console.log("Fetched interactions:", res?.data?.interactions);
-      // Log subStatusId values to verify
-      console.log("SubStatus IDs:", res?.data?.interactions?.map((i: Interaction) => ({
-        id: i.id,
-        subStatusId: i.subStatusId,
-        subStatusName: i.subStatusName
-      })));
-      
       setInteractions(res?.data?.interactions || []);
     } catch (error) {
       console.error("❌ Failed to fetch cases:", error);
+      showApiError(error)
     } finally {
       setLoading(false);
     }

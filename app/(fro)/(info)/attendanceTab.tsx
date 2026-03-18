@@ -2,13 +2,14 @@ import ReusableButton from "@/components/reusables/ReusableButton";
 import { useTheme } from "@/theme/ThemeContext";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 
 import { getAttendanceHistory } from "@/features/fro/addAttendance";
 import { addAttendance } from "@/features/fro/addAttendanceStatus";
 import { useLocation } from "@/hooks/LocationContext";
 import { useAppSelector } from "@/store/hooks";
-import { router, useFocusEffect } from "expo-router";
+import { showApiError } from "@/utils/showApiError";
+import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
 
 /* ================= TYPES ================= */
@@ -242,26 +243,7 @@ export default function AttendanceTab() {
 
       const status = err?.status || err?.response?.status;
 
-      if (status === 401) {
-        Alert.alert(
-          t("common.sessionExpired") || "Session Expired",
-          t("common.pleaseLoginAgain") || "Your session has expired. Please login again.",
-          [
-            {
-              text: t("common.ok") || "OK",
-              onPress: () => {
-                router.replace("/(onboarding)/login");
-              },
-            },
-          ],
-        );
-        return;
-      }
-
-      Alert.alert(
-        t("common.error") || "Error",
-        err?.message || t("attendance.unableToLoad") || "Unable to fetch attendance. Please try again.",
-      );
+     showApiError(err)
     } finally {
       setLoading(false);
     }
@@ -345,10 +327,7 @@ export default function AttendanceTab() {
     } catch (error) {
       console.error("Attendance submit failed", error);
 
-      Toast.show({
-        type: "error",
-        text1: t("attendance.failed") || "Attendance failed",
-      });
+      showApiError(error)
     }
   };
 

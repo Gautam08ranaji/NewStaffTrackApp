@@ -5,6 +5,7 @@ import { getLeaveList } from "@/features/fro/Attendance/leaves/getLeaveList";
 import { getLookupMasters } from "@/features/fro/getLookupMasters";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router, useFocusEffect } from "expo-router";
@@ -131,10 +132,7 @@ export default function LeavesTab() {
 
     } catch (error) {
       console.error("❌ Failed to fetch Leave Types:", error);
-      Toast.show({
-        type: "error",
-        text1: "Failed to fetch leave types",
-      });
+    showApiError(error)
     } finally {
       setLoadingLeaveTypes(false);
     }
@@ -220,10 +218,7 @@ export default function LeavesTab() {
     } catch (error: any) {
       console.error("❌ Delete Error:", error);
 
-      Toast.show({
-        type: "error",
-        text1: error?.response?.data?.message || "Failed to delete leave",
-      });
+      showApiError(error)
     }
   };
 
@@ -264,10 +259,7 @@ export default function LeavesTab() {
     } catch (error: any) {
       console.error("❌ Error creating leave:", error);
 
-      Toast.show({
-        type: "error",
-        text1: error?.response?.data?.message || "Failed to apply leave",
-      });
+     showApiError(error)
     } finally {
       setIsSubmitting(false);
     }

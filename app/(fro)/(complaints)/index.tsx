@@ -5,6 +5,7 @@ import { getInteractionsListByAssignToId } from "@/features/fro/interactionApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, {
   useCallback,
@@ -133,6 +134,7 @@ export default function TasksScreen() {
       setInteractions(res?.data?.interactions || []);
     } catch (error) {
       console.error("❌ Failed to fetch Tasks:", error);
+      showApiError(error)
     } finally {
       setRefreshing(false);
       dispatch(hideLoader()); // ⭐ hide global loader

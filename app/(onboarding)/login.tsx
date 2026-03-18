@@ -5,6 +5,7 @@ import { setAntiForgeryToken } from "@/features/security/antiForgerySlice";
 import { useLocation } from "@/hooks/LocationContext";
 import { useAppDispatch } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
+import { showApiError } from "@/utils/showApiError";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -128,10 +129,9 @@ export default function LoginScreen() {
         role === "FRO" ? "/(fro)/(dashboard)" : "/(frl)/(dashboard)",
       );
     } catch (err: any) {
-      Alert.alert(
-        t("login.errorTitle"),
-        err?.data?.errors?.[0] ?? t("login.errors.generic"),
-      );
+      showApiError(err);
+      console.log("err",err?.data?.errors?.[0] );
+      
     }
   };
 
