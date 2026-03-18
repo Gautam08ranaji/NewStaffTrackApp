@@ -1,33 +1,34 @@
 import { logout } from "@/features/auth/authSlice";
 import { AnyAction, ThunkDispatch } from "@reduxjs/toolkit";
 import { router } from "expo-router";
-import { Alert } from "react-native";
+import Toast from "react-native-toast-message";
 
 let isLoggingOut = false;
 
-export const showApiError = (error: any, dispatch: ThunkDispatch<any, any, AnyAction>) => {
+export const showApiError = (
+  error: any,
+  dispatch: ThunkDispatch<any, any, AnyAction>
+) => {
   const status = error?.status;
-  const title = status ? `Error ${status}` : "Error";
 
   let message = error?.message || "Something went wrong";
 
-  // 🔐 401 / 440 → LOGOUT + REDIRECT
+  // 🔐 401 / 440 → TOAST + LOGOUT + REDIRECT
   if ((status === 401 || status === 440) && !isLoggingOut) {
     isLoggingOut = true;
 
-    Alert.alert("Session Expired", "Please login again", [
-      {
-        text: "OK",
-        onPress: () => {
-          dispatch(logout());
+    Toast.show({
+      type: "error",
+      text1: "Session Expired",
+      text2: "Please login again",
+      visibilityTime: 2000,
+    });
 
-          // ✅ IMPORTANT → replace, not push
-          router.replace("/(onboarding)/login");
-
-          isLoggingOut = false;
-        },
-      },
-    ]);
+    setTimeout(() => {
+      dispatch(logout());
+      router.replace("/(onboarding)/login");
+      isLoggingOut = false;
+    }, 1500);
 
     return;
   }
@@ -62,5 +63,11 @@ export const showApiError = (error: any, dispatch: ThunkDispatch<any, any, AnyAc
     message = "Server error. Please try again later.";
   }
 
-  Alert.alert(title, message, [{ text: "OK" }]);
+  // ✅ Default toast for ALL remaining cases
+  Toast.show({
+    type: "error",
+    text1: "Error",
+    text2: message,
+    visibilityTime: 2500,
+  });
 };
