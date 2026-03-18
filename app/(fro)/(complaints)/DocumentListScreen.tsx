@@ -94,7 +94,7 @@ export default function CommonDocumentListScreen() {
       console.error("Failed to load documents:", error);
       
       
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoading(false);
       setRefreshing(false);

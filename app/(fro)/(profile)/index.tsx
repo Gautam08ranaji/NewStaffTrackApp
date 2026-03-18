@@ -1,9 +1,11 @@
+import GlobalLoader from "@/components/GlobalLoader";
 import ConfirmationAlert from "@/components/reusables/ConfirmationAlert";
 import { baseUrlApi } from "@/features/api/baseUrl.ts";
 import { logout } from "@/features/auth/authSlice";
 import { logoutUser } from "@/features/auth/logoutApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
+import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
 import { showApiError } from "@/utils/showApiError";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -71,6 +73,7 @@ type OfficerForm = {
 
 export default function ProfileScreen() {
   const { theme } = useTheme();
+  
   const { t } = useTranslation();
   const router = useRouter();
   const authState = useAppSelector((state) => state.auth);
@@ -121,6 +124,7 @@ export default function ProfileScreen() {
 
   const fetchUserData = async () => {
     try {
+      dispatch(showLoader());
       const response = await getUserDataById({
         userId: String(authState.userId),
         token: String(authState.token),
@@ -154,8 +158,9 @@ export default function ProfileScreen() {
       // console.log("response", response);
     } catch (error) {
       console.error("Failed to fetch user data", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
+      dispatch(hideLoader());
     }
   };
 
@@ -293,6 +298,9 @@ export default function ProfileScreen() {
         { backgroundColor: theme.colors.background },
       ]}
     >
+      {/* ================= GLOBAL LOADER ================= */}
+      <GlobalLoader /> {/* 👈 ADD THIS LINE - it will show automatically when loading is true */}
+
       {/* ================= HEADER ================= */}
       <View
         style={[
@@ -503,8 +511,6 @@ export default function ProfileScreen() {
           () => router.push("/changePassword"),
           theme.colors.colorError600,
         )}
-
-      
 
         {/* ===== Logout ===== */}
         <TouchableOpacity

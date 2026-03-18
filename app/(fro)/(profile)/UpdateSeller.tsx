@@ -145,7 +145,7 @@ export default function UpdateSellerScreen() {
       }
     } catch (error: any) {
       console.error("Failed to fetch seller data:", error);
-     showApiError(error)
+     showApiError(error, dispatch);
       router.back();
     } finally {
       setLoadingData(false);
@@ -170,7 +170,7 @@ export default function UpdateSellerScreen() {
       setStateDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch states:", error);
-     showApiError(error)
+     showApiError(error, dispatch);
       setStateDropdown([]);
     } finally {
       setLoadingDropdowns(false);
@@ -194,7 +194,7 @@ export default function UpdateSellerScreen() {
       setDistrictDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch districts:", error);
-     showApiError(error)
+     showApiError(error, dispatch);
       setDistrictDropdown([]);
     } finally {
       setLoadingDropdowns(false);
@@ -219,7 +219,7 @@ export default function UpdateSellerScreen() {
       setGenderDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch genders:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
       setGenderDropdown([]);
     } finally {
       setLoadingDropdowns(false);
@@ -356,7 +356,7 @@ export default function UpdateSellerScreen() {
       }
     } catch (error: any) {
       console.error("Update error:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoading(false);
       console.log("=== HANDLE UPDATE END ===");

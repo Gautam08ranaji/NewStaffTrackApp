@@ -83,7 +83,7 @@ export default function ClientListScreen() {
                 Alert.alert("Error", res?.message || "Delete failed");
             }
         } catch (error) {
-            showApiError(error)
+            showApiError(error, dispatch);
         } finally {
             setDeleteAlert({ visible: false, client: null });
         }
@@ -116,7 +116,7 @@ export default function ClientListScreen() {
             }
         } catch (error) {
             console.error("Error fetching clients:", error);
-            showApiError(error)
+            showApiError(error, dispatch);
         } finally {
             setLoading(false);
             setRefreshing(false);

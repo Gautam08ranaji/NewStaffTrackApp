@@ -67,7 +67,7 @@ export default function NotesHistoryScreen() {
 
       setNotes(list);
     } catch (error: any) {
-   showApiError(error)
+   showApiError(error, dispatch);
     } finally {
       setLoading(false);
     }

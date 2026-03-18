@@ -339,7 +339,7 @@ export default function SellerOnboardingScreen() {
     }
   } catch (error: any) {
     console.error("Submit error:", error);
-    showApiError(error)
+    showApiError(error, dispatch);
   } finally {
     setLoading(false);
     console.log("=== HANDLE SUBMIT END ===");

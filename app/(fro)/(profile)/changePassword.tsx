@@ -116,7 +116,7 @@ export default function ChangePasswordScreen() {
       }
     } catch (error) {
       console.error("Change password failed", error);
-     showApiError(error)
+     showApiError(error, dispatch);
     } finally {
       setLoading(false);
     }

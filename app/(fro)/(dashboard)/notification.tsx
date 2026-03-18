@@ -73,7 +73,7 @@ export default function NotificationScreen() {
       setInteractions(res?.data?.interactions || []);
     } catch (error) {
       console.error("❌ Failed to fetch cases:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoading(false);
     }

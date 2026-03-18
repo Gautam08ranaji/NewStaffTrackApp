@@ -121,7 +121,7 @@ export default function AddNoteScreen() {
       });
     } catch (err) {
       console.log("Activity error", err);
-      showApiError(err)
+      showApiError(error, dispatch);
     }
   };
 
@@ -207,7 +207,7 @@ export default function AddNoteScreen() {
       Alert.alert("Success", "Note added successfully");
       router.back();
     } catch (error: any) {
-   showApiError(error)
+   showApiError(error, dispatch);
     } finally {
       setLoading(false);
     }

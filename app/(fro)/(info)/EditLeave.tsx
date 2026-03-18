@@ -127,7 +127,7 @@ export default function UpdateLeave() {
 
     } catch (error) {
       console.error("❌ Failed to fetch Leave Types:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoadingLeaveTypes(false);
     }
@@ -207,7 +207,7 @@ export default function UpdateLeave() {
     } catch (error: any) {
       console.error("❌ Error updating leave:", error);
 
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setIsSubmitting(false);
     }

@@ -134,7 +134,7 @@ export default function TasksScreen() {
       setInteractions(res?.data?.interactions || []);
     } catch (error) {
       console.error("❌ Failed to fetch Tasks:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setRefreshing(false);
       dispatch(hideLoader()); // ⭐ hide global loader

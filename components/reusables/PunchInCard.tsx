@@ -122,7 +122,7 @@ export default function PunchInCard() {
     } catch (err: any) {
       const status = err?.status || err?.response?.status;
 
-      showApiError(err)
+      showApiError(error, dispatch);
     } finally {
       dispatch(hideLoader());
     }
@@ -215,7 +215,7 @@ export default function PunchInCard() {
     } catch (error) {
       console.log("Attendance Error:", error);
 
-     showApiError(error)
+     showApiError(error, dispatch);
     } finally {
       dispatch(hideLoader()); // ✅ GLOBAL LOADER STOP
     }

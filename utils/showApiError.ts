@@ -1,11 +1,11 @@
 import { logout } from "@/features/auth/authSlice";
+import { AnyAction, ThunkDispatch } from "@reduxjs/toolkit";
 import { router } from "expo-router";
 import { Alert } from "react-native";
 
-
 let isLoggingOut = false;
 
-export const showApiError = (error: any) => {
+export const showApiError = (error: any, dispatch: ThunkDispatch<any, any, AnyAction>) => {
   const status = error?.status;
   const title = status ? `Error ${status}` : "Error";
 
@@ -19,7 +19,7 @@ export const showApiError = (error: any) => {
       {
         text: "OK",
         onPress: () => {
-           dispatch(logout());
+          dispatch(logout());
 
           // ✅ IMPORTANT → replace, not push
           router.replace("/(onboarding)/login");
@@ -64,7 +64,3 @@ export const showApiError = (error: any) => {
 
   Alert.alert(title, message, [{ text: "OK" }]);
 };
-
-function dispatch(arg0: { payload: undefined; type: "auth/logout"; }) {
-  throw new Error("Function not implemented.");
-}

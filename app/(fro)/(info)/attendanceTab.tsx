@@ -4,10 +4,12 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
 
+import GlobalLoader from "@/components/GlobalLoader";
 import { getAttendanceHistory } from "@/features/fro/addAttendance";
 import { addAttendance } from "@/features/fro/addAttendanceStatus";
 import { useLocation } from "@/hooks/LocationContext";
-import { useAppSelector } from "@/store/hooks";
+import { useAppDispatch, useAppSelector } from "@/store/hooks"; // 👈 ADD useAppDispatch
+import { hideLoader, showLoader } from "@/store/loaderSlice"; // 👈 ADD loader actions
 import { showApiError } from "@/utils/showApiError";
 import { useFocusEffect } from "expo-router";
 import Toast from "react-native-toast-message";
@@ -138,6 +140,7 @@ export default function AttendanceTab() {
   const { theme } = useTheme();
   const { t, i18n } = useTranslation();
   const authState = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch(); // 👈 ADD dispatch
   const { hasPermission, fetchLocation, address } = useLocation();
 
   const [attendanceHistory, setAttendanceHistory] = useState<AttendanceItem[]>(
@@ -213,6 +216,7 @@ export default function AttendanceTab() {
 
   const loadAttendance = async () => {
     try {
+      dispatch(showLoader()); // 👈 SHOW LOADER
       setLoading(true);
 
       const res = await getAttendanceHistory({
@@ -243,9 +247,10 @@ export default function AttendanceTab() {
 
       const status = err?.status || err?.response?.status;
 
-     showApiError(err)
+      showApiError(error, dispatch);
     } finally {
       setLoading(false);
+      dispatch(hideLoader()); // 👈 HIDE LOADER
     }
   };
 
@@ -279,6 +284,8 @@ export default function AttendanceTab() {
 
   const submitAttendanceStatus = async (action: "start" | "end") => {
     try {
+      dispatch(showLoader()); // 👈 SHOW LOADER
+      
       const now = new Date();
       const currentDate = now.toISOString().split("T")[0];
       const currentDateTime = now.toISOString();
@@ -290,6 +297,7 @@ export default function AttendanceTab() {
           type: "error",
           text1: t("attendance.locationNotAvailable") || "Location not available",
         });
+        dispatch(hideLoader()); // 👈 HIDE LOADER ON ERROR
         return;
       }
 
@@ -326,8 +334,9 @@ export default function AttendanceTab() {
       await loadAttendance();
     } catch (error) {
       console.error("Attendance submit failed", error);
-
-      showApiError(error)
+      showApiError(error, dispatch);
+    } finally {
+      dispatch(hideLoader()); // 👈 HIDE LOADER
     }
   };
 
@@ -357,6 +366,8 @@ export default function AttendanceTab() {
 
   return (
     <ScrollView style={{ padding: 16, backgroundColor: theme.colors.background }}>
+      <GlobalLoader /> {/* 👈 ADD THIS LINE - it will show automatically when loading is true */}
+      
       <View
         style={[
           styles.card, 

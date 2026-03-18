@@ -286,7 +286,7 @@ export default function UpdateTaskScreen() {
       console.log("Activity saved successfully");
     } catch (err) {
       console.log("Activity error", err);
-      showApiError(err)
+      showApiError(error, dispatch);
     }
   };
 
@@ -353,7 +353,7 @@ export default function UpdateTaskScreen() {
       setStatusDropdown(mapped);
     } catch (error: any) {
       console.error("Failed to fetch statuses:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoadingDropdowns(false);
     }
@@ -379,7 +379,7 @@ export default function UpdateTaskScreen() {
       setSubStatusDropdown(mapped);
     } catch (error) {
       console.error("Failed to fetch sub-statuses:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoadingDropdowns(false);
     }
@@ -404,7 +404,7 @@ export default function UpdateTaskScreen() {
       setCategoryDropdown(mapped);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoadingDropdowns(false);
     }

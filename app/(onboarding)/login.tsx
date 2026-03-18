@@ -129,7 +129,7 @@ export default function LoginScreen() {
         role === "FRO" ? "/(fro)/(dashboard)" : "/(frl)/(dashboard)",
       );
     } catch (err: any) {
-      showApiError(err);
+      showApiError(err, dispatch);
       console.log("err",err?.data?.errors?.[0] );
       
     }

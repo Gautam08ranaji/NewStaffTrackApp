@@ -227,7 +227,7 @@ export default function OfficerDetailsScreen() {
       }
     } catch (error) {
       console.error("Failed to fetch user data", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoading(false);
     }
@@ -245,7 +245,7 @@ export default function OfficerDetailsScreen() {
 
     setGenderDropdown(res.data ?? []);
     } catch (error) {
-      showApiError(error)
+      showApiError(error, dispatch);
     }
    
   };
@@ -261,7 +261,7 @@ export default function OfficerDetailsScreen() {
 
     setStateDropdown(res.data ?? []);
     } catch (error) {
-      showApiError(error)
+      showApiError(error, dispatch);
     }
   
   };
@@ -277,7 +277,7 @@ export default function OfficerDetailsScreen() {
 
     setCityDropdown(res.data ?? []);
     } catch (error) {
-      showApiError(error)
+      showApiError(error, dispatch);
     }
    
   };
@@ -502,7 +502,7 @@ export default function OfficerDetailsScreen() {
         // router.push("/(fro)/(profile)")
       }
     } catch (error: any) {
-      showApiError(error)
+      showApiError(error, dispatch);
       console.error("Update failed:", error?.response?.data ?? error.message);
     } finally {
       setSaving(false);

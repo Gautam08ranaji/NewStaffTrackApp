@@ -120,7 +120,7 @@ export default function UpdateDocumentScreen() {
       console.log("✅ Document Activity Response:", response);
     } catch (err) {
       console.error("❌ Document Activity save error:", err);
-      showApiError(err)
+      showApiError(error, dispatch);
     }
   };
 
@@ -390,7 +390,7 @@ export default function UpdateDocumentScreen() {
       videoStartTimeRef.current = null;
     } catch (error) {
       console.log("UPLOAD ERROR:", error);
-     showApiError(error)
+     showApiError(error, dispatch);
     } finally {
       setLoading(false);
     }

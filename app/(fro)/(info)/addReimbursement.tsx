@@ -318,7 +318,7 @@ export default function AddReimbursementScreen() {
       }
     } catch (error) {
       console.error("❌ Failed to fetch Tasks:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setIsLoadingTasks(false);
     }
@@ -348,7 +348,7 @@ export default function AddReimbursementScreen() {
     } catch (error) {
       console.error("❌ Failed to fetch Expense Types:", error);
       // Set fallback options
-     showApiError(error)
+     showApiError(error, dispatch);
     } finally {
       setIsLoadingExpenseTypes(false);
     }
@@ -531,7 +531,7 @@ export default function AddReimbursementScreen() {
       }
     } catch (error) {
       console.log("Error picking file:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     }
   };
 
@@ -725,7 +725,7 @@ export default function AddReimbursementScreen() {
       );
     } catch (error) {
       console.log("Reimbursement Error:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setIsSubmitting(false);
     }

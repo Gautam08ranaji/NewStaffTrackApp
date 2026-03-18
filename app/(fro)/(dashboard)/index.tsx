@@ -192,7 +192,7 @@ export default function HomeScreen() {
       setLastName(response?.data?.lastName || "");
     } catch (error) {
       console.error("User fetch error:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       dispatch(hideLoader());
     }
@@ -233,7 +233,7 @@ export default function HomeScreen() {
     } catch (error) {
       console.error("Count fetch error:", error);
 
-      showApiError(error)
+      showApiError(error, dispatch);
     }
   };
 
@@ -266,7 +266,7 @@ export default function HomeScreen() {
 
     } catch (error) {
       console.error("Error fetching day performance:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     } finally {
       setLoading(false);
     }
@@ -288,7 +288,7 @@ export default function HomeScreen() {
 
     } catch (error: any) {
       console.error("Error fetching month performance:", error);
-      showApiError(error)
+      showApiError(error, dispatch);
     }
   };
 

@@ -132,7 +132,7 @@ export default function LeavesTab() {
 
     } catch (error) {
       console.error("❌ Failed to fetch Leave Types:", error);
-    showApiError(error)
+    showApiError(error, dispatch);
     } finally {
       setLoadingLeaveTypes(false);
     }
@@ -218,7 +218,7 @@ export default function LeavesTab() {
     } catch (error: any) {
       console.error("❌ Delete Error:", error);
 
-      showApiError(error)
+      showApiError(error, dispatch);
     }
   };
 
@@ -259,7 +259,7 @@ export default function LeavesTab() {
     } catch (error: any) {
       console.error("❌ Error creating leave:", error);
 
-     showApiError(error)
+     showApiError(error, dispatch);
     } finally {
       setIsSubmitting(false);
     }

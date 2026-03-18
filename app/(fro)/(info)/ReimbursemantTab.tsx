@@ -148,7 +148,7 @@ export default function ReimbursementHistoryScreen() {
     console.log("res exp",res);
   } catch (err) {
     console.error(err);
-    showApiError(err)
+    showApiError(error, dispatch);
   }
 };
 
@@ -183,7 +183,7 @@ export default function ReimbursementHistoryScreen() {
       }
     } catch (error) {
       console.log("Reimbursement API Error", error);
-     showApiError(error)
+     showApiError(error, dispatch);
     } finally {
       setIsLoading(false);
       setRefreshing(false);
