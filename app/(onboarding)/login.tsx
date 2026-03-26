@@ -6,19 +6,19 @@ import { useLocation } from "@/hooks/LocationContext";
 import { useAppDispatch } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { showApiError } from "@/utils/showApiError";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
   Alert,
-  Image,
-  ScrollView,
+  Image, NativeModules, ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 import RemixIcon from "react-native-remix-icon";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -41,7 +41,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const { hasPermission, fetchLocation, address } = useLocation();
-
+const { ForegroundServiceModule } = NativeModules;
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
@@ -82,58 +82,81 @@ export default function LoginScreen() {
   console.log("oc",location);
   
 
-  const handleLogin = async () => {
-    if (isLoading) return;
-    if (!validate()) return;
+const handleLogin = async () => {
+  if (isLoading) return;
+  if (!validate()) return;
 
-    try {
-      const res = await login({
-        userName: email.trim(),
-        password,
-        latitude: location?.coords.latitude.toString() || "",
-        longitude: location?.coords?.longitude.toString() || "",
-      }).unwrap();
+  try {
+    const res = await login({
+      userName: email.trim(),
+      password,
+      latitude: location?.coords.latitude?.toString() || "",
+      longitude: location?.coords?.longitude?.toString() || "",
+    }).unwrap();
 
-      if (!res.success || !res.data) {
-        Alert.alert(
-          t("login.errorTitle"),
-          res.errors?.[0] ?? t("login.errors.loginFailed"),
-        );
-        return;
-      }
-      const user = res.data;
-      console.log("login res", res);
-
-      console.log("login res", res?.data?.userRoles[0]);
-
-      const role = user.userType == "FRO" ? "FRO" : "FRL";
-
-      console.log("role", role);
-
-      const antiRes = await loadAntiForgeryToken(user.bearerToken);
-
-      // 3️⃣ STORE AUTH + ANTIFORGERY TOGETHER ✅
-      dispatch(
-        setAuth({
-          id: user.id,
-          bearerToken: user.bearerToken,
-          role,
-          antiforgeryToken: antiRes.token,
-        }),
+    if (!res.success || !res.data) {
+      Alert.alert(
+        t("login.errorTitle"),
+        res.errors?.[0] ?? t("login.errors.loginFailed"),
       );
-
-      console.log("role", res);
-
-      // 4️⃣ NAVIGATE
-      router.replace(
-        role === "FRO" ? "/(fro)/(dashboard)" : "/(frl)/(dashboard)",
-      );
-    } catch (err: any) {
-      showApiError(err, dispatch);
-      console.log("err",err?.data?.errors?.[0] );
-      
+      return;
     }
-  };
+
+    const user = res.data;
+
+    console.log("✅ login res", res);
+
+    const role = user.userType === "FRO" ? "FRO" : "FRL";
+
+    // ✅ Get CSRF token
+    const antiRes = await loadAntiForgeryToken(user.bearerToken);
+
+    // ✅ Store in Redux
+    dispatch(
+      setAuth({
+        id: user.id,
+        bearerToken: user.bearerToken,
+        role,
+        antiforgeryToken: antiRes.token,
+      })
+    );
+
+    // ✅ Store for Native Service (VERY IMPORTANT)
+    await AsyncStorage.multiSet([
+      ["native_userId", user.id],
+      ["native_token", user.bearerToken],
+      ["native_csrf", antiRes.token || ""],
+      ["native_name", user?.firstName || "User"],
+    ]);
+
+    console.log("✅ Auth + Native storage saved");
+
+    // 🚀 START NATIVE FOREGROUND SERVICE (THIS IS THE KEY)
+    try {
+      await ForegroundServiceModule.startForegroundService(
+        user.id,
+        user.bearerToken,
+        antiRes.token || "",
+        user?.firstName || "User"
+      );
+
+      console.log("🚀 Foreground service started");
+    } catch (e) {
+      console.log("❌ Failed to start service", e);
+    }
+
+    // ✅ Navigate
+    router.replace(
+      role === "FRO"
+        ? "/(fro)/(dashboard)"
+        : "/(frl)/(dashboard)"
+    );
+
+  } catch (err: any) {
+    showApiError(err, dispatch);
+    console.log("❌ login error", err?.data?.errors?.[0]);
+  }
+};
 
   return (
     <SafeAreaView

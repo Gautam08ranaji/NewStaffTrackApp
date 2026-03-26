@@ -9,7 +9,6 @@ import { getDashCount } from "@/features/fro/interaction/countApi";
 import { getUserDataById } from "@/features/fro/profile/getProfile";
 import { getClientDataById } from "@/features/fro/profile/sellerContactByIdApi";
 import { useInteractionPopupPoller } from "@/hooks/InteractionPopupProvider";
-import { useFROLocationUpdater } from "@/hooks/useFROLocationUpdater";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { hideLoader, showLoader } from "@/store/loaderSlice";
 import { useTheme } from "@/theme/ThemeContext";
@@ -154,7 +153,7 @@ export default function HomeScreen() {
     return Math.round((count.closed / count.tickets) * 100);
   }, [count.closed, count.tickets]);
 
-  useFROLocationUpdater(authState?.userId);
+  // useFROLocationUpdater(authState?.userId);
 
   useFocusEffect(
     useCallback(() => {

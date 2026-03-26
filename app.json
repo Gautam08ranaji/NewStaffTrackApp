@@ -48,23 +48,17 @@
         "ACCESS_BACKGROUND_LOCATION",
         "FOREGROUND_SERVICE",
         "WAKE_LOCK",
-        "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" , // ✅ ADD THIS
-        "REQUEST_DELETE_PACKAGES", // For accessing app settings
-        "QUERY_ALL_PACKAGES" // For
+        "REQUEST_IGNORE_BATTERY_OPTIMIZATIONS",
+        "REQUEST_DELETE_PACKAGES",
+        "QUERY_ALL_PACKAGES"
       ],
-
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyDVl4s2zlYODWTIpEfzYePa_hj5nrWksuE"
-        }
-      },
 
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/staffTrackLogo.png",
         "backgroundColor": "#ffffff"
       },
 
-      "intentFilters": [  // ✅ ADD THIS ENTIRE SECTION
+      "intentFilters": [
         {
           "action": "android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
         }
@@ -74,10 +68,6 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.gautam1008.fieldtrack",
-
-      "config": {
-        "googleMapsApiKey": "AIzaSyDVl4s2zlYODWTIpEfzYePa_hj5nrWksuE"
-      },
 
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
