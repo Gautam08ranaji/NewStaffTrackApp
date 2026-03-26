@@ -1,132 +1,203 @@
-import {
-  checkAutoRevokeStatus,
-  shouldShowAutoRevokeGuide,
-  showAutoRevokeGuide
-} from "@/services/autoRevokePermission";
-
-import {
-  requestDisableBatteryOptimizations,
-  shouldShowBatteryGuide,
-  showBatteryOptimizationGuide
-} from "@/services/batteryOptimization";
-
-import { useTheme } from "@/theme/ThemeContext";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Location from "expo-location";
 import React, { createContext, useContext, useEffect, useState } from "react";
 import {
+  AppState,
+  Linking,
   Modal,
   Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
-/* ================= CONTEXT ================= */
+import {
+  requestDisableBatteryOptimizations,
+  shouldShowBatteryGuide,
+} from "@/services/batteryOptimization";
+
+import { openAutoRevokeSettings } from "@/services/autoRevokePermission";
 
 const LocationContext = createContext<any>({});
 
-/* ================= PROVIDER ================= */
+type Step = "fg" | "bg" | "battery" | "autoRevoke" | "done";
 
 export const LocationProvider = ({ children }: any) => {
-  const { theme } = useTheme();
+  const [step, setStep] = useState<Step>("fg");
+  const [visible, setVisible] = useState(true);
+  const [progress, setProgress] = useState(1);
+  const [isChecking, setIsChecking] = useState(false);
 
-  const [location, setLocation] = useState<any>(null);
-  const [address, setAddress] = useState<string | null>(null);
-  const [hasPermission, setHasPermission] = useState(false);
-  const [hasBackgroundPermission, setHasBackgroundPermission] = useState(false);
-  const [autoRevokeEnabled, setAutoRevokeEnabled] = useState(false);
-
-  const [showPermissionModal, setShowPermissionModal] = useState(false);
-  const [isRequesting, setIsRequesting] = useState(false);
-  const [permissionStep, setPermissionStep] = useState<'initial' | 'background'>('initial');
+  /* ================= INIT ================= */
 
   useEffect(() => {
-    checkPermissions();
+    evaluate();
   }, []);
 
+  /* ================= APP RETURN ================= */
+
   useEffect(() => {
-    if (!hasPermission) {
-      setShowPermissionModal(true);
-      setPermissionStep('initial');
-    } else if (!hasBackgroundPermission) {
-      setShowPermissionModal(true);
-      setPermissionStep('background');
-    } else {
-      setShowPermissionModal(false);
-    }
-  }, [hasPermission, hasBackgroundPermission]);
-
-  const checkPermissions = async () => {
-    const fg = await Location.getForegroundPermissionsAsync();
-    const bg = await Location.getBackgroundPermissionsAsync();
-
-    setHasPermission(fg.status === "granted");
-    setHasBackgroundPermission(bg.status === "granted");
-
-    console.log("Permission check:", {
-      foreground: fg.status,
-      background: bg.status
-    });
-
-    if (fg.status === "granted" && bg.status === "granted" && Platform.OS === "android") {
-      const shouldShowBattery = await shouldShowBatteryGuide();
-
-      if (shouldShowBattery) {
-        setTimeout(() => requestDisableBatteryOptimizations(), 2000);
-      } else {
-        setTimeout(async () => {
-          const shouldShowAuto = await shouldShowAutoRevokeGuide();
-          if (shouldShowAuto) {
-            const status = await checkAutoRevokeStatus();
-            setAutoRevokeEnabled(status.isEnabled);
-            showAutoRevokeGuide();
-          }
-        }, 4000);
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        evaluate();
       }
+    });
+    return () => sub.remove();
+  }, []);
+
+  /* ================= CORE ENGINE ================= */
+
+  const evaluate = async () => {
+    if (isChecking) return;
+    setIsChecking(true);
+
+    try {
+      const fg = await Location.getForegroundPermissionsAsync();
+      const bg = await Location.getBackgroundPermissionsAsync();
+
+      // ❌ Foreground not granted
+      if (fg.status !== "granted") {
+        setStep("fg");
+        setProgress(1);
+        setVisible(true);
+        return;
+      }
+
+      // ❌ Background not granted
+      if (bg.status !== "granted") {
+        setStep("bg");
+        setProgress(2);
+        setVisible(true);
+        return;
+      }
+
+      // ANDROID ONLY CHECKS
+      if (Platform.OS === "android") {
+        const battery = await shouldShowBatteryGuide();
+
+        if (battery) {
+          setStep("battery");
+          setProgress(3);
+          setVisible(true);
+          return;
+        }
+
+        // ✅ Auto revoke confirmation (IMPORTANT FIX)
+        const confirmed = await AsyncStorage.getItem("autoRevokeConfirmed");
+
+        if (!confirmed) {
+          setStep("autoRevoke");
+          setProgress(4);
+          setVisible(true);
+          return;
+        }
+      }
+
+      // ✅ ALL GOOD
+      setStep("done");
+      setVisible(false);
+
+    } catch (e) {
+      console.log("Permission flow error:", e);
+    } finally {
+      setIsChecking(false);
     }
   };
 
-  const requestPermission = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    setHasPermission(status === "granted");
-    return status === "granted";
+  /* ================= ACTIONS ================= */
+
+  const requestFG = async () => {
+    await Location.requestForegroundPermissionsAsync();
+    evaluate();
   };
 
-  const requestBackgroundPermission = async () => {
-    const { status } = await Location.requestBackgroundPermissionsAsync();
-    setHasBackgroundPermission(status === "granted");
-    return status === "granted";
+  const requestBG = async () => {
+    await Location.requestBackgroundPermissionsAsync();
+    evaluate();
   };
 
-  const fetchLocation = async () => {
-    const loc = await Location.getCurrentPositionAsync({});
-    setLocation(loc);
-    return loc;
+  const openBattery = () => {
+    requestDisableBatteryOptimizations();
   };
+
+  const openAutoRevoke = async () => {
+    await openAutoRevokeSettings();
+
+    // ✅ Assume user disables → store confirmation
+    await AsyncStorage.setItem("autoRevokeConfirmed", "true");
+  };
+
+  const openSettings = () => {
+    Linking.openSettings();
+  };
+
+  /* ================= UI ================= */
+
+  const renderStep = () => {
+    switch (step) {
+      case "fg":
+        return {
+          title: "Enable Location Access",
+          desc: "We require your location to track field activity accurately.",
+          btn: "Allow Location",
+          action: requestFG,
+        };
+
+      case "bg":
+        return {
+          title: "Enable Background Tracking",
+          desc: "Allow location access even when the app is closed.",
+          btn: "Allow Always",
+          action: requestBG,
+        };
+
+      case "battery":
+        return {
+          title: "Disable Battery Restrictions",
+          desc: "Ensure uninterrupted tracking by disabling battery optimization.",
+          btn: "Open Settings",
+          action: openBattery,
+        };
+
+      case "autoRevoke":
+        return {
+          title: "Keep Permissions Active",
+          desc:
+            "Turn OFF 'Remove permissions if app is unused' to ensure continuous tracking.",
+          btn: "Open Settings",
+          action: openAutoRevoke,
+        };
+
+      default:
+        return null;
+    }
+  };
+
+  const data = renderStep();
 
   return (
-    <LocationContext.Provider
-      value={{
-        location,
-        address,
-        hasPermission,
-        hasBackgroundPermission,
-        requestPermission,
-        requestBackgroundPermission,
-        fetchLocation,
-        showBatteryOptimizationGuide
-      }}
-    >
-      {children}
+    <LocationContext.Provider value={{}}>
+      {/* ❌ HARD BLOCK UNTIL DONE */}
+      {step === "done" && children}
 
-      <Modal visible={showPermissionModal} transparent>
+      <Modal visible={visible} transparent animationType="fade">
         <View style={styles.overlay}>
-          <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
-            <Text>Location permission required</Text>
+          <View style={styles.card}>
+            <Text style={styles.progress}>
+              Step {progress} of 4
+            </Text>
 
-            <TouchableOpacity onPress={requestPermission}>
-              <Text>Grant Permission</Text>
+            <Text style={styles.title}>{data?.title}</Text>
+
+            <Text style={styles.desc}>{data?.desc}</Text>
+
+            <TouchableOpacity style={styles.primaryBtn} onPress={data?.action}>
+              <Text style={styles.primaryText}>{data?.btn}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={openSettings}>
+              <Text style={styles.link}>Open App Settings</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -137,7 +208,52 @@ export const LocationProvider = ({ children }: any) => {
 
 export const useLocation = () => useContext(LocationContext);
 
+/* ================= STYLES ================= */
+
 const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: "center", alignItems: "center" },
-  modalContent: { padding: 20, borderRadius: 10 }
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.65)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  card: {
+    width: "88%",
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 22,
+    elevation: 5,
+  },
+  progress: {
+    fontSize: 12,
+    color: "#888",
+    marginBottom: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 10,
+  },
+  desc: {
+    fontSize: 14,
+    color: "#555",
+    marginBottom: 20,
+    lineHeight: 20,
+  },
+  primaryBtn: {
+    backgroundColor: "#007AFF",
+    padding: 14,
+    borderRadius: 10,
+  },
+  primaryText: {
+    color: "#fff",
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  link: {
+    textAlign: "center",
+    marginTop: 12,
+    color: "#007AFF",
+    fontSize: 13,
+  },
 });
