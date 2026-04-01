@@ -23,7 +23,9 @@
     "remove": "Remove",
     "clear": "Clear Search",
     "unknown": "Unknown",
-    "permissionRequired": "Permission Required"
+    "permissionRequired": "Permission Required",
+    "save":"Save",
+    "saving":"Saving"
     
   },
   "dashboard": {
@@ -107,7 +109,9 @@
     "ticketNumber": "Ticket Number:",
     "autoAssigned": "Auto Assigned",
     "taskAccepted": "Task Accepted",
-    "taskDeclined": "Task Declined"
+    "taskDeclined": "Task Declined",
+    "sellerId":"Seller ID:",
+    "name":"Name"
   },"caseDetail": {
     "screenTitle": "Task Details",
     "sellerDetails": "Seller Details",
@@ -129,6 +133,7 @@
     "followUp": "Follow-up",
     "viewAllNotes": "View all",
     "quickActions": "Quick Actions",
+    "sellerId":"Seller ID",
     "actions": 
     {
       "updateStatus": "Update Status",

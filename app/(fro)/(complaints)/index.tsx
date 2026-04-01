@@ -244,11 +244,15 @@ export default function TasksScreen() {
 
         <View style={styles.infoContainer}>
           <Text style={[theme.typography.fontBody, styles.cardText, { color: theme.colors.colorTextSecondary }]}>
-            {item.name || t("tasks.unnamedCase")}
+            {t("tasks.sellerId") || "Seller ID"} {item.sellerId || "_"}
           </Text>
-          <Text style={[theme.typography.fontBody, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
+           <Text style={[theme.typography.fontBody, styles.cardText, { color: theme.colors.colorTextSecondary }]}>
+            {t("tasks.name") || "Name"}: {item.name || t("tasks.unnamedCase")}
+          </Text>
+         
+          {/* <Text style={[theme.typography.fontBody, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
             {t("tasks.category")}: {item.categoryName || "-"}
-          </Text>
+          </Text> */}
           <Text style={[theme.typography.fontBody, styles.cardText, styles.infoText, { color: theme.colors.colorTextSecondary }]}>
             {t("tasks.priority")}: {item.priority || "-"}
           </Text>
@@ -262,7 +266,7 @@ export default function TasksScreen() {
               color={theme.colors.colorTextSecondary}
             />
             <Text style={[theme.typography.fontBodySmall, styles.metaText, { color: theme.colors.colorTextSecondary }]} numberOfLines={1}>
-              {item.districtName || "-"}
+              {item.districtName || "-"}v
             </Text>
           </View>
           <View style={styles.metaItem}>

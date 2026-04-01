@@ -7,8 +7,10 @@ import { useAppDispatch } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { showApiError } from "@/utils/showApiError";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Application from "expo-application";
 import { router } from "expo-router";
 import React, { useState } from "react";
+      
 import { useTranslation } from "react-i18next";
 import {
   ActivityIndicator,
@@ -31,6 +33,9 @@ const PASSWORD_REGEX =
 console.log("LOGIN SCREEN LOADED");
 
 export default function LoginScreen() {
+
+const version = Application.nativeApplicationVersion; 
+const build = Application.nativeBuildVersion;   
   const { theme } = useTheme();
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -322,6 +327,14 @@ const handleLogin = async () => {
             ]}
           >
             © 2026 Stream Digital Services | All Rights Reserved
+          </Text>
+            <Text
+            style={[
+              styles.footerText,
+              { color: theme.colors.colorTextSecondary },
+            ]}
+          >
+          Version {version} ({build})
           </Text>
         </View>
       </ScrollView>

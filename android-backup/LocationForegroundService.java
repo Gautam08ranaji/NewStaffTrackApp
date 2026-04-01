@@ -132,7 +132,7 @@ public class LocationForegroundService extends Service {
 
         LocationRequest request = new LocationRequest.Builder(
                 Priority.PRIORITY_HIGH_ACCURACY,
-                10000
+                30000
         ).setMinUpdateIntervalMillis(5000).build();
 
         locationCallback = new LocationCallback() {

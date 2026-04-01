@@ -44,11 +44,15 @@ export default function CaseDetailScreen() {
   const [loadingNotes, setLoadingNotes] = useState(false);
   
   // Extract data with proper field names based on your actual data structure
+console.log("item",item);
+
+
   const ticketNo = item?.transactionNumber;
   const elderName = item?.name || item?.contactName;
   const age = item?.age;
   const gender = item?.gender;
   const ContactId = item?.contactId;
+  const sellerId = item?.sellerId ;
 
   const phone = item?.mobileNo;
   const emergencyPhone = item?.alternateNo;
@@ -751,6 +755,33 @@ export default function CaseDetailScreen() {
           </View>
 
           <View style={styles.elderInfo}>
+             <View style={styles.keyValueRow}>
+              <View style={styles.labelContainer}>
+                <RemixIcon
+                  name="id-card-line"
+                  size={14}
+                  color={theme.colors.colorTextSecondary}
+                />
+                <Text
+                  style={[
+                    theme.typography.fontBodySmall,
+                    styles.labelKey,
+                    { color: theme.colors.colorTextSecondary },
+                  ]}
+                >
+                  {t("caseDetail.sellerId") || "Seller ID"}:
+                </Text>
+              </View>
+              <Text
+                style={[
+                  theme.typography.fontBody,
+                  styles.labelValue,
+                  { color: theme.colors.colorTextPrimary },
+                ]}
+              >
+                {sellerId || '-'}
+              </Text>
+            </View>
             <View style={styles.keyValueRow}>
               <View style={styles.labelContainer}>
                 <RemixIcon
@@ -957,7 +988,7 @@ export default function CaseDetailScreen() {
         </View>
 
         <View style={styles.detailSection}>
-          <View style={styles.keyValueRow}>
+          {/* <View style={styles.keyValueRow}>
             <View style={styles.labelContainer}>
               <RemixIcon
                 name="folder-line"
@@ -987,7 +1018,7 @@ export default function CaseDetailScreen() {
                 {category || '-'}
               </Text>
             </View>
-          </View>
+          </View> */}
 
           <View style={styles.keyValueRow}>
             <View style={styles.labelContainer}>
@@ -1677,7 +1708,7 @@ const styles = StyleSheet.create({
   labelContainer: {
     flexDirection: "row",
     alignItems: "center",
-    width: 90,
+    // width: 90,
     marginRight: 8,
   },
   labelKey: {

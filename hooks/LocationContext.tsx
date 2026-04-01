@@ -29,6 +29,10 @@ export const LocationProvider = ({ children }: any) => {
   const [progress, setProgress] = useState(1);
   const [isChecking, setIsChecking] = useState(false);
 
+  // ✅ NEW STATES (NO LOGIC CHANGE)
+  const [address, setAddress] = useState("");
+  const [hasPermission, setHasPermission] = useState(false);
+
   /* ================= INIT ================= */
 
   useEffect(() => {
@@ -55,6 +59,11 @@ export const LocationProvider = ({ children }: any) => {
     try {
       const fg = await Location.getForegroundPermissionsAsync();
       const bg = await Location.getBackgroundPermissionsAsync();
+
+      // ✅ Track permission status
+      setHasPermission(
+        fg.status === "granted" && bg.status === "granted"
+      );
 
       // ❌ Foreground not granted
       if (fg.status !== "granted") {
@@ -83,7 +92,6 @@ export const LocationProvider = ({ children }: any) => {
           return;
         }
 
-        // ✅ Auto revoke confirmation (IMPORTANT FIX)
         const confirmed = await AsyncStorage.getItem("autoRevokeConfirmed");
 
         if (!confirmed) {
@@ -105,6 +113,30 @@ export const LocationProvider = ({ children }: any) => {
     }
   };
 
+  /* ================= LOCATION FUNCTION (NEW) ================= */
+
+  const fetchLocation = async () => {
+    try {
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      const reverse = await Location.reverseGeocodeAsync(loc.coords);
+
+      if (reverse.length > 0) {
+        const place = reverse[0];
+
+        const formatted = `${place.name || ""}, ${place.city || ""}, ${place.region || ""}`;
+        setAddress(formatted);
+      }
+
+      return loc;
+    } catch (e) {
+      console.log("Location error:", e);
+      return null;
+    }
+  };
+
   /* ================= ACTIONS ================= */
 
   const requestFG = async () => {
@@ -123,8 +155,6 @@ export const LocationProvider = ({ children }: any) => {
 
   const openAutoRevoke = async () => {
     await openAutoRevokeSettings();
-
-    // ✅ Assume user disables → store confirmation
     await AsyncStorage.setItem("autoRevokeConfirmed", "true");
   };
 
@@ -177,8 +207,13 @@ export const LocationProvider = ({ children }: any) => {
   const data = renderStep();
 
   return (
-    <LocationContext.Provider value={{}}>
-      {/* ❌ HARD BLOCK UNTIL DONE */}
+    <LocationContext.Provider
+      value={{
+        fetchLocation,   // ✅ FIXED
+        address,         // ✅ FIXED
+        hasPermission,   // ✅ FIXED
+      }}
+    >
       {step === "done" && children}
 
       <Modal visible={visible} transparent animationType="fade">

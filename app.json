@@ -2,7 +2,7 @@
   "expo": {
     "name": "FIELD TRACK",
     "slug": "field-track",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/staffTrackLogo.png",
     "scheme": "fieldtrackapp",
@@ -37,6 +37,7 @@
     ],
 
     "android": {
+      "versionCode": 2,
       "backgroundColor": "#ffffff",
       "predictiveBackGestureEnabled": false,
       "package": "com.gautam1008.fieldtrack",
@@ -66,6 +67,7 @@
     },
 
     "ios": {
+      "buildNumber": "2",
       "supportsTablet": true,
       "bundleIdentifier": "com.gautam1008.fieldtrack",
 
