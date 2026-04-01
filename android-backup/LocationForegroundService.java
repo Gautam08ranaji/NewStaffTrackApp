@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
 import android.util.Log;
@@ -26,6 +27,8 @@ public class LocationForegroundService extends Service {
     private static final String TAG = "LocationService";
     private static final String CHANNEL_ID = "field_track_foreground_channel";
 
+    private static final long API_INTERVAL = 60000; // 1 minute
+
     private FusedLocationProviderClient fusedLocationClient;
     private LocationCallback locationCallback;
 
@@ -36,11 +39,20 @@ public class LocationForegroundService extends Service {
 
     private SharedPreferences prefs;
 
+    // ✅ Latest location cache
+    private volatile double lastLat = 0;
+    private volatile double lastLng = 0;
+    private volatile boolean hasLocation = false;
+
+    // ✅ Timer
+    private Handler handler;
+    private Runnable apiRunnable;
+
     @Override
     public void onCreate() {
         super.onCreate();
 
-        Log.d(TAG, "🚀 Service Created");
+        Log.d(TAG, "🚀 Service Created (Timer Based)");
 
         prefs = getSharedPreferences("TRACK_PREF", MODE_PRIVATE);
 
@@ -48,6 +60,8 @@ public class LocationForegroundService extends Service {
         startForeground(9999, createNotification());
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+
+        handler = new Handler(Looper.getMainLooper());
     }
 
     @Override
@@ -61,25 +75,21 @@ public class LocationForegroundService extends Service {
             csrf = intent.getStringExtra("csrf");
             name = intent.getStringExtra("name");
 
-            Log.d(TAG, "📦 Received from intent: " + userId);
-
             prefs.edit()
                     .putString("userId", userId)
                     .putString("token", token)
                     .putString("csrf", csrf)
                     .putString("name", name)
                     .apply();
-
         } else {
             userId = prefs.getString("userId", null);
             token = prefs.getString("token", null);
             csrf = prefs.getString("csrf", null);
             name = prefs.getString("name", null);
-
-            Log.d(TAG, "♻️ Restored from prefs: " + userId);
         }
 
         startLocationUpdates();
+        startApiTimer(); // ✅ start exact timer
 
         return START_STICKY;
     }
@@ -90,6 +100,10 @@ public class LocationForegroundService extends Service {
 
         if (fusedLocationClient != null && locationCallback != null) {
             fusedLocationClient.removeLocationUpdates(locationCallback);
+        }
+
+        if (handler != null && apiRunnable != null) {
+            handler.removeCallbacks(apiRunnable);
         }
 
         super.onDestroy();
@@ -116,55 +130,63 @@ public class LocationForegroundService extends Service {
         return null;
     }
 
+    // ✅ LOCATION (fast updates)
     private void startLocationUpdates() {
 
-        Log.d(TAG, "🔥 startLocationUpdates called");
-
-        // ✅ CRITICAL PERMISSION CHECK
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             Log.e(TAG, "❌ LOCATION PERMISSION NOT GRANTED");
             return;
         }
 
-        if (locationCallback != null) {
-            fusedLocationClient.removeLocationUpdates(locationCallback);
-        }
-
         LocationRequest request = new LocationRequest.Builder(
                 Priority.PRIORITY_HIGH_ACCURACY,
-                30000
-        ).setMinUpdateIntervalMillis(5000).build();
+                30000 // 30 sec
+        ).setMinUpdateIntervalMillis(10000)
+         .setMaxUpdateDelayMillis(0)
+         .build();
 
         locationCallback = new LocationCallback() {
             @Override
             public void onLocationResult(LocationResult result) {
                 if (result == null) return;
 
-                Log.d(TAG, "🔥 LOCATION CALLBACK TRIGGERED");
-
                 for (Location location : result.getLocations()) {
-                    double lat = location.getLatitude();
-                    double lng = location.getLongitude();
 
-                    Log.d(TAG, "📍 Location: " + lat + ", " + lng);
+                    lastLat = location.getLatitude();
+                    lastLng = location.getLongitude();
+                    hasLocation = true;
 
-                    sendLocationToServer(lat, lng);
+                    Log.d(TAG, "📍 Cached Location: " + lastLat + ", " + lastLng);
                 }
             }
         };
 
-        try {
-            fusedLocationClient.requestLocationUpdates(
-                    request,
-                    locationCallback,
-                    Looper.getMainLooper()
-            );
+        fusedLocationClient.requestLocationUpdates(
+                request,
+                locationCallback,
+                Looper.getMainLooper()
+        );
+    }
 
-            Log.d(TAG, "✅ Location updates requested");
+    // ✅ EXACT TIMER (every 1 min)
+    private void startApiTimer() {
 
-        } catch (Exception e) {
-            Log.e(TAG, "❌ Failed to request updates", e);
-        }
+        apiRunnable = new Runnable() {
+            @Override
+            public void run() {
+
+                if (hasLocation) {
+                    Log.d(TAG, "⏱ Timer triggered → Sending API");
+                    sendLocationToServer(lastLat, lastLng);
+                } else {
+                    Log.d(TAG, "⏳ No location yet");
+                }
+
+                handler.postDelayed(this, API_INTERVAL);
+            }
+        };
+
+        handler.postDelayed(apiRunnable, API_INTERVAL);
     }
 
     private void sendLocationToServer(double lat, double lng) {
@@ -173,7 +195,7 @@ public class LocationForegroundService extends Service {
             try {
 
                 if (userId == null || token == null) {
-                    Log.e(TAG, "❌ Missing auth data → skipping API");
+                    Log.e(TAG, "❌ Missing auth data");
                     return;
                 }
 
