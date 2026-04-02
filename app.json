@@ -8,7 +8,6 @@
     "scheme": "fieldtrackapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-
     "plugins": [
       "expo-router",
       [
@@ -33,15 +32,15 @@
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true
         }
-      ]
+      ],
+      "expo-video",
+      
     ],
-
     "android": {
       "versionCode": 3,
       "backgroundColor": "#ffffff",
       "predictiveBackGestureEnabled": false,
       "package": "com.gautam1008.fieldtrack",
-
       "permissions": [
         "RECORD_AUDIO",
         "ACCESS_FINE_LOCATION",
@@ -53,24 +52,20 @@
         "REQUEST_DELETE_PACKAGES",
         "QUERY_ALL_PACKAGES"
       ],
-
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/staffTrackLogo.png",
         "backgroundColor": "#ffffff"
       },
-
       "intentFilters": [
         {
           "action": "android.settings.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
         }
       ]
     },
-
     "ios": {
       "buildNumber": "3",
       "supportsTablet": true,
       "bundleIdentifier": "com.gautam1008.fieldtrack",
-
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "UIBackgroundModes": [
@@ -82,17 +77,14 @@
         "NSLocationAlwaysUsageDescription": "Location is used to monitor field activity."
       }
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/staffTrackLogo.png"
     },
-
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
-
     "extra": {
       "router": {},
       "eas": {

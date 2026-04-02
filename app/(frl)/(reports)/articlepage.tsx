@@ -1,8 +1,6 @@
 import BodyLayout from "@/components/layout/BodyLayout";
 import { useTheme } from "@/theme/ThemeContext";
-import { ResizeMode, Video } from "expo-av";
-import React, { useRef } from "react";
-import { useTranslation } from "react-i18next"; // <-- Added
+import { useTranslation } from "react-i18next";
 import {
   StyleSheet,
   Text,
@@ -11,11 +9,10 @@ import {
 
 export default function ArticleScreen() {
   const { theme } = useTheme();
-  const { t } = useTranslation(); // <-- Added
-  const videoRef = useRef<Video>(null);
+  const { t } = useTranslation();
 
   return (
-    <BodyLayout scrollContentStyle={{paddingHorizontal:5}} type="screen" screenName="Read Article">
+    <BodyLayout scrollContentStyle={{ paddingHorizontal: 5 }} type="screen" screenName="Read Article">
 
       {/* ---------- TITLE + TAG ---------- */}
       <View style={styles.titleRow}>
@@ -35,7 +32,6 @@ export default function ArticleScreen() {
         </View>
       </View>
 
-      {/* Divider */}
       <View style={[styles.divider, { backgroundColor: theme.colors.colorBorder }]} />
 
       {/* ---------- SECTION HEADER ---------- */}
@@ -44,16 +40,14 @@ export default function ArticleScreen() {
       </Text>
 
       {/* ---------- VIDEO PLAYER ---------- */}
-      <Video
-        ref={videoRef}
+      {/* <VideoView
         style={styles.videoPlayer}
         source={{ uri: "https://www.w3schools.com/html/mov_bbb.mp4" }}
-        useNativeControls
-        resizeMode={ResizeMode.COVER}
-        isLooping
-      />
+        controls // ✅ replaces useNativeControls
+        contentFit="cover" // ✅ replaces resizeMode
+        allowsFullscreen
+      /> */}
 
-      {/* Divider */}
       <View style={[styles.divider, { backgroundColor: theme.colors.colorBorder }]} />
 
       {/* ---------- DETAILS SECTION ---------- */}
@@ -77,7 +71,6 @@ export default function ArticleScreen() {
         • {t("article.point4")}
       </Text>
 
-      {/* Divider */}
       <View style={[styles.divider, { backgroundColor: theme.colors.colorBorder }]} />
 
       {/* ---------- HOW TO USE SECTION ---------- */}
@@ -97,7 +90,6 @@ export default function ArticleScreen() {
         • {t("article.step3")}
       </Text>
 
-      {/* Divider */}
       <View style={[styles.divider, { backgroundColor: theme.colors.colorBorder }]} />
 
       {/* ---------- CONCLUSION ---------- */}
@@ -112,7 +104,6 @@ export default function ArticleScreen() {
     </BodyLayout>
   );
 }
-
 /* ---------------- STYLES ---------------- */
 
 const styles = StyleSheet.create({

@@ -4,7 +4,7 @@ import "@/i18n";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Platform, StatusBar as RNStatusBar, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -15,7 +15,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import GlobalLoader from "@/components/GlobalLoader";
 import { useThemedToastConfig } from "@/components/reusables/ThemedToast";
 
-import { AudioRecorderProvider } from "@/hooks/AudioRecorderProvider";
+// import { AudioRecorderProvider } from "@/hooks/AudioRecorderProvider";
 import { CameraPermissionProvider } from "@/hooks/CameraPermissionProvider";
 import { LocationProvider, useLocation } from "@/hooks/LocationContext";
 
@@ -38,7 +38,7 @@ export default function RootLayout() {
             <LocationProvider>
               <CameraPermissionProvider>
                 <ThemeProvider>
-                  <AudioRecorderProvider>
+                  {/* <AudioRecorderProvider> */}
                     <>
 
                       <View style={{ flex: 1 }}>
@@ -52,7 +52,7 @@ export default function RootLayout() {
                       </View>
                       
                     </>
-                  </AudioRecorderProvider>
+                  {/* </AudioRecorderProvider> */}
                 </ThemeProvider>
               </CameraPermissionProvider>
             </LocationProvider>

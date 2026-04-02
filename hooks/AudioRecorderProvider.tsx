@@ -1,193 +1,141 @@
-import { Audio } from "expo-av";
-import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+// import {
+//   createContext,
+//   ReactNode,
+//   useContext,
+//   useEffect,
+//   useRef,
+//   useState,
+// } from "react";
 
-type AudioRecorderContextType = {
-  recording: Audio.Recording | null;
-  audioUri: string | null;
-  isPlaying: boolean;
-  sec: number;
-  startRecording: () => Promise<void>;
-  stopRecording: () => Promise<void>;
-  playAudio: () => Promise<void>;
-  pauseAudio: () => Promise<void>;
-};
+// const audioRecorderPlayer = AudioRecorderPlayer;
 
-const AudioRecorderContext = createContext<AudioRecorderContextType | undefined>(
-  undefined
-);
+// type AudioRecorderContextType = {
+//   audioUri: string | null;
+//   isPlaying: boolean;
+//   sec: number;
+//   startRecording: () => Promise<void>;
+//   stopRecording: () => Promise<void>;
+//   playAudio: () => Promise<void>;
+//   pauseAudio: () => Promise<void>;
+// };
 
-export const AudioRecorderProvider = ({ children }: { children: ReactNode }) => {
-  const [recording, setRecording] = useState<Audio.Recording | null>(null);
-  const [audioUri, setAudioUri] = useState<string | null>(null);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [sec, setSec] = useState(0);
+// const AudioRecorderContext = createContext<AudioRecorderContextType | undefined>(
+//   undefined
+// );
 
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+// export const AudioRecorderProvider = ({ children }: { children: ReactNode }) => {
+//   const [audioUri, setAudioUri] = useState<string | null>(null);
+//   const [isPlaying, setIsPlaying] = useState(false);
+//   const [sec, setSec] = useState(0);
 
-  const clearTimer = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
+//   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  /* ================= START RECORDING ================= */
+//   const clearTimer = () => {
+//     if (timerRef.current) {
+//       clearInterval(timerRef.current);
+//       timerRef.current = null;
+//     }
+//   };
 
-  const startRecording = async () => {
-    try {
-      const permission = await Audio.requestPermissionsAsync();
-      if (!permission.granted) return;
+//   /* ================= START RECORDING ================= */
 
-      // Stop any playing audio before recording again
-      if (sound) {
-        await sound.unloadAsync();
-        setSound(null);
-        setIsPlaying(false);
-      }
+//   const startRecording = async () => {
+//     try {
+//       setAudioUri(null);
+//       setSec(0);
+//       clearTimer();
 
-      // Updated safe audio mode (no invalid Android interruptionMode)
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
-        shouldDuckAndroid: true,
-      });
+//       timerRef.current = setInterval(() => {
+//         setSec((prev) => prev + 1);
+//       }, 1000);
 
-      setAudioUri(null);
-      setSec(0);
-      clearTimer();
+//       const uri = await audioRecorderPlayer.startRecorder();
+//       console.log("Recording started:", uri);
+//     } catch (err) {
+//       console.log("Recording start error:", err);
+//     }
+//   };
 
-      timerRef.current = setInterval(() => {
-        setSec((prev) => prev + 1);
-      }, 1000);
+//   /* ================= STOP RECORDING ================= */
 
-      const created = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
+//   const stopRecording = async () => {
+//     try {
+//       clearTimer();
 
-      setRecording(created.recording);
+//       const uri = await audioRecorderPlayer.stopRecorder();
+//       setAudioUri(uri);
+//       setIsPlaying(false);
 
-      console.log("rec",created?.recording);
-      
-    } catch (err) {
-      console.log("Recording start error:", err);
-    }
-  };
+//       console.log("Recording stopped:", uri);
+//     } catch (err) {
+//       console.log("Recording stop error:", err);
+//     }
+//   };
 
-  /* ================= STOP RECORDING ================= */
+//   /* ================= PLAY AUDIO ================= */
 
-  const stopRecording = async () => {
-    try {
-      if (!recording) return;
+//   const playAudio = async () => {
+//     try {
+//       if (!audioUri) return;
 
-      clearTimer();
+//       await audioRecorderPlayer.startPlayer(audioUri);
+//       setIsPlaying(true);
 
-      await recording.stopAndUnloadAsync();
-      const uri = recording.getURI();
-      if (uri) setAudioUri(uri);
+//       audioRecorderPlayer.addPlayBackListener((e: any) => {
+//         if (e.currentPosition >= e.duration) {
+//           setIsPlaying(false);
+//           audioRecorderPlayer.stopPlayer();
+//           audioRecorderPlayer.removePlayBackListener();
+//         }
+//       });
+//     } catch (err) {
+//       console.log("Playback error:", err);
+//     }
+//   };
 
-      console.log("uri",uri);
-      
+//   /* ================= PAUSE AUDIO ================= */
 
-      setRecording(null);
-      setIsPlaying(false);
+//   const pauseAudio = async () => {
+//     try {
+//       await audioRecorderPlayer.pausePlayer();
+//       setIsPlaying(false);
+//     } catch (err) {
+//       console.log("Pause error:", err);
+//     }
+//   };
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: false,
-      });
-    } catch (err) {
-      console.log("Recording stop error:", err);
-    }
-  };
+//   /* ================= CLEANUP ================= */
 
-  /* ================= PLAY AUDIO ================= */
+//   useEffect(() => {
+//     return () => {
+//       clearTimer();
+//       audioRecorderPlayer.stopRecorder().catch(() => {});
+//       audioRecorderPlayer.stopPlayer().catch(() => {});
+//       audioRecorderPlayer.removePlayBackListener();
+//     };
+//   }, []);
 
-  const playAudio = async () => {
-    try {
-      if (!audioUri) return;
+//   return (
+//     <AudioRecorderContext.Provider
+//       value={{
+//         audioUri,
+//         isPlaying,
+//         sec,
+//         startRecording,
+//         stopRecording,
+//         playAudio,
+//         pauseAudio,
+//       }}
+//     >
+//       {children}
+//     </AudioRecorderContext.Provider>
+//   );
+// };
 
-      // Always unload previous sound
-      if (sound) {
-        await sound.unloadAsync();
-        setSound(null);
-      }
-
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: audioUri },
-        { shouldPlay: true }
-      );
-
-      setSound(newSound);
-      setIsPlaying(true);
-
-      newSound.setOnPlaybackStatusUpdate((status) => {
-        if (!status.isLoaded) return;
-        if (status.didJustFinish) setIsPlaying(false);
-      });
-    } catch (err) {
-      console.log("Playback error:", err);
-    }
-  };
-
-  /* ================= PAUSE AUDIO ================= */
-
-  const pauseAudio = async () => {
-    try {
-      if (!sound) return;
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } catch (err) {
-      console.log("Pause error:", err);
-    }
-  };
-
-  /* ================= CLEANUP ================= */
-
-  useEffect(() => {
-    return () => {
-      clearTimer();
-
-      if (recording) {
-        recording.stopAndUnloadAsync().catch(() => {});
-      }
-
-      if (sound) {
-        sound.unloadAsync().catch(() => {});
-      }
-    };
-  }, []);
-
-  const value: AudioRecorderContextType = {
-    recording,
-    audioUri,
-    isPlaying,
-    sec,
-    startRecording,
-    stopRecording,
-    playAudio,
-    pauseAudio,
-  };
-
-  return (
-    <AudioRecorderContext.Provider value={value}>
-      {children}
-    </AudioRecorderContext.Provider>
-  );
-};
-
-export const useAudioRecorder = () => {
-  const ctx = useContext(AudioRecorderContext);
-  if (!ctx) {
-    throw new Error(
-      "useAudioRecorder must be used within AudioRecorderProvider"
-    );
-  }
-  return ctx;
-};
+// export const useAudioRecorder = () => {
+//   const ctx = useContext(AudioRecorderContext);
+//   if (!ctx) {
+//     throw new Error("useAudioRecorder must be used within provider");
+//   }
+//   return ctx;
+// };
