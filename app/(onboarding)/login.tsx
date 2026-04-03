@@ -9,7 +9,7 @@ import { showApiError } from "@/utils/showApiError";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Application from "expo-application";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import { useState } from "react";
       
 import { useTranslation } from "react-i18next";
 import {
@@ -47,6 +47,7 @@ const build = Application.nativeBuildVersion;
   const [showPassword, setShowPassword] = useState(false);
   const { hasPermission, fetchLocation, address } = useLocation();
 const { ForegroundServiceModule } = NativeModules;
+console.log("ForegroundServiceModule available:", !!ForegroundServiceModule);
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
 
@@ -97,6 +98,7 @@ const handleLogin = async () => {
       password,
       latitude: location?.coords.latitude?.toString() || "",
       longitude: location?.coords?.longitude?.toString() || "",
+      remoteIp: "string",
     }).unwrap();
 
     if (!res.success || !res.data) {
@@ -108,15 +110,12 @@ const handleLogin = async () => {
     }
 
     const user = res.data;
-
-    console.log("✅ login res", res);
-
     const role = user.userType === "FRO" ? "FRO" : "FRL";
 
-    // ✅ Get CSRF token
+    // Get CSRF token
     const antiRes = await loadAntiForgeryToken(user.bearerToken);
 
-    // ✅ Store in Redux
+    // Store in Redux
     dispatch(
       setAuth({
         id: user.id,
@@ -126,7 +125,7 @@ const handleLogin = async () => {
       })
     );
 
-    // ✅ Store for Native Service (VERY IMPORTANT)
+    // Store for Native Service
     await AsyncStorage.multiSet([
       ["native_userId", user.id],
       ["native_token", user.bearerToken],
@@ -136,21 +135,25 @@ const handleLogin = async () => {
 
     console.log("✅ Auth + Native storage saved");
 
-    // 🚀 START NATIVE FOREGROUND SERVICE (THIS IS THE KEY)
-    try {
-      await ForegroundServiceModule.startForegroundService(
-        user.id,
-        user.bearerToken,
-        antiRes.token || "",
-        user?.firstName || "User"
-      );
-
-      console.log("🚀 Foreground service started");
-    } catch (e) {
-      console.log("❌ Failed to start service", e);
+    // START NATIVE FOREGROUND SERVICE
+    if (ForegroundServiceModule) {
+      try {
+        await ForegroundServiceModule.startForegroundService(
+          user.id,
+          user.bearerToken,
+          antiRes.token || "",
+          user?.firstName || "User"
+        );
+        console.log("🚀 Foreground service started");
+      } catch (e) {
+        console.log("❌ Failed to start service", e);
+        // Don't block login if service fails to start
+      }
+    } else {
+      console.warn("⚠️ ForegroundServiceModule not available");
     }
 
-    // ✅ Navigate
+    // Navigate
     router.replace(
       role === "FRO"
         ? "/(fro)/(dashboard)"
@@ -159,7 +162,7 @@ const handleLogin = async () => {
 
   } catch (err: any) {
     showApiError(err, dispatch);
-    console.log("❌ login error", err?.data?.errors?.[0]);
+    console.log("❌ login error", err);
   }
 };
 

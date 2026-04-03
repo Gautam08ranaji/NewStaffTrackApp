@@ -15,6 +15,7 @@ export interface LoginRequest {
   password: string;
   latitude?: string;
   longitude?: string;
+  remoteIp: string,
 }
 
 /* ---------- BACKEND ROLE TYPE ---------- */
