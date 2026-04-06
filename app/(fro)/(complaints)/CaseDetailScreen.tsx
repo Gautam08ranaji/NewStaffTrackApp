@@ -4,7 +4,7 @@ import { getNotesRecordList } from "@/features/fro/complaints/noteListApi";
 import { useAppSelector } from "@/store/hooks";
 import { useTheme } from "@/theme/ThemeContext";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Alert,
@@ -16,7 +16,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import RemixIcon from "react-native-remix-icon";
 
 interface Note {
@@ -1563,7 +1563,7 @@ console.log("item",item);
 
           <View style={styles.mapContainer}>
             <MapView
-              provider={PROVIDER_GOOGLE}
+              // provider="google"  
               style={styles.map}
               initialRegion={initialRegion}
               scrollEnabled={true}

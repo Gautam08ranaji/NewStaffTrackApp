@@ -3,7 +3,7 @@ import { useLocation } from "@/hooks/LocationContext";
 import { useTheme } from "@/theme/ThemeContext";
 import * as Location from "expo-location";
 import { useLocalSearchParams } from "expo-router";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Linking,
@@ -13,7 +13,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+import MapView, { Marker } from "react-native-maps";
 import MapViewDirections from "react-native-maps-directions";
 import RemixIcon, { IconName } from "react-native-remix-icon";
 
@@ -115,7 +115,7 @@ export default function StartNavigationScreen() {
       <View style={[styles.mapContainer, { borderColor: colors.colorBorder }]}>
         <MapView
           ref={mapRef}
-          provider={PROVIDER_GOOGLE}
+          // provider={PROVIDER_GOOGLE}
           style={StyleSheet.absoluteFillObject}
           showsUserLocation
           showsMyLocationButton

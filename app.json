@@ -67,15 +67,17 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.gautam1008.fieldtrack",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "UIBackgroundModes": [
-          "location",
-          "fetch"
-        ],
-        "NSLocationWhenInUseUsageDescription": "This app needs your location to track field staff.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app tracks location in background for field monitoring.",
-        "NSLocationAlwaysUsageDescription": "Location is used to monitor field activity."
-      }
+  "ITSAppUsesNonExemptEncryption": false,
+  "UIBackgroundModes": ["location", "fetch"],
+
+  "NSAppTransportSecurity": {
+    "NSAllowsArbitraryLoads": true
+  },
+
+  "NSLocationWhenInUseUsageDescription": "This app needs your location to track field staff.",
+  "NSLocationAlwaysAndWhenInUseUsageDescription": "This app tracks location in background for field monitoring.",
+  "NSLocationAlwaysUsageDescription": "Location is used to monitor field activity."
+}
     },
     "web": {
       "output": "static",

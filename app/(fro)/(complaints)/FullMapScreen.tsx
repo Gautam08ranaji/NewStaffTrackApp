@@ -2,10 +2,9 @@
 import BodyLayout from '@/components/layout/BodyLayout';
 import { useTheme } from '@/theme/ThemeContext';
 import { router, useLocalSearchParams } from 'expo-router';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import RemixIcon from 'react-native-remix-icon';
 
 export default function FullMapScreen() {
@@ -29,7 +28,7 @@ export default function FullMapScreen() {
     <BodyLayout type="screen" screenName={t('fullMap.screenTitle') || 'Location Map'}>
       <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
         <MapView
-          provider={PROVIDER_GOOGLE}
+          // provider={PROVIDER_GOOGLE}
           style={styles.map}
           initialRegion={initialRegion}
           showsUserLocation={true}
